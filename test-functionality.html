@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Functionality Test - Soccer Bet Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .test-pass { background-color: #10b981; color: white; }
+        .test-fail { background-color: #ef4444; color: white; }
+        .test-pending { background-color: #f59e0b; color: white; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white p-4">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Soccer Bet Pro - Functionality Test</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Test Results Panel -->
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h2 class="text-xl font-bold mb-4">Test Results</h2>
+                <div id="test-results"></div>
+                <button id="run-tests" class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded">Run All Tests</button>
+            </div>
+            
+            <!-- Game Preview Panel -->
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <h2 class="text-xl font-bold mb-4">Game Preview</h2>
+                <iframe id="game-frame" src="index.html" class="w-full h-96 border border-gray-600 rounded"></iframe>
+            </div>
+        </div>
+        
+        <!-- Manual Test Checklist -->
+        <div class="mt-6 bg-gray-800 p-4 rounded-lg">
+            <h2 class="text-xl font-bold mb-4">Manual Test Checklist</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="font-semibold mb-2">Core Functionality</h3>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Lobby loads with match list
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Match selection works
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Match screen displays correctly
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Timer counts up properly
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Score updates during match
+                    </label>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-2">Betting System</h3>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Full match betting works (1X2)
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Action bets appear during match
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Wallet balance updates correctly
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Bet history shows active bets
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Power-ups are awarded and work
+                    </label>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-2">UI/UX</h3>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Event feed updates in real-time
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Modals open and close properly
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Classic mode toggle works
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Back to lobby button works
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Reset prototype button works
+                    </label>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-2">Match End</h3>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Match ends after full time
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Bets are resolved correctly
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Winnings are calculated properly
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Match end modal shows summary
+                    </label>
+                    <label class="flex items-center mb-2">
+                        <input type="checkbox" class="mr-2"> Return to lobby works
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Automated tests for file structure and basic functionality
+        const tests = [
+            {
+                name: "HTML Structure",
+                test: () => {
+                    const frame = document.getElementById('game-frame');
+                    const doc = frame.contentDocument || frame.contentWindow.document;
+                    return doc.getElementById('app-container') !== null;
+                }
+            },
+            {
+                name: "CSS Files Load",
+                test: () => {
+                    const frame = document.getElementById('game-frame');
+                    const doc = frame.contentDocument || frame.contentWindow.document;
+                    const links = doc.querySelectorAll('link[rel="stylesheet"]');
+                    return links.length >= 3; // main.css, components.css, animations.css
+                }
+            },
+            {
+                name: "JavaScript Modules Load",
+                test: () => {
+                    const frame = document.getElementById('game-frame');
+                    const win = frame.contentWindow;
+                    return win.mainApp !== undefined;
+                }
+            },
+            {
+                name: "Lobby Screen Visible",
+                test: () => {
+                    const frame = document.getElementById('game-frame');
+                    const doc = frame.contentDocument || frame.contentWindow.document;
+                    const lobby = doc.getElementById('lobby-screen');
+                    return lobby && !lobby.classList.contains('hidden');
+                }
+            },
+            {
+                name: "Match List Populated",
+                test: () => {
+                    const frame = document.getElementById('game-frame');
+                    const doc = frame.contentDocument || frame.contentWindow.document;
+                    const matchList = doc.getElementById('match-list');
+                    return matchList && matchList.children.length > 0;
+                }
+            }
+        ];
+
+        function runTests() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '';
+
+            tests.forEach((test, index) => {
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'test-result test-pending';
+                resultDiv.textContent = `${test.name}: Running...`;
+                resultsDiv.appendChild(resultDiv);
+
+                setTimeout(() => {
+                    try {
+                        const passed = test.test();
+                        resultDiv.className = passed ? 'test-result test-pass' : 'test-result test-fail';
+                        resultDiv.textContent = `${test.name}: ${passed ? 'PASS' : 'FAIL'}`;
+                    } catch (error) {
+                        resultDiv.className = 'test-result test-fail';
+                        resultDiv.textContent = `${test.name}: ERROR - ${error.message}`;
+                    }
+                }, (index + 1) * 500);
+            });
+        }
+
+        document.getElementById('run-tests').addEventListener('click', runTests);
+
+        // Run tests automatically after iframe loads
+        document.getElementById('game-frame').addEventListener('load', () => {
+            setTimeout(runTests, 1000);
+        });
+    </script>
+</body>
+</html>

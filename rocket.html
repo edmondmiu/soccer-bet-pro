@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚀 Starfall Stake - Sci-Fi Demo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Orbitron', sans-serif;
+    background: radial-gradient(ellipse at bottom, #0a0f1c 0%, #000000 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    height: 100vh;
+    overflow: hidden;
+  }
+  h1 {
+    font-size: 1.4rem;
+    color: cyan;
+    text-shadow: 0 0 8px cyan;
+    margin-bottom: 10px;
+  }
+  #status {
+    font-size: 1rem;
+    margin: 5px 0;
+    color: #fff;
+    text-shadow: 0 0 5px #0ff;
+  }
+  #multiplier {
+    font-size: 3rem;
+    margin: 15px 0;
+    color: #0ff;
+    text-shadow: 0 0 15px #0ff;
+    transition: transform 0.1s ease;
+  }
+  #controls {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 400px;
+    gap: 10px;
+    margin-top: auto;
+    margin-bottom: 15px;
+  }
+  input, select, button {
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+    outline: none;
+    backdrop-filter: blur(5px);
+  }
+  select { color: cyan; }
+  button {
+    background: linear-gradient(90deg, #ff004c, #ff7f00);
+    font-weight: bold;
+    text-transform: uppercase;
+    box-shadow: 0 0 10px #ff004c;
+    cursor: pointer;
+  }
+  button:disabled {
+    background: grey;
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+  #history {
+    font-size: 0.85rem;
+    width: 100%;
+    max-width: 400px;
+    overflow-y: auto;
+    max-height: 25%;
+    padding-bottom: 10px;
+    color: #aaa;
+  }
+  #history div {
+    padding: 5px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  /* Background stars */
+  body::before {
+    content: '';
+    position: absolute;
+    top:0; left:0;
+    width:100%; height:100%;
+    background: transparent url('https://i.ibb.co/6Wf4Q12/stars.png') repeat;
+    animation: moveStars 60s linear infinite;
+    z-index: -1;
+  }
+  @keyframes moveStars {
+    from { background-position: 0 0; }
+    to { background-position: -10000px 5000px; }
+  }
+</style>
+</head>
+<body>
+<h1>🚀 Starfall Stake</h1>
+<div id="status">Place your bets!</div>
+<div id="multiplier">1.00x</div>
+<div id="controls">
+  <input type="number" id="mainBet" placeholder="Main Bet" min="1" value="10">
+  <select id="fateBet">
+    <option value="">No Fate Bet</option>
+    <option value="Engine Failure">Engine Failure (2.5x)</option>
+    <option value="Alien Attack">Alien Attack (4x)</option>
+    <option value="Asteroid Collision">Asteroid Collision (8x)</option>
+    <option value="Wormhole Escape">Wormhole Escape (20x)</option>
+  </select>
+  <button id="actionBtn">Place Bet</button>
+</div>
+<div id="history"></div>
+
+<script>
+let phase = "betting";
+let multiplier = 1;
+let timer;
+let crashPoint;
+let hasCashedOut = false;
+let betAmount = 0;
+let chosenFate = "";
+const fates = [
+  { name: "Engine Failure", odds: 2.5, weight: 60 },
+  { name: "Alien Attack", odds: 4, weight: 25 },
+  { name: "Asteroid Collision", odds: 8, weight: 10 },
+  { name: "Wormhole Escape", odds: 20, weight: 5 }
+];
+
+const statusEl = document.getElementById("status");
+const multiplierEl = document.getElementById("multiplier");
+const actionBtn = document.getElementById("actionBtn");
+const historyEl = document.getElementById("history");
+
+actionBtn.onclick = () => {
+  if (phase === "betting") startFlying();
+  else if (phase === "flying") cashOut();
+};
+
+function startBetting() {
+  phase = "betting";
+  multiplier = 1;
+  hasCashedOut = false;
+  multiplierEl.textContent = "1.00x";
+  multiplierEl.style.transform = "scale(1)";
+  actionBtn.textContent = "Place Bet";
+  statusEl.textContent = "Place your bets!";
+}
+
+function startFlying() {
+  betAmount = parseFloat(document.getElementById("mainBet").value);
+  chosenFate = document.getElementById("fateBet").value;
+  if (!betAmount || betAmount <= 0) return alert("Enter a valid bet!");
+
+  crashPoint = (Math.random() * 10 + 1).toFixed(2);
+  phase = "flying";
+  actionBtn.textContent = "Cash Out";
+  statusEl.textContent = "🚀 Rocket launched!";
+  
+  timer = setInterval(() => {
+    multiplier += 0.05 + multiplier * 0.02;
+    multiplierEl.textContent = multiplier.toFixed(2) + "x";
+    multiplierEl.style.transform = `scale(${1 + multiplier / 20})`;
+    if (multiplier >= crashPoint) crash();
+  }, 100);
+}
+
+function cashOut() {
+  if (hasCashedOut) return;
+  hasCashedOut = true;
+  const win = betAmount * multiplier;
+  statusEl.textContent = `✅ Cashed out at ${multiplier.toFixed(2)}x → Won ${win.toFixed(2)}`;
+  actionBtn.disabled = true;
+}
+
+function crash() {
+  clearInterval(timer);
+  const fate = pickFate();
+  phase = "crashed";
+  actionBtn.disabled = true;
+  
+  let mainResult = hasCashedOut ? "" : ` ❌ Lost ${betAmount.toFixed(2)}`;
+  let fateWin = "";
+  if (chosenFate === fate.name) {
+    fateWin = ` 💎 Fate Win: ${(betAmount * fate.odds).toFixed(2)}`;
+  }
+  
+  statusEl.textContent = `💥 Crash at ${crashPoint}x — Fate: ${fate.name}${mainResult}${fateWin}`;
+  addToHistory(crashPoint, fate.name);
+  
+  setTimeout(() => {
+    actionBtn.disabled = false;
+    startBetting();
+  }, 3000);
+}
+
+function pickFate() {
+  let totalWeight = fates.reduce((sum, f) => sum + f.weight, 0);
+  let rnd = Math.random() * totalWeight;
+  for (let f of fates) {
+    if (rnd < f.weight) return f;
+    rnd -= f.weight;
+  }
+}
+
+function addToHistory(mult, fate) {
+  const entry = document.createElement("div");
+  entry.textContent = `Crash at ${mult}x — Fate: ${fate}`;
+  historyEl.prepend(entry);
+}
+
+startBetting();
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+/* Component-specific styles */
+
+/* Animation for event feed items */
+.feed-item-enter {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* Power-up glow effect */
+.power-up-glow {
+    box-shadow: 0 0 15px 5px rgba(255, 215, 0, 0.6);
+}
+
+/* Bet button selected state */
+.bet-btn-selected {
+    box-shadow: 0 0 0 3px #a78bfa;
+    background-color: #4338ca;
+}
