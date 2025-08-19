@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Countdown Visual Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: monospace;
+        }
+
+        .game-area {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            transition: filter 0.3s ease;
+        }
+
+        .game-content {
+            font-size: 1.2rem;
+            color: #e5e7eb;
+        }
+
+        #app-container {
+            position: relative;
+        }
+
+        .test-info {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .test-info h3 {
+            margin-top: 0;
+            color: #10b981;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+        }
+
+        .success {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #6ee7b7;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Resume Countdown Visual Tests</h1>
+        
+        <div class="test-info">
+            <h3>Test Instructions</h3>
+            <p>This page tests the resume countdown functionality for the pause system. Use the buttons below to test different countdown scenarios.</p>
+            <ul>
+                <li><strong>Start Pause:</strong> Shows the pause overlay</li>
+                <li><strong>Resume with Countdown:</strong> Shows 3-second countdown before resuming</li>
+                <li><strong>Custom Countdown:</strong> Shows 5-second countdown</li>
+                <li><strong>Resume without Countdown:</strong> Resumes immediately</li>
+                <li><strong>Test Integration:</strong> Full pause-to-resume cycle with countdown</li>
+            </ul>
+        </div>
+
+        <div id="app-container">
+            <div class="test-section">
+                <h2>Countdown Controls</h2>
+                <div class="test-controls">
+                    <button onclick="startPause()">Start Pause</button>
+                    <button onclick="resumeWithCountdown()">Resume with Countdown (3s)</button>
+                    <button onclick="resumeWithCustomCountdown()">Custom Countdown (5s)</button>
+                    <button onclick="resumeWithoutCountdown()">Resume without Countdown</button>
+                    <button onclick="testFullCycle()">Test Full Cycle</button>
+                    <button onclick="clearStatus()">Clear Status</button>
+                </div>
+
+                <div class="game-area" id="game-area">
+                    <div class="game-content">
+                        <h3>🎮 Game Area</h3>
+                        <p>This represents the main game area that gets dimmed during pause.</p>
+                        <p>Current Time: <span id="current-time">--:--:--</span></p>
+                    </div>
+                </div>
+
+                <div class="status" id="status">
+                    Ready for testing. Click buttons above to test countdown functionality.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include the required scripts -->
+    <script type="module">
+        // Mock gameState for testing
+        let mockGameState = {
+            pause: {
+                active: false,
+                reason: null,
+                startTime: null,
+                timeoutId: null
+            }
+        };
+
+        // Mock gameState functions
+        window.updatePauseState = function(newState) {
+            Object.assign(mockGameState.pause, newState);
+            updateStatus(`Game state updated: ${JSON.stringify(mockGameState.pause, null, 2)}`);
+        };
+
+        window.getPauseState = function() {
+            return mockGameState.pause;
+        };
+
+        // Import and initialize components
+        import('../scripts/pauseUI.js').then(module => {
+            const PauseUI = module.default || module;
+            window.pauseUI = new PauseUI();
+            updateStatus('PauseUI initialized successfully');
+        }).catch(error => {
+            updateStatus(`Error loading PauseUI: ${error.message}`, 'error');
+        });
+
+        import('../scripts/pauseManager.js').then(module => {
+            const { PauseManager } = module;
+            window.pauseManager = new PauseManager();
+            
+            // Set up callbacks
+            window.pauseManager.setCountdownCallback(async (seconds) => {
+                updateStatus(`Starting ${seconds}-second countdown...`);
+                await window.pauseUI.showResumeCountdown(seconds);
+                updateStatus('Countdown completed!', 'success');
+            });
+
+            window.pauseManager.setTimeoutWarningCallback((message) => {
+                window.pauseUI.showTimeoutWarning(message);
+                updateStatus(`Timeout warning: ${message}`, 'error');
+            });
+
+            updateStatus('PauseManager initialized successfully');
+        }).catch(error => {
+            updateStatus(`Error loading PauseManager: ${error.message}`, 'error');
+        });
+
+        // Update time display
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleTimeString();
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+    </script>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const statusElement = document.getElementById('status');
+            const timestamp = new Date().toLocaleTimeString();
+            const newMessage = `[${timestamp}] ${message}`;
+            
+            if (type === 'error') {
+                statusElement.className = 'status error';
+            } else if (type === 'success') {
+                statusElement.className = 'status success';
+            } else {
+                statusElement.className = 'status';
+            }
+            
+            statusElement.textContent = newMessage;
+            console.log(newMessage);
+        }
+
+        function startPause() {
+            if (!window.pauseManager || !window.pauseUI) {
+                updateStatus('Components not loaded yet', 'error');
+                return;
+            }
+
+            try {
+                const success = window.pauseManager.pauseGame('TESTING_COUNTDOWN', 30000);
+                if (success) {
+                    window.pauseUI.showPauseOverlay('Testing Countdown', 'Ready for countdown test...');
+                    updateStatus('Game paused successfully');
+                } else {
+                    updateStatus('Failed to pause game', 'error');
+                }
+            } catch (error) {
+                updateStatus(`Error pausing game: ${error.message}`, 'error');
+            }
+        }
+
+        async function resumeWithCountdown() {
+            if (!window.pauseManager) {
+                updateStatus('PauseManager not loaded yet', 'error');
+                return;
+            }
+
+            try {
+                updateStatus('Starting resume with 3-second countdown...');
+                const success = await window.pauseManager.resumeGame(true, 3);
+                if (success) {
+                    window.pauseUI.hidePauseOverlay();
+                    updateStatus('Game resumed successfully with countdown!', 'success');
+                } else {
+                    updateStatus('Failed to resume game', 'error');
+                }
+            } catch (error) {
+                updateStatus(`Error resuming game: ${error.message}`, 'error');
+            }
+        }
+
+        async function resumeWithCustomCountdown() {
+            if (!window.pauseManager) {
+                updateStatus('PauseManager not loaded yet', 'error');
+                return;
+            }
+
+            try {
+                updateStatus('Starting resume with 5-second countdown...');
+                const success = await window.pauseManager.resumeGame(true, 5);
+                if (success) {
+                    window.pauseUI.hidePauseOverlay();
+                    updateStatus('Game resumed successfully with 5-second countdown!', 'success');
+                } else {
+                    updateStatus('Failed to resume game', 'error');
+                }
+            } catch (error) {
+                updateStatus(`Error resuming game: ${error.message}`, 'error');
+            }
+        }
+
+        async function resumeWithoutCountdown() {
+            if (!window.pauseManager) {
+                updateStatus('PauseManager not loaded yet', 'error');
+                return;
+            }
+
+            try {
+                updateStatus('Resuming without countdown...');
+                const success = await window.pauseManager.resumeGame(false);
+                if (success) {
+                    window.pauseUI.hidePauseOverlay();
+                    updateStatus('Game resumed immediately (no countdown)', 'success');
+                } else {
+                    updateStatus('Failed to resume game', 'error');
+                }
+            } catch (error) {
+                updateStatus(`Error resuming game: ${error.message}`, 'error');
+            }
+        }
+
+        async function testFullCycle() {
+            if (!window.pauseManager || !window.pauseUI) {
+                updateStatus('Components not loaded yet', 'error');
+                return;
+            }
+
+            try {
+                updateStatus('Starting full pause-resume cycle test...');
+                
+                // Step 1: Pause
+                const pauseSuccess = window.pauseManager.pauseGame('FULL_CYCLE_TEST', 30000);
+                if (!pauseSuccess) {
+                    updateStatus('Failed to pause game', 'error');
+                    return;
+                }
+                
+                window.pauseUI.showPauseOverlay('Full Cycle Test', 'Testing complete cycle...');
+                updateStatus('Game paused, waiting 2 seconds before resume...');
+                
+                // Step 2: Wait 2 seconds
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Step 3: Resume with countdown
+                updateStatus('Starting resume with countdown...');
+                const resumeSuccess = await window.pauseManager.resumeGame(true, 3);
+                
+                if (resumeSuccess) {
+                    window.pauseUI.hidePauseOverlay();
+                    updateStatus('Full cycle test completed successfully!', 'success');
+                } else {
+                    updateStatus('Failed to resume game in full cycle test', 'error');
+                }
+                
+            } catch (error) {
+                updateStatus(`Error in full cycle test: ${error.message}`, 'error');
+            }
+        }
+
+        function clearStatus() {
+            updateStatus('Status cleared. Ready for testing.');
+        }
+
+        // Initialize status
+        updateStatus('Page loaded. Initializing components...');
+    </script>
+</body>
+</html>

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 7: Consistent Pause Behavior - Browser Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .test-pass {
+            background-color: #1b5e20;
+            border-left: 4px solid #4CAF50;
+        }
+        .test-fail {
+            background-color: #b71c1c;
+            border-left: 4px solid #f44336;
+        }
+        .test-info {
+            background-color: #1a237e;
+            border-left: 4px solid #2196F3;
+        }
+        .controls {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        .status {
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.paused {
+            background-color: #ff9800;
+            color: #000;
+        }
+        .status.running {
+            background-color: #4CAF50;
+        }
+        .betting-queue {
+            background-color: #444;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .queue-item {
+            background-color: #555;
+            padding: 5px 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border-left: 3px solid #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Task 7: Consistent Pause Behavior Across All Betting Scenarios</h1>
+    <p>This test verifies that pause behavior is consistent across all betting scenarios including full-match betting, future betting event types, multiple betting events, and classic mode compatibility.</p>
+
+    <div class="controls">
+        <h3>Test Controls</h3>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="testFullMatchBetting()">Test Full-Match Betting</button>
+        <button onclick="testFutureBettingEvents()">Test Future Betting Events</button>
+        <button onclick="testMultipleBettingEvents()">Test Multiple Betting Events</button>
+        <button onclick="testClassicMode()">Test Classic Mode</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="game-status" class="status running">Game Status: Running</div>
+    <div id="betting-queue" class="betting-queue">
+        <h4>Betting Event Queue:</h4>
+        <div id="queue-items">No queued events</div>
+    </div>
+
+    <div id="test-results"></div>
+
+    <!-- Mock game elements -->
+    <div style="display: none;">
+        <div id="inline-bet-slip" class="hidden"></div>
+        <input id="inline-stake-amount" type="number" />
+        <div id="action-bet-modal" class="hidden"></div>
+        <div id="action-bet-title"></div>
+        <div id="action-bet-main-description"></div>
+        <div id="action-bet-choices"></div>
+        <div id="action-bet-timer-bar"></div>
+        <div id="event-feed"></div>
+        <button id="full-match-btn-HOME" data-bet-type="full-match" data-outcome="HOME"></button>
+        <button id="full-match-btn-DRAW" data-bet-type="full-match" data-outcome="DRAW"></button>
+        <button id="full-match-btn-AWAY" data-bet-type="full-match" data-outcome="AWAY"></button>
+    </div>
+
+    <script type="module">
+        // Mock pause manager for testing
+        const mockPauseManager = {
+            _paused: false,
+            _reason: null,
+            _timeout: null,
+            
+            pauseGame(reason, timeout) {
+                this._paused = true;
+                this._reason = reason;
+                this._timeout = timeout;
+                updateGameStatus();
+                logResult(`🔴 Game paused: ${reason} (${timeout}ms)`, 'info');
+                return true;
+            },
+            
+            resumeGame(useCountdown = true, seconds = 3) {
+                this._paused = false;
+                this._reason = null;
+                updateGameStatus();
+                logResult(`🟢 Game resumed: countdown=${useCountdown}, seconds=${seconds}`, 'info');
+                return Promise.resolve(true);
+            },
+            
+            isPaused() {
+                return this._paused;
+            },
+            
+            getPauseInfo() {
+                return {
+                    active: this._paused,
+                    reason: this._reason,
+                    startTime: Date.now(),
+                    timeoutId: null
+                };
+            },
+            
+            clearTimeout() {
+                this._timeout = null;
+            }
+        };
+
+        // Mock pause UI
+        const mockPauseUI = {
+            showPauseOverlay: () => {},
+            hidePauseOverlay: () => {},
+            showTimeoutWarning: () => {},
+            isOverlayVisible: () => false
+        };
+
+        // Global functions for testing
+        window.addEventToFeed = (message, className) => {
+            logResult(`📢 Event: ${message}`, 'info');
+        };
+
+        window.render = () => {
+            // Mock render function
+        };
+
+        // Import the game class
+        import { SoccerBettingGame, EVENT_CLASSIFICATIONS } from '../scripts/main.js';
+
+        let game;
+        let testResults = [];
+
+        function initializeGame() {
+            game = new SoccerBettingGame();
+            game.pauseManager = mockPauseManager;
+            game.pauseUI = mockPauseUI;
+            game.state = game.getInitialState();
+            game.state.bettingEventQueue = [];
+            
+            // Mock DOM elements
+            game.inlineBetSlip = document.getElementById('inline-bet-slip');
+            game.inlineStakeAmount = document.getElementById('inline-stake-amount');
+            game.actionBetModal = document.getElementById('action-bet-modal');
+        }
+
+        function updateGameStatus() {
+            const statusEl = document.getElementById('game-status');
+            if (mockPauseManager.isPaused()) {
+                statusEl.textContent = `Game Status: PAUSED (${mockPauseManager._reason})`;
+                statusEl.className = 'status paused';
+            } else {
+                statusEl.textContent = 'Game Status: Running';
+                statusEl.className = 'status running';
+            }
+        }
+
+        function updateBettingQueue() {
+            const queueEl = document.getElementById('queue-items');
+            if (!game || !game.state.bettingEventQueue || game.state.bettingEventQueue.length === 0) {
+                queueEl.innerHTML = 'No queued events';
+                return;
+            }
+
+            queueEl.innerHTML = game.state.bettingEventQueue.map((event, index) => 
+                `<div class="queue-item">${index + 1}. ${event.type}: ${event.description}</div>`
+            ).join('');
+        }
+
+        function logResult(message, type = 'pass') {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result test-${type}`;
+            resultDiv.textContent = message;
+            
+            const resultsContainer = document.getElementById('test-results');
+            resultsContainer.appendChild(resultDiv);
+            
+            testResults.push({ message, type, timestamp: new Date().toISOString() });
+            
+            // Auto-scroll to bottom
+            resultsContainer.scrollTop = resultsContainer.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+            testResults = [];
+            mockPauseManager._paused = false;
+            mockPauseManager._reason = null;
+            updateGameStatus();
+            updateBettingQueue();
+        }
+
+        // Test Functions
+        window.testFullMatchBetting = function() {
+            logResult('=== Testing Full-Match Betting Pause Integration ===', 'info');
+            
+            try {
+                initializeGame();
+                
+                // Test 1: Full-match betting should pause game
+                logResult('Test 1: Full-match betting should pause game', 'info');
+                game.showInlineBetSlip('HOME', 2.5);
+                
+                if (mockPauseManager.isPaused() && mockPauseManager._reason === 'FULL_MATCH_BETTING') {
+                    logResult('✅ PASS: Game paused for full-match betting', 'pass');
+                } else {
+                    logResult('❌ FAIL: Game not paused for full-match betting', 'fail');
+                }
+
+                // Test 2: Full-match bet placement should resume game
+                logResult('Test 2: Full-match bet placement should resume game', 'info');
+                game.state.wallet = 100;
+                game.placeBet('full-match', 'HOME', 2.5, 10);
+                
+                if (!mockPauseManager.isPaused()) {
+                    logResult('✅ PASS: Game resumed after full-match bet placement', 'pass');
+                } else {
+                    logResult('❌ FAIL: Game not resumed after full-match bet placement', 'fail');
+                }
+
+                // Test 3: Full-match betting cancellation should resume game
+                logResult('Test 3: Full-match betting cancellation should resume game', 'info');
+                mockPauseManager.pauseGame('FULL_MATCH_BETTING', 30000);
+                game.hideInlineBetSlip();
+                
+                if (!mockPauseManager.isPaused()) {
+                    logResult('✅ PASS: Game resumed after full-match betting cancellation', 'pass');
+                } else {
+                    logResult('❌ FAIL: Game not resumed after full-match betting cancellation', 'fail');
+                }
+
+                // Test 4: Classic mode compatibility
+                logResult('Test 4: Classic mode compatibility', 'info');
+                game.state.classicMode = true;
+                game.showInlineBetSlip('DRAW', 3.5);
+                
+                if (mockPauseManager.isPaused() && mockPauseManager._reason === 'FULL_MATCH_BETTING') {
+                    logResult('✅ PASS: Full-match betting works in classic mode', 'pass');
+                } else {
+                    logResult('❌ FAIL: Full-match betting not working in classic mode', 'fail');
+                }
+
+            } catch (error) {
+                logResult(`❌ ERROR: ${error.message}`, 'fail');
+            }
+        };
+
+        window.testFutureBettingEvents = function() {
+            logResult('=== Testing Future Betting Event Types Support ===', 'info');
+            
+            try {
+                initializeGame();
+                
+                // Test 1: All future betting events are classified
+                logResult('Test 1: All future betting events are classified', 'info');
+                const futureBettingEvents = [
+                    'PENALTY_BET', 'CORNER_BET', 'CARD_BET', 'SUBSTITUTION_BET',
+                    'FREE_KICK_BET', 'OFFSIDE_BET', 'INJURY_TIME_BET',
+                    'PLAYER_PERFORMANCE_BET', 'NEXT_GOAL_BET', 'HALF_TIME_SCORE_BET'
+                ];
+
+                let allClassified = true;
+                futureBettingEvents.forEach(eventType => {
+                    if (!EVENT_CLASSIFICATIONS.BETTING_EVENTS.includes(eventType)) {
+                        allClassified = false;
+                        logResult(`❌ Missing classification: ${eventType}`, 'fail');
+                    }
+                });
+
+                if (allClassified) {
+                    logResult('✅ PASS: All future betting events are classified', 'pass');
+                } else {
+                    logResult('❌ FAIL: Some future betting events are not classified', 'fail');
+                }
+
+                // Test 2: Future betting events are detected
+                logResult('Test 2: Future betting events are detected', 'info');
+                const futureEvent = {
+                    type: 'PENALTY_BET',
+                    description: 'Penalty awarded! Will it be scored?',
+                    choices: [
+                        { text: 'Goal', odds: 1.8 },
+                        { text: 'Miss', odds: 2.2 }
+                    ],
+                    betType: 'PENALTY_OUTCOME'
+                };
+
+                const isBetting = game.isBettingEvent(futureEvent);
+                if (isBetting) {
+                    logResult('✅ PASS: Future betting event detected correctly', 'pass');
+                } else {
+                    logResult('❌ FAIL: Future betting event not detected', 'fail');
+                }
+
+                // Test 3: Extensible betting event detection
+                logResult('Test 3: Extensible betting event detection', 'info');
+                const extensibleEvent = {
+                    type: 'NEW_BETTING_TYPE',
+                    description: 'New betting opportunity',
+                    choices: [
+                        { text: 'Option A', odds: 2.0 },
+                        { text: 'Option B', odds: 1.5 }
+                    ]
+                };
+
+                const isExtensibleBetting = game.isBettingEvent(extensibleEvent);
+                if (isExtensibleBetting) {
+                    logResult('✅ PASS: Extensible betting event detected correctly', 'pass');
+                } else {
+                    logResult('❌ FAIL: Extensible betting event not detected', 'fail');
+                }
+
+                // Test 4: Events with betType property
+                logResult('Test 4: Events with betType property', 'info');
+                const eventWithBetType = {
+                    type: 'CUSTOM_EVENT',
+                    description: 'Custom betting event',
+                    betType: 'CUSTOM_BET'
+                };
+
+                const isBetTypeEvent = game.isBettingEvent(eventWithBetType);
+                if (isBetTypeEvent) {
+                    logResult('✅ PASS: Event with betType detected correctly', 'pass');
+                } else {
+                    logResult('❌ FAIL: Event with betType not detected', 'fail');
+                }
+
+            } catch (error) {
+                logResult(`❌ ERROR: ${error.message}`, 'fail');
+            }
+        };
+
+        window.testMultipleBettingEvents = function() {
+            logResult('=== Testing Multiple Betting Events Sequencing ===', 'info');
+            
+            try {
+                initializeGame();
+                
+                // Test 1: Queueing betting events when one is active
+                logResult('Test 1: Queueing betting events when one is active', 'info');
+                const firstEvent = {
+                    type: 'MULTI_CHOICE_ACTION_BET',
+                    description: 'First betting event',
+                    choices: [{ text: 'Option 1', odds: 2.0 }],
+                    betType: 'FIRST_BET'
+                };
+                
+                const secondEvent = {
+                    type: 'CORNER_BET',
+                    description: 'Second betting event',
+                    choices: [{ text: 'Option 2', odds: 1.8 }],
+                    betType: 'SECOND_BET'
+                };
+
+                // Set up first event as active
+                game.state.currentActionBet.active = true;
+                game.state.currentActionBet.details = firstEvent;
+
+                // Process second event
+                game.processMatchEvent(secondEvent);
+                updateBettingQueue();
+
+                if (game.state.bettingEventQueue.length === 1 && game.state.bettingEventQueue[0].type === 'CORNER_BET') {
+                    logResult('✅ PASS: Betting event queued correctly', 'pass');
+                } else {
+                    logResult('❌ FAIL: Betting event not queued correctly', 'fail');
+                }
+
+                // Test 2: Priority-based event replacement
+                logResult('Test 2: Priority-based event replacement', 'info');
+                const lowPriorityEvent = {
+                    type: 'NEXT_GOAL_BET',
+                    description: 'Low priority event'
+                };
+                
+                const highPriorityEvent = {
+                    type: 'PENALTY_BET',
+                    description: 'High priority event'
+                };
+
+                game.state.currentActionBet.details = lowPriorityEvent;
+                const shouldReplace = game.shouldReplaceCurrentBettingEvent(highPriorityEvent);
+
+                if (shouldReplace) {
+                    logResult('✅ PASS: High priority event should replace low priority', 'pass');
+                } else {
+                    logResult('❌ FAIL: Priority-based replacement not working', 'fail');
+                }
+
+                // Test 3: Not replacing high priority with low priority
+                logResult('Test 3: Not replacing high priority with low priority', 'info');
+                game.state.currentActionBet.details = highPriorityEvent;
+                const shouldNotReplace = game.shouldReplaceCurrentBettingEvent(lowPriorityEvent);
+
+                if (!shouldNotReplace) {
+                    logResult('✅ PASS: Low priority event should not replace high priority', 'pass');
+                } else {
+                    logResult('❌ FAIL: Low priority event incorrectly replacing high priority', 'fail');
+                }
+
+                // Test 4: Processing next queued event
+                logResult('Test 4: Processing next queued event', 'info');
+                const queuedEvent = {
+                    type: 'CORNER_BET',
+                    description: 'Queued betting event',
+                    choices: [{ text: 'Option', odds: 2.0 }],
+                    queuedAt: Date.now()
+                };
+                
+                game.state.bettingEventQueue = [queuedEvent];
+                const initialQueueLength = game.state.bettingEventQueue.length;
+                
+                // Mock setTimeout to execute immediately for testing
+                const originalSetTimeout = window.setTimeout;
+                window.setTimeout = (fn) => fn();
+                
+                game.processNextQueuedBettingEvent();
+                updateBettingQueue();
+                
+                // Restore setTimeout
+                window.setTimeout = originalSetTimeout;
+
+                if (game.state.bettingEventQueue.length < initialQueueLength) {
+                    logResult('✅ PASS: Queued event processed correctly', 'pass');
+                } else {
+                    logResult('❌ FAIL: Queued event not processed', 'fail');
+                }
+
+                // Test 5: Skipping expired events
+                logResult('Test 5: Skipping expired events', 'info');
+                const expiredEvent = {
+                    type: 'CORNER_BET',
+                    description: 'Expired betting event',
+                    choices: [{ text: 'Option', odds: 2.0 }],
+                    queuedAt: Date.now() - 35000 // 35 seconds ago (expired)
+                };
+                
+                game.state.bettingEventQueue = [expiredEvent];
+                game.processNextQueuedBettingEvent();
+                updateBettingQueue();
+
+                if (game.state.bettingEventQueue.length === 0) {
+                    logResult('✅ PASS: Expired event skipped correctly', 'pass');
+                } else {
+                    logResult('❌ FAIL: Expired event not skipped', 'fail');
+                }
+
+            } catch (error) {
+                logResult(`❌ ERROR: ${error.message}`, 'fail');
+            }
+        };
+
+        window.testClassicMode = function() {
+            logResult('=== Testing Classic Mode Compatibility ===', 'info');
+            
+            try {
+                initializeGame();
+                
+                // Test 1: Full-match betting works in classic mode
+                logResult('Test 1: Full-match betting works in classic mode', 'info');
+                game.state.classicMode = true;
+                game.showInlineBetSlip('HOME', 2.5);
+                
+                if (mockPauseManager.isPaused() && mockPauseManager._reason === 'FULL_MATCH_BETTING') {
+                    logResult('✅ PASS: Full-match betting pauses game in classic mode', 'pass');
+                } else {
+                    logResult('❌ FAIL: Full-match betting not working in classic mode', 'fail');
+                }
+
+                // Test 2: Action betting events still work in classic mode
+                logResult('Test 2: Action betting events still work in classic mode', 'info');
+                const actionEvent = {
+                    type: 'MULTI_CHOICE_ACTION_BET',
+                    description: 'Action betting in classic mode',
+                    choices: [{ text: 'Option', odds: 2.0 }],
+                    betType: 'ACTION_BET'
+                };
+
+                const isActionBetting = game.isBettingEvent(actionEvent);
+                if (isActionBetting) {
+                    logResult('✅ PASS: Action betting events detected in classic mode', 'pass');
+                } else {
+                    logResult('❌ FAIL: Action betting events not working in classic mode', 'fail');
+                }
+
+                // Test 3: Future betting events work in classic mode
+                logResult('Test 3: Future betting events work in classic mode', 'info');
+                const futureEvent = {
+                    type: 'PENALTY_BET',
+                    description: 'Penalty in classic mode',
+                    choices: [{ text: 'Goal', odds: 1.8 }],
+                    betType: 'PENALTY_OUTCOME'
+                };
+
+                const isFutureBetting = game.isBettingEvent(futureEvent);
+                if (isFutureBetting) {
+                    logResult('✅ PASS: Future betting events work in classic mode', 'pass');
+                } else {
+                    logResult('❌ FAIL: Future betting events not working in classic mode', 'fail');
+                }
+
+            } catch (error) {
+                logResult(`❌ ERROR: ${error.message}`, 'fail');
+            }
+        };
+
+        window.runAllTests = function() {
+            clearResults();
+            logResult('🚀 Starting comprehensive Task 7 testing...', 'info');
+            
+            setTimeout(() => testFullMatchBetting(), 100);
+            setTimeout(() => testFutureBettingEvents(), 500);
+            setTimeout(() => testMultipleBettingEvents(), 1000);
+            setTimeout(() => testClassicMode(), 1500);
+            
+            setTimeout(() => {
+                const passCount = testResults.filter(r => r.type === 'pass').length;
+                const failCount = testResults.filter(r => r.type === 'fail').length;
+                const totalTests = passCount + failCount;
+                
+                logResult(`🏁 Testing completed: ${passCount}/${totalTests} tests passed`, 
+                         failCount === 0 ? 'pass' : 'fail');
+                
+                if (failCount === 0) {
+                    logResult('🎉 All Task 7 requirements verified successfully!', 'pass');
+                } else {
+                    logResult(`⚠️ ${failCount} test(s) failed - review implementation`, 'fail');
+                }
+            }, 2000);
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeGame();
+            updateGameStatus();
+            updateBettingQueue();
+            logResult('Task 7 browser test environment initialized', 'info');
+        });
+    </script>
+</body>
+</html>

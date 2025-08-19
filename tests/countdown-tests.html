@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown Functionality Tests</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .test-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .test-output {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .game-area {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+            transition: filter 0.3s ease;
+        }
+
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+
+        #app-container {
+            position: relative;
+        }
+
+        .requirements-section {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .requirements-section h3 {
+            color: #10b981;
+            margin-top: 0;
+        }
+
+        .requirement-item {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .requirement-item::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🕐 Resume Countdown Functionality Tests</h1>
+            <p>Testing implementation of task 6: Resume countdown functionality</p>
+        </div>
+
+        <div class="requirements-section">
+            <h3>Requirements Being Tested (3.1, 3.2, 3.3, 3.5)</h3>
+            <div class="requirement-item">3.1: Game should automatically resume when player completes betting decision</div>
+            <div class="requirement-item">3.2: System should provide 3-second countdown before gameplay continues</div>
+            <div class="requirement-item">3.3: Countdown should display "Resuming in 3... 2... 1..." to the player</div>
+            <div class="requirement-item">3.5: System should clear all pause-related UI elements when resuming</div>
+        </div>
+
+        <div id="app-container">
+            <div class="test-section">
+                <h2>🧪 Automated Tests</h2>
+                <div class="test-controls">
+                    <button onclick="runAllTests()">Run All Tests</button>
+                    <button onclick="runCountdownTests()">Test Countdown Display</button>
+                    <button onclick="runTimingTests()">Test Countdown Timing</button>
+                    <button onclick="runIntegrationTests()">Test PauseManager Integration</button>
+                    <button onclick="clearTestOutput()">Clear Output</button>
+                </div>
+                <div class="test-output" id="test-output">
+                    Click "Run All Tests" to start testing countdown functionality...
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h2>🎮 Visual Tests</h2>
+                <div class="test-controls">
+                    <button onclick="testCountdownDisplay()">Test Countdown Display</button>
+                    <button onclick="testCustomCountdown()">Test 5-Second Countdown</button>
+                    <button onclick="testCountdownWithCallback()">Test with Callback</button>
+                    <button onclick="testFullIntegration()">Test Full Integration</button>
+                </div>
+
+                <div class="game-area" id="game-area">
+                    <h3>🎯 Game Area</h3>
+                    <p>This area will be dimmed during pause and restored after countdown.</p>
+                    <p>Status: <span id="game-status">Ready</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load PauseUI -->
+    <script src="../scripts/pauseUI.js"></script>
+    
+    <!-- Load test framework and tests -->
+    <script src="countdown-functionality-browser.test.js"></script>
+
+    <script>
+        // Test output management
+        function logToOutput(message, type = 'info') {
+            const output = document.getElementById('test-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            
+            const line = document.createElement('div');
+            line.className = className;
+            line.textContent = `[${timestamp}] ${message}`;
+            
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+            
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearTestOutput() {
+            document.getElementById('test-output').innerHTML = 'Test output cleared. Ready for new tests...';
+        }
+
+        function updateGameStatus(status) {
+            document.getElementById('game-status').textContent = status;
+        }
+
+        // Mock gameState for testing
+        let mockGameState = {
+            pause: {
+                active: false,
+                reason: null,
+                startTime: null,
+                timeoutId: null
+            }
+        };
+
+        window.updatePauseState = function(newState) {
+            Object.assign(mockGameState.pause, newState);
+            logToOutput(`Game state updated: active=${newState.active}, reason=${newState.reason}`);
+        };
+
+        window.getPauseState = function() {
+            return mockGameState.pause;
+        };
+
+        // Initialize components
+        let pauseUI, pauseManager;
+
+        function initializeComponents() {
+            try {
+                pauseUI = new PauseUI();
+                logToOutput('PauseUI initialized successfully', 'success');
+                
+                // Mock PauseManager for testing (since we can't import ES modules easily)
+                pauseManager = {
+                    pauseGame: function(reason, timeout = 15000) {
+                        mockGameState.pause = {
+                            active: true,
+                            reason: reason,
+                            startTime: Date.now(),
+                            timeoutId: null
+                        };
+                        logToOutput(`Game paused: ${reason}`, 'info');
+                        return true;
+                    },
+                    
+                    resumeGame: async function(withCountdown = true, countdownSeconds = 3) {
+                        if (!mockGameState.pause.active) {
+                            logToOutput('Cannot resume - game not paused', 'error');
+                            return false;
+                        }
+                        
+                        if (withCountdown) {
+                            logToOutput(`Starting ${countdownSeconds}-second countdown...`, 'info');
+                            await pauseUI.showResumeCountdown(countdownSeconds);
+                            logToOutput('Countdown completed!', 'success');
+                        }
+                        
+                        mockGameState.pause = {
+                            active: false,
+                            reason: null,
+                            startTime: null,
+                            timeoutId: null
+                        };
+                        
+                        logToOutput('Game resumed successfully', 'success');
+                        return true;
+                    },
+                    
+                    isPaused: function() {
+                        return mockGameState.pause.active;
+                    }
+                };
+                
+                logToOutput('Mock PauseManager initialized successfully', 'success');
+                
+            } catch (error) {
+                logToOutput(`Error initializing components: ${error.message}`, 'error');
+            }
+        }
+
+        // Test functions
+        async function runAllTests() {
+            logToOutput('🚀 Starting comprehensive countdown functionality tests...', 'info');
+            
+            await runCountdownTests();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await runTimingTests();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await runIntegrationTests();
+            
+            logToOutput('✅ All tests completed!', 'success');
+        }
+
+        async function runCountdownTests() {
+            logToOutput('📋 Testing countdown display functionality...', 'info');
+            
+            try {
+                // Test 1: Basic countdown display
+                pauseUI.showPauseOverlay('Test Pause');
+                pauseUI.showResumeCountdown(3);
+                
+                const countdownNumber = document.querySelector('.countdown-number');
+                const countdownText = document.querySelector('.countdown-text');
+                
+                if (countdownNumber && countdownText) {
+                    logToOutput('✓ Countdown elements created successfully', 'success');
+                    logToOutput(`✓ Initial countdown number: ${countdownNumber.textContent}`, 'success');
+                    logToOutput(`✓ Countdown text: ${countdownText.textContent}`, 'success');
+                } else {
+                    logToOutput('✗ Failed to create countdown elements', 'error');
+                }
+                
+                // Test 2: CSS styles
+                const countdownStyles = document.getElementById('countdown-styles');
+                if (countdownStyles) {
+                    logToOutput('✓ Countdown CSS styles added successfully', 'success');
+                } else {
+                    logToOutput('✗ Countdown CSS styles not found', 'error');
+                }
+                
+                // Test 3: Pause reason update
+                const reasonElement = document.querySelector('.pause-reason');
+                if (reasonElement && reasonElement.textContent === 'Resuming Game') {
+                    logToOutput('✓ Pause reason updated to "Resuming Game"', 'success');
+                } else {
+                    logToOutput('✗ Pause reason not updated correctly', 'error');
+                }
+                
+                pauseUI.hidePauseOverlay();
+                
+            } catch (error) {
+                logToOutput(`✗ Error in countdown display tests: ${error.message}`, 'error');
+            }
+        }
+
+        async function runTimingTests() {
+            logToOutput('⏱️ Testing countdown timing functionality...', 'info');
+            
+            try {
+                pauseUI.showPauseOverlay('Timing Test');
+                
+                // Test with 2-second countdown for faster testing
+                const startTime = Date.now();
+                await pauseUI.showResumeCountdown(2);
+                const endTime = Date.now();
+                
+                const duration = endTime - startTime;
+                const expectedDuration = 2500; // 2 seconds + 500ms for "GO!" display
+                const tolerance = 200; // 200ms tolerance
+                
+                if (Math.abs(duration - expectedDuration) <= tolerance) {
+                    logToOutput(`✓ Countdown timing accurate: ${duration}ms (expected ~${expectedDuration}ms)`, 'success');
+                } else {
+                    logToOutput(`✗ Countdown timing inaccurate: ${duration}ms (expected ~${expectedDuration}ms)`, 'error');
+                }
+                
+                pauseUI.hidePauseOverlay();
+                
+            } catch (error) {
+                logToOutput(`✗ Error in timing tests: ${error.message}`, 'error');
+            }
+        }
+
+        async function runIntegrationTests() {
+            logToOutput('🔗 Testing PauseManager integration...', 'info');
+            
+            try {
+                // Test full pause-resume cycle
+                updateGameStatus('Testing integration...');
+                
+                // Pause the game
+                const pauseSuccess = pauseManager.pauseGame('INTEGRATION_TEST');
+                if (pauseSuccess) {
+                    logToOutput('✓ Game paused successfully', 'success');
+                } else {
+                    logToOutput('✗ Failed to pause game', 'error');
+                    return;
+                }
+                
+                // Show pause overlay
+                pauseUI.showPauseOverlay('Integration Test', 'Testing full cycle...');
+                logToOutput('✓ Pause overlay displayed', 'success');
+                
+                // Wait a moment
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Resume with countdown
+                const resumeSuccess = await pauseManager.resumeGame(true, 2);
+                if (resumeSuccess) {
+                    logToOutput('✓ Game resumed with countdown successfully', 'success');
+                } else {
+                    logToOutput('✗ Failed to resume game with countdown', 'error');
+                }
+                
+                // Hide overlay
+                pauseUI.hidePauseOverlay();
+                updateGameStatus('Integration test completed');
+                
+            } catch (error) {
+                logToOutput(`✗ Error in integration tests: ${error.message}`, 'error');
+            }
+        }
+
+        // Visual test functions
+        async function testCountdownDisplay() {
+            updateGameStatus('Testing countdown display...');
+            
+            pauseManager.pauseGame('VISUAL_TEST');
+            pauseUI.showPauseOverlay('Visual Test', 'Testing countdown display...');
+            
+            await pauseUI.showResumeCountdown(3);
+            
+            pauseUI.hidePauseOverlay();
+            pauseManager.resumeGame(false); // Resume without countdown to clear state
+            updateGameStatus('Countdown display test completed');
+        }
+
+        async function testCustomCountdown() {
+            updateGameStatus('Testing 5-second countdown...');
+            
+            pauseManager.pauseGame('CUSTOM_COUNTDOWN_TEST');
+            pauseUI.showPauseOverlay('Custom Countdown Test', 'Testing 5-second countdown...');
+            
+            await pauseUI.showResumeCountdown(5);
+            
+            pauseUI.hidePauseOverlay();
+            pauseManager.resumeGame(false);
+            updateGameStatus('5-second countdown test completed');
+        }
+
+        async function testCountdownWithCallback() {
+            updateGameStatus('Testing countdown with callback...');
+            
+            let callbackCalled = false;
+            const testCallback = () => {
+                callbackCalled = true;
+                logToOutput('✓ Countdown callback executed successfully', 'success');
+            };
+            
+            pauseManager.pauseGame('CALLBACK_TEST');
+            pauseUI.showPauseOverlay('Callback Test', 'Testing countdown with callback...');
+            
+            await pauseUI.showResumeCountdown(2, testCallback);
+            
+            if (callbackCalled) {
+                logToOutput('✓ Callback test passed', 'success');
+            } else {
+                logToOutput('✗ Callback was not called', 'error');
+            }
+            
+            pauseUI.hidePauseOverlay();
+            pauseManager.resumeGame(false);
+            updateGameStatus('Callback test completed');
+        }
+
+        async function testFullIntegration() {
+            updateGameStatus('Testing full integration...');
+            
+            logToOutput('🔄 Starting full integration test...', 'info');
+            
+            // Full cycle using PauseManager
+            const pauseSuccess = pauseManager.pauseGame('FULL_INTEGRATION');
+            if (pauseSuccess) {
+                pauseUI.showPauseOverlay('Full Integration Test', 'Testing complete cycle...');
+                
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                const resumeSuccess = await pauseManager.resumeGame(true, 3);
+                if (resumeSuccess) {
+                    pauseUI.hidePauseOverlay();
+                    logToOutput('✅ Full integration test completed successfully!', 'success');
+                    updateGameStatus('Full integration test passed');
+                } else {
+                    logToOutput('✗ Resume failed in integration test', 'error');
+                    updateGameStatus('Integration test failed');
+                }
+            } else {
+                logToOutput('✗ Pause failed in integration test', 'error');
+                updateGameStatus('Integration test failed');
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            logToOutput('🎯 Countdown Functionality Test Suite Loaded', 'info');
+            logToOutput('Initializing components...', 'info');
+            initializeComponents();
+            logToOutput('Ready for testing! Click buttons above to run tests.', 'success');
+        });
+    </script>
+</body>
+</html>

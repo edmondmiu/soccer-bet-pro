@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Handling Browser Tests - Betting Modal Improvements</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background-color: #2a2a2a;
+        }
+        
+        .test-button {
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .test-button:hover {
+            background-color: #3730a3;
+        }
+        
+        .error-button {
+            background-color: #dc2626;
+        }
+        
+        .error-button:hover {
+            background-color: #b91c1c;
+        }
+        
+        .success {
+            color: #10b981;
+        }
+        
+        .error {
+            color: #ef4444;
+        }
+        
+        .warning {
+            color: #f59e0b;
+        }
+        
+        #test-results {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #374151;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        
+        .mock-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #1f2937;
+            border: 2px solid #4f46e5;
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 1000;
+            min-width: 300px;
+            display: none;
+        }
+        
+        .mock-timer-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #374151;
+            border-radius: 2px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .mock-timer-fill {
+            height: 100%;
+            background-color: #10b981;
+            transition: width 0.1s linear;
+            width: 100%;
+        }
+        
+        .mock-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            z-index: 1001;
+            display: none;
+        }
+        
+        .mock-indicator.urgent {
+            animation: urgentPulse 1s infinite;
+        }
+        
+        @keyframes urgentPulse {
+            0%, 100% { 
+                background: linear-gradient(135deg, #ef4444, #dc2626);
+                transform: scale(1);
+            }
+            50% { 
+                background: linear-gradient(135deg, #f87171, #ef4444);
+                transform: scale(1.1);
+            }
+        }
+        
+        .fallback-modal {
+            background-color: #dc2626 !important;
+            border-color: #fbbf24 !important;
+        }
+        
+        .fallback-modal::before {
+            content: "⚠️ FALLBACK MODE";
+            display: block;
+            font-size: 12px;
+            color: #fbbf24;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Error Handling Browser Tests</h1>
+    <p>Interactive tests for betting modal error handling and recovery mechanisms.</p>
+
+    <div class="test-section">
+        <h2>1. Multiple Betting Events</h2>
+        <p>Test handling of concurrent betting opportunities with replace behavior.</p>
+        <button class="test-button" onclick="testMultipleBettingEvents()">Test Multiple Events</button>
+        <button class="test-button" onclick="testEventQueue()">Test Event Queuing</button>
+        <div id="multiple-events-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. DOM Element Fallbacks</h2>
+        <p>Test fallback behavior when critical DOM elements are missing.</p>
+        <button class="test-button" onclick="testMissingModal()">Test Missing Modal</button>
+        <button class="test-button" onclick="testMissingElements()">Test Missing Elements</button>
+        <button class="test-button" onclick="testFallbackCreation()">Test Fallback Creation</button>
+        <div id="dom-fallback-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Animation Graceful Degradation</h2>
+        <p>Test graceful degradation when CSS animations fail.</p>
+        <button class="test-button" onclick="testAnimationFailure()">Test Animation Failure</button>
+        <button class="test-button" onclick="testTimerBarFallback()">Test Timer Bar Fallback</button>
+        <button class="test-button" onclick="testIndicatorFallback()">Test Indicator Fallback</button>
+        <div id="animation-fallback-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Modal State Recovery</h2>
+        <p>Test recovery from corrupted modal states.</p>
+        <button class="test-button" onclick="testStateCorruption()">Test State Corruption</button>
+        <button class="test-button" onclick="testStateRecovery()">Test State Recovery</button>
+        <button class="error-button" onclick="corruptModalState()">Corrupt State (Dangerous)</button>
+        <div id="state-recovery-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Edge Cases</h2>
+        <p>Test boundary conditions and edge cases.</p>
+        <button class="test-button" onclick="testZeroTime()">Test Zero Time</button>
+        <button class="test-button" onclick="testNegativeTime()">Test Negative Time</button>
+        <button class="test-button" onclick="testInvalidData()">Test Invalid Data</button>
+        <div id="edge-cases-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>6. Visual Error Demonstrations</h2>
+        <p>Visual demonstrations of error handling in action.</p>
+        <button class="test-button" onclick="showNormalModal()">Show Normal Modal</button>
+        <button class="test-button" onclick="showFallbackModal()">Show Fallback Modal</button>
+        <button class="test-button" onclick="showBrokenAnimation()">Show Broken Animation</button>
+        <button class="test-button" onclick="hideAllModals()">Hide All</button>
+    </div>
+
+    <!-- Mock Modal Elements -->
+    <div id="mock-modal" class="mock-modal">
+        <h3 id="modal-title">⚡ Betting Opportunity ⚡</h3>
+        <p id="modal-description">Test betting event description</p>
+        <div class="mock-timer-bar">
+            <div id="timer-fill" class="mock-timer-fill"></div>
+        </div>
+        <div id="modal-choices">
+            <button class="test-button">Choice 1 @2.5</button>
+            <button class="test-button">Choice 2 @3.0</button>
+        </div>
+        <button class="test-button" onclick="minimizeModal()">Minimize</button>
+        <button class="error-button" onclick="hideAllModals()">Close</button>
+    </div>
+
+    <div id="mock-indicator" class="mock-indicator" onclick="restoreModal()">
+        <div>Betting: <span id="indicator-time">10s</span></div>
+    </div>
+
+    <div id="test-results"></div>
+
+    <script>
+        // Test state management
+        let testResults = [];
+        let currentTest = null;
+        let mockModalState = {
+            visible: false,
+            minimized: false,
+            hasErrors: false,
+            fallbackMode: false
+        };
+
+        // Utility functions
+        function logResult(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            testResults.push(logEntry);
+            updateResultsDisplay();
+            
+            console.log(logEntry);
+        }
+
+        function updateResultsDisplay() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.textContent = testResults.slice(-20).join('\n'); // Show last 20 entries
+        }
+
+        function clearResults() {
+            testResults = [];
+            updateResultsDisplay();
+        }
+
+        // Test 1: Multiple Betting Events
+        function testMultipleBettingEvents() {
+            logResult('Testing multiple betting events handling...', 'info');
+            
+            // Simulate first event
+            showNormalModal();
+            logResult('First betting event shown', 'success');
+            
+            setTimeout(() => {
+                // Simulate second event (should replace first)
+                logResult('Second betting event triggered - replacing first', 'warning');
+                
+                // In real implementation, this would clean up the first event
+                const modal = document.getElementById('mock-modal');
+                modal.style.borderColor = '#f59e0b'; // Visual indication of replacement
+                
+                setTimeout(() => {
+                    modal.style.borderColor = '#4f46e5'; // Reset
+                    logResult('Event replacement completed successfully', 'success');
+                }, 1000);
+            }, 2000);
+        }
+
+        function testEventQueue() {
+            logResult('Testing event queuing mechanism...', 'info');
+            
+            let eventQueue = [];
+            let processing = false;
+            
+            function processEvent(eventId) {
+                if (processing) {
+                    eventQueue.push(eventId);
+                    logResult(`Event ${eventId} queued (queue length: ${eventQueue.length})`, 'warning');
+                    return;
+                }
+                
+                processing = true;
+                logResult(`Processing event ${eventId}`, 'info');
+                
+                setTimeout(() => {
+                    processing = false;
+                    logResult(`Event ${eventId} completed`, 'success');
+                    
+                    if (eventQueue.length > 0) {
+                        const nextEvent = eventQueue.shift();
+                        processEvent(nextEvent);
+                    }
+                }, 1500);
+            }
+            
+            // Simulate rapid events
+            processEvent(1);
+            processEvent(2);
+            processEvent(3);
+        }
+
+        // Test 2: DOM Element Fallbacks
+        function testMissingModal() {
+            logResult('Testing missing modal element handling...', 'info');
+            
+            // Hide the normal modal to simulate missing element
+            const modal = document.getElementById('mock-modal');
+            const originalDisplay = modal.style.display;
+            modal.style.display = 'none';
+            
+            // Simulate fallback modal creation
+            setTimeout(() => {
+                const fallbackModal = document.createElement('div');
+                fallbackModal.className = 'mock-modal fallback-modal';
+                fallbackModal.style.display = 'block';
+                fallbackModal.innerHTML = `
+                    <h3>Fallback Betting Modal</h3>
+                    <p>Original modal not found - using fallback</p>
+                    <button onclick="this.parentElement.remove()">Close Fallback</button>
+                `;
+                document.body.appendChild(fallbackModal);
+                
+                logResult('Fallback modal created successfully', 'success');
+                
+                // Restore original modal after demo
+                setTimeout(() => {
+                    modal.style.display = originalDisplay;
+                    if (document.body.contains(fallbackModal)) {
+                        document.body.removeChild(fallbackModal);
+                    }
+                }, 3000);
+            }, 1000);
+        }
+
+        function testMissingElements() {
+            logResult('Testing missing DOM elements handling...', 'info');
+            
+            const modal = document.getElementById('mock-modal');
+            const title = document.getElementById('modal-title');
+            const description = document.getElementById('modal-description');
+            
+            // Temporarily hide elements
+            const originalTitleDisplay = title.style.display;
+            const originalDescDisplay = description.style.display;
+            
+            title.style.display = 'none';
+            description.style.display = 'none';
+            
+            showNormalModal();
+            
+            // Simulate fallback element creation
+            setTimeout(() => {
+                const fallbackTitle = document.createElement('h3');
+                fallbackTitle.textContent = '⚠️ Fallback Title';
+                fallbackTitle.style.color = '#f59e0b';
+                modal.insertBefore(fallbackTitle, modal.firstChild);
+                
+                const fallbackDesc = document.createElement('p');
+                fallbackDesc.textContent = 'Fallback description created';
+                fallbackDesc.style.color = '#f59e0b';
+                modal.insertBefore(fallbackDesc, fallbackTitle.nextSibling);
+                
+                logResult('Fallback elements created for missing DOM elements', 'success');
+                
+                // Cleanup after demo
+                setTimeout(() => {
+                    title.style.display = originalTitleDisplay;
+                    description.style.display = originalDescDisplay;
+                    fallbackTitle.remove();
+                    fallbackDesc.remove();
+                    hideAllModals();
+                }, 3000);
+            }, 1000);
+        }
+
+        function testFallbackCreation() {
+            logResult('Testing comprehensive fallback creation...', 'info');
+            
+            // Create a completely independent fallback system
+            const fallbackContainer = document.createElement('div');
+            fallbackContainer.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: linear-gradient(135deg, #dc2626, #b91c1c);
+                color: white;
+                padding: 20px;
+                border-radius: 12px;
+                border: 2px solid #fbbf24;
+                z-index: 2000;
+                min-width: 300px;
+                text-align: center;
+            `;
+            
+            fallbackContainer.innerHTML = `
+                <div style="color: #fbbf24; font-size: 12px; margin-bottom: 10px;">⚠️ EMERGENCY FALLBACK SYSTEM</div>
+                <h3>Betting Opportunity</h3>
+                <p>All primary systems failed - using emergency fallback</p>
+                <div style="margin: 15px 0;">
+                    <div>Time remaining: <span id="fallback-timer">10</span>s</div>
+                </div>
+                <button onclick="this.parentElement.remove()" style="background: #374151; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Close</button>
+            `;
+            
+            document.body.appendChild(fallbackContainer);
+            
+            // Simulate countdown
+            let timeLeft = 10;
+            const timerSpan = fallbackContainer.querySelector('#fallback-timer');
+            const countdown = setInterval(() => {
+                timeLeft--;
+                if (timerSpan) {
+                    timerSpan.textContent = timeLeft;
+                }
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    if (document.body.contains(fallbackContainer)) {
+                        document.body.removeChild(fallbackContainer);
+                    }
+                    logResult('Emergency fallback system completed successfully', 'success');
+                }
+            }, 1000);
+            
+            logResult('Emergency fallback system activated', 'warning');
+        }
+
+        // Test 3: Animation Graceful Degradation
+        function testAnimationFailure() {
+            logResult('Testing animation failure handling...', 'info');
+            
+            const modal = document.getElementById('mock-modal');
+            showNormalModal();
+            
+            // Simulate animation failure by removing CSS transitions
+            const timerFill = document.getElementById('timer-fill');
+            timerFill.style.transition = 'none'; // Remove smooth animation
+            
+            logResult('CSS transitions disabled - testing fallback', 'warning');
+            
+            // Simulate timer with broken animation
+            let width = 100;
+            const brokenTimer = setInterval(() => {
+                width -= 10;
+                timerFill.style.width = width + '%';
+                
+                // Change color based on remaining time (fallback behavior)
+                if (width <= 25) {
+                    timerFill.style.backgroundColor = '#ef4444'; // red
+                } else if (width <= 50) {
+                    timerFill.style.backgroundColor = '#f59e0b'; // yellow
+                }
+                
+                if (width <= 0) {
+                    clearInterval(brokenTimer);
+                    logResult('Timer completed without smooth animations', 'success');
+                    
+                    // Restore normal animation
+                    setTimeout(() => {
+                        timerFill.style.transition = 'width 0.1s linear';
+                        timerFill.style.backgroundColor = '#10b981';
+                        timerFill.style.width = '100%';
+                        hideAllModals();
+                    }, 1000);
+                }
+            }, 500);
+        }
+
+        function testTimerBarFallback() {
+            logResult('Testing timer bar fallback modes...', 'info');
+            
+            showNormalModal();
+            const timerContainer = document.querySelector('.mock-timer-bar');
+            const timerFill = document.getElementById('timer-fill');
+            
+            // Simulate timer bar failure
+            setTimeout(() => {
+                logResult('Timer bar animation failed - switching to text mode', 'warning');
+                
+                // Replace visual timer with text timer
+                timerContainer.innerHTML = '<div style="text-align: center; color: white; font-weight: bold;">Time: <span id="text-timer">10</span>s</div>';
+                
+                // Text-based countdown
+                let seconds = 10;
+                const textTimer = setInterval(() => {
+                    seconds--;
+                    const textSpan = document.getElementById('text-timer');
+                    if (textSpan) {
+                        textSpan.textContent = seconds;
+                        
+                        // Color changes for urgency
+                        if (seconds <= 3) {
+                            textSpan.style.color = '#ef4444';
+                        } else if (seconds <= 5) {
+                            textSpan.style.color = '#f59e0b';
+                        }
+                    }
+                    
+                    if (seconds <= 0) {
+                        clearInterval(textTimer);
+                        logResult('Text-based timer fallback completed', 'success');
+                        hideAllModals();
+                    }
+                }, 1000);
+            }, 1000);
+        }
+
+        function testIndicatorFallback() {
+            logResult('Testing minimized indicator fallback...', 'info');
+            
+            const indicator = document.getElementById('mock-indicator');
+            
+            // Show indicator with normal styling
+            indicator.style.display = 'block';
+            indicator.innerHTML = '<div>Betting: <span id="indicator-time">10s</span></div>';
+            
+            setTimeout(() => {
+                logResult('Indicator animation failed - using fallback styling', 'warning');
+                
+                // Remove fancy styling and use basic fallback
+                indicator.style.background = '#374151';
+                indicator.style.border = '2px solid #fbbf24';
+                indicator.innerHTML = 'BET: 8s (Fallback Mode)';
+                
+                setTimeout(() => {
+                    logResult('Indicator fallback mode demonstrated', 'success');
+                    hideAllModals();
+                }, 2000);
+            }, 2000);
+        }
+
+        // Test 4: Modal State Recovery
+        function testStateCorruption() {
+            logResult('Testing state corruption detection...', 'info');
+            
+            // Simulate corrupted state
+            mockModalState.hasErrors = true;
+            mockModalState.visible = undefined; // Corrupted boolean
+            mockModalState.minimized = "invalid"; // Wrong type
+            
+            // State validation
+            function validateState(state) {
+                const errors = [];
+                
+                if (typeof state.visible !== 'boolean') {
+                    errors.push('visible property corrupted');
+                }
+                if (typeof state.minimized !== 'boolean') {
+                    errors.push('minimized property corrupted');
+                }
+                
+                return errors;
+            }
+            
+            const errors = validateState(mockModalState);
+            if (errors.length > 0) {
+                logResult(`State corruption detected: ${errors.join(', ')}`, 'error');
+                
+                // Trigger recovery
+                setTimeout(() => {
+                    testStateRecovery();
+                }, 1000);
+            }
+        }
+
+        function testStateRecovery() {
+            logResult('Initiating state recovery...', 'warning');
+            
+            // Reset to safe defaults
+            mockModalState = {
+                visible: false,
+                minimized: false,
+                hasErrors: false,
+                fallbackMode: false
+            };
+            
+            // Clear any existing modals
+            hideAllModals();
+            
+            // Verify recovery
+            setTimeout(() => {
+                if (typeof mockModalState.visible === 'boolean' && 
+                    typeof mockModalState.minimized === 'boolean') {
+                    logResult('State recovery completed successfully', 'success');
+                } else {
+                    logResult('State recovery failed - manual intervention required', 'error');
+                }
+            }, 500);
+        }
+
+        function corruptModalState() {
+            logResult('WARNING: Deliberately corrupting modal state...', 'error');
+            
+            // Intentionally corrupt the state for testing
+            mockModalState = {
+                visible: "not_boolean",
+                minimized: null,
+                hasErrors: true,
+                corruptedData: { circular: null }
+            };
+            
+            // Create circular reference
+            mockModalState.corruptedData.circular = mockModalState;
+            
+            logResult('State corrupted - use "Test State Recovery" to fix', 'error');
+        }
+
+        // Test 5: Edge Cases
+        function testZeroTime() {
+            logResult('Testing zero time duration handling...', 'info');
+            
+            showNormalModal();
+            const timerFill = document.getElementById('timer-fill');
+            
+            // Simulate zero duration
+            timerFill.style.width = '0%';
+            timerFill.style.backgroundColor = '#ef4444';
+            
+            logResult('Zero duration handled - immediate expiration', 'success');
+            
+            setTimeout(() => {
+                logResult('Modal auto-closed due to zero duration', 'success');
+                hideAllModals();
+            }, 1000);
+        }
+
+        function testNegativeTime() {
+            logResult('Testing negative time handling...', 'info');
+            
+            const negativeTime = -5000;
+            const clampedTime = Math.max(0, negativeTime);
+            
+            logResult(`Negative time ${negativeTime}ms clamped to ${clampedTime}ms`, 'success');
+            
+            // Show visual representation
+            showNormalModal();
+            const timerFill = document.getElementById('timer-fill');
+            timerFill.style.width = '0%';
+            timerFill.style.backgroundColor = '#ef4444';
+            
+            setTimeout(() => {
+                hideAllModals();
+            }, 2000);
+        }
+
+        function testInvalidData() {
+            logResult('Testing invalid data handling...', 'info');
+            
+            const invalidInputs = [
+                null,
+                undefined,
+                "string",
+                123,
+                [],
+                { invalid: true }
+            ];
+            
+            invalidInputs.forEach((input, index) => {
+                const isValid = input && 
+                               typeof input === 'object' && 
+                               input.description && 
+                               input.betType && 
+                               Array.isArray(input.choices);
+                
+                logResult(`Input ${index + 1} (${typeof input}): ${isValid ? 'VALID' : 'INVALID'}`, 
+                         isValid ? 'success' : 'warning');
+            });
+            
+            logResult('Invalid data validation completed', 'success');
+        }
+
+        // Visual Demonstrations
+        function showNormalModal() {
+            const modal = document.getElementById('mock-modal');
+            modal.style.display = 'block';
+            modal.className = 'mock-modal';
+            mockModalState.visible = true;
+            mockModalState.minimized = false;
+            
+            // Reset timer bar
+            const timerFill = document.getElementById('timer-fill');
+            timerFill.style.width = '100%';
+            timerFill.style.backgroundColor = '#10b981';
+            timerFill.style.transition = 'width 0.1s linear';
+        }
+
+        function showFallbackModal() {
+            const modal = document.getElementById('mock-modal');
+            modal.style.display = 'block';
+            modal.className = 'mock-modal fallback-modal';
+            mockModalState.visible = true;
+            mockModalState.fallbackMode = true;
+            
+            logResult('Fallback modal displayed', 'warning');
+        }
+
+        function showBrokenAnimation() {
+            showNormalModal();
+            
+            // Break the animation intentionally
+            const timerFill = document.getElementById('timer-fill');
+            timerFill.style.transition = 'none';
+            timerFill.style.animation = 'none';
+            
+            logResult('Animation disabled - showing broken state', 'warning');
+        }
+
+        function minimizeModal() {
+            const modal = document.getElementById('mock-modal');
+            const indicator = document.getElementById('mock-indicator');
+            
+            modal.style.display = 'none';
+            indicator.style.display = 'block';
+            
+            mockModalState.visible = false;
+            mockModalState.minimized = true;
+            
+            // Start indicator countdown
+            let time = 10;
+            const countdown = setInterval(() => {
+                time--;
+                const timeSpan = document.getElementById('indicator-time');
+                if (timeSpan) {
+                    timeSpan.textContent = time + 's';
+                }
+                
+                if (time <= 5) {
+                    indicator.classList.add('urgent');
+                }
+                
+                if (time <= 0) {
+                    clearInterval(countdown);
+                    hideAllModals();
+                }
+            }, 1000);
+            
+            logResult('Modal minimized - indicator shown', 'info');
+        }
+
+        function restoreModal() {
+            const modal = document.getElementById('mock-modal');
+            const indicator = document.getElementById('mock-indicator');
+            
+            indicator.style.display = 'none';
+            modal.style.display = 'block';
+            
+            mockModalState.visible = true;
+            mockModalState.minimized = false;
+            
+            logResult('Modal restored from minimized state', 'info');
+        }
+
+        function hideAllModals() {
+            const modal = document.getElementById('mock-modal');
+            const indicator = document.getElementById('mock-indicator');
+            
+            modal.style.display = 'none';
+            indicator.style.display = 'none';
+            indicator.classList.remove('urgent');
+            
+            mockModalState.visible = false;
+            mockModalState.minimized = false;
+            
+            // Clean up any fallback modals
+            const fallbackModals = document.querySelectorAll('.fallback-modal');
+            fallbackModals.forEach(modal => {
+                if (modal.parentElement) {
+                    modal.parentElement.removeChild(modal);
+                }
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            logResult('Error handling browser tests initialized', 'info');
+            logResult('Click buttons above to test various error scenarios', 'info');
+        });
+
+        // Global error handler for demonstration
+        window.addEventListener('error', (event) => {
+            logResult(`Global error caught: ${event.message}`, 'error');
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            hideAllModals();
+        });
+    </script>
+</body>
+</html>

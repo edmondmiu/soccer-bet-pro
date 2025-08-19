@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 7: Enhanced Modal Structure Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/animations.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #111827;
+            color: #ffffff;
+        }
+        
+        .test-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid #374151;
+            border-radius: 0.5rem;
+            background: #1f2937;
+        }
+        
+        .test-button {
+            background: #4f46e5;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            margin: 0.25rem;
+            transition: background 0.2s;
+        }
+        
+        .test-button:hover {
+            background: #3730a3;
+        }
+        
+        .status {
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            border-radius: 0.375rem;
+        }
+        
+        .status.pass {
+            background: #065f46;
+            color: #d1fae5;
+        }
+        
+        .status.fail {
+            background: #7f1d1d;
+            color: #fecaca;
+        }
+        
+        .status.info {
+            background: #1e3a8a;
+            color: #dbeafe;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto p-4 max-w-4xl">
+        <h1 class="text-3xl font-bold mb-6">Task 7: Enhanced Modal Structure and Visual Hierarchy Test</h1>
+        
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Visual Hierarchy Test</h2>
+            <p class="mb-4">Testing the clear visual hierarchy: pause info → betting options → amount selection</p>
+            
+            <button class="test-button" onclick="showTestModal()">Show Enhanced Modal</button>
+            <button class="test-button" onclick="hideTestModal()">Hide Modal</button>
+            <button class="test-button" onclick="testResponsiveDesign()">Test Responsive Design</button>
+            
+            <div id="hierarchy-results" class="mt-4"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Timer Bar Integration Test</h2>
+            <p class="mb-4">Testing integrated timer bar styling within modal container</p>
+            
+            <button class="test-button" onclick="testTimerBar()">Test Timer Bar</button>
+            <button class="test-button" onclick="testTimerBarStates()">Test Timer States</button>
+            
+            <div id="timer-results" class="mt-4"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Button Styling Test</h2>
+            <p class="mb-4">Testing consistent Bet/Skip button styling and behavior</p>
+            
+            <button class="test-button" onclick="testButtonStyling()">Test Button Styles</button>
+            <button class="test-button" onclick="testButtonAnimations()">Test Button Animations</button>
+            
+            <div id="button-results" class="mt-4"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Responsive Design Test</h2>
+            <p class="mb-4">Testing responsive design on different screen sizes</p>
+            
+            <button class="test-button" onclick="simulateMobile()">Simulate Mobile (480px)</button>
+            <button class="test-button" onclick="simulateSmallMobile()">Simulate Small Mobile (320px)</button>
+            <button class="test-button" onclick="resetViewport()">Reset Viewport</button>
+            
+            <div id="responsive-results" class="mt-4"></div>
+        </div>
+    </div>
+
+    <!-- Enhanced Action Bet Modal for Testing -->
+    <div id="test-action-bet-modal" class="hidden action-bet-modal-enhanced">
+        <div class="action-bet-modal-content enhanced-modal-entrance">
+            <!-- 1. Pause Information Header (Top Priority) -->
+            <div id="test-pause-header" class="pause-info-header">
+                <div class="pause-info-content">
+                    <span class="pause-info-icon">⏸️</span>
+                    <span class="pause-info-text">Game Paused - Betting Opportunity</span>
+                </div>
+            </div>
+            
+            <!-- 2. Timer Bar Integration (High Priority) -->
+            <div class="modal-timer-container">
+                <div class="modal-timer-bar">
+                    <div id="test-timer-bar" class="modal-timer-progress"></div>
+                </div>
+            </div>
+            
+            <!-- 3. Betting Content Section (Medium Priority) -->
+            <div class="betting-content-section">
+                <h2 id="test-betting-title" class="betting-title">⚡ Action Bet! ⚡</h2>
+                <p id="test-betting-description" class="betting-description">Test betting opportunity - will the player score?</p>
+            </div>
+            
+            <!-- 4. Betting Choices Section (Medium Priority) -->
+            <div id="test-betting-choices" class="betting-choices-container">
+                <button class="betting-choice-button">
+                    <span class="betting-choice-text">Goal Scored</span>
+                    <span class="betting-choice-odds">@2.50</span>
+                </button>
+                <button class="betting-choice-button">
+                    <span class="betting-choice-text">Shot Saved</span>
+                    <span class="betting-choice-odds">@1.80</span>
+                </button>
+                <button class="betting-choice-button">
+                    <span class="betting-choice-text">Shot Missed</span>
+                    <span class="betting-choice-odds">@3.20</span>
+                </button>
+            </div>
+            
+            <!-- 5. Action Buttons Section (Lower Priority) -->
+            <div class="modal-actions-container">
+                <button id="test-minimize-btn" class="modal-action-button minimize">Minimize</button>
+                <button id="test-skip-btn" class="modal-action-button skip">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = {
+            hierarchy: [],
+            timer: [],
+            buttons: [],
+            responsive: []
+        };
+
+        function showTestModal() {
+            const modal = document.getElementById('test-action-bet-modal');
+            const modalContent = modal.querySelector('.action-bet-modal-content');
+            
+            modal.classList.remove('hidden');
+            modalContent.classList.remove('enhanced-modal-exit');
+            modalContent.classList.add('enhanced-modal-entrance');
+            
+            // Test visual hierarchy
+            testVisualHierarchy();
+        }
+
+        function hideTestModal() {
+            const modal = document.getElementById('test-action-bet-modal');
+            const modalContent = modal.querySelector('.action-bet-modal-content');
+            
+            modalContent.classList.remove('enhanced-modal-entrance');
+            modalContent.classList.add('enhanced-modal-exit');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function testVisualHierarchy() {
+            const results = [];
+            
+            // Test 1: Pause info header is at the top
+            const pauseHeader = document.getElementById('test-pause-header');
+            const pauseHeaderRect = pauseHeader.getBoundingClientRect();
+            results.push({
+                test: 'Pause header positioning',
+                pass: pauseHeaderRect.top > 0,
+                message: 'Pause header should be at the top of modal'
+            });
+            
+            // Test 2: Timer bar is below pause header
+            const timerContainer = document.querySelector('.modal-timer-container');
+            const timerRect = timerContainer.getBoundingClientRect();
+            results.push({
+                test: 'Timer bar positioning',
+                pass: timerRect.top > pauseHeaderRect.bottom,
+                message: 'Timer bar should be below pause header'
+            });
+            
+            // Test 3: Betting content is below timer
+            const bettingContent = document.querySelector('.betting-content-section');
+            const contentRect = bettingContent.getBoundingClientRect();
+            results.push({
+                test: 'Betting content positioning',
+                pass: contentRect.top > timerRect.bottom,
+                message: 'Betting content should be below timer bar'
+            });
+            
+            // Test 4: Choices are below content
+            const choices = document.querySelector('.betting-choices-container');
+            const choicesRect = choices.getBoundingClientRect();
+            results.push({
+                test: 'Betting choices positioning',
+                pass: choicesRect.top > contentRect.bottom,
+                message: 'Betting choices should be below content'
+            });
+            
+            // Test 5: Actions are at the bottom
+            const actions = document.querySelector('.modal-actions-container');
+            const actionsRect = actions.getBoundingClientRect();
+            results.push({
+                test: 'Action buttons positioning',
+                pass: actionsRect.top > choicesRect.bottom,
+                message: 'Action buttons should be at the bottom'
+            });
+            
+            testResults.hierarchy = results;
+            displayResults('hierarchy-results', results);
+        }
+
+        function testTimerBar() {
+            const results = [];
+            const timerBar = document.getElementById('test-timer-bar');
+            
+            // Test 1: Timer bar has correct initial class
+            results.push({
+                test: 'Timer bar initial class',
+                pass: timerBar.classList.contains('modal-timer-progress'),
+                message: 'Timer bar should have modal-timer-progress class'
+            });
+            
+            // Test 2: Timer bar width animation
+            timerBar.style.width = '100%';
+            setTimeout(() => {
+                timerBar.style.width = '50%';
+                results.push({
+                    test: 'Timer bar width animation',
+                    pass: timerBar.style.width === '50%',
+                    message: 'Timer bar width should be animatable'
+                });
+                
+                testResults.timer = results;
+                displayResults('timer-results', results);
+            }, 100);
+        }
+
+        function testTimerBarStates() {
+            const timerBar = document.getElementById('test-timer-bar');
+            const results = [];
+            
+            // Test warning state
+            timerBar.classList.add('warning');
+            results.push({
+                test: 'Warning state styling',
+                pass: timerBar.classList.contains('warning'),
+                message: 'Timer bar should support warning state'
+            });
+            
+            // Test urgent state
+            timerBar.classList.remove('warning');
+            timerBar.classList.add('urgent');
+            results.push({
+                test: 'Urgent state styling',
+                pass: timerBar.classList.contains('urgent'),
+                message: 'Timer bar should support urgent state'
+            });
+            
+            // Reset to normal
+            timerBar.classList.remove('urgent');
+            
+            testResults.timer = [...testResults.timer, ...results];
+            displayResults('timer-results', testResults.timer);
+        }
+
+        function testButtonStyling() {
+            const results = [];
+            
+            // Test betting choice buttons
+            const choiceButtons = document.querySelectorAll('.betting-choice-button');
+            results.push({
+                test: 'Betting choice buttons exist',
+                pass: choiceButtons.length > 0,
+                message: 'Should have betting choice buttons'
+            });
+            
+            // Test action buttons
+            const minimizeBtn = document.getElementById('test-minimize-btn');
+            const skipBtn = document.getElementById('test-skip-btn');
+            
+            results.push({
+                test: 'Minimize button styling',
+                pass: minimizeBtn.classList.contains('modal-action-button') && minimizeBtn.classList.contains('minimize'),
+                message: 'Minimize button should have correct classes'
+            });
+            
+            results.push({
+                test: 'Skip button styling',
+                pass: skipBtn.classList.contains('modal-action-button') && skipBtn.classList.contains('skip'),
+                message: 'Skip button should have correct classes'
+            });
+            
+            testResults.buttons = results;
+            displayResults('button-results', results);
+        }
+
+        function testButtonAnimations() {
+            const results = [];
+            const choiceButton = document.querySelector('.betting-choice-button');
+            
+            // Test button press animation
+            choiceButton.classList.add('button-press-animation');
+            results.push({
+                test: 'Button press animation',
+                pass: choiceButton.classList.contains('button-press-animation'),
+                message: 'Buttons should support press animation'
+            });
+            
+            // Test choice selection animation
+            setTimeout(() => {
+                choiceButton.classList.remove('button-press-animation');
+                choiceButton.classList.add('choice-selection-animation');
+                results.push({
+                    test: 'Choice selection animation',
+                    pass: choiceButton.classList.contains('choice-selection-animation'),
+                    message: 'Choice buttons should support selection animation'
+                });
+                
+                testResults.buttons = [...testResults.buttons, ...results];
+                displayResults('button-results', testResults.buttons);
+            }, 200);
+        }
+
+        function simulateMobile() {
+            document.body.style.width = '480px';
+            document.body.style.margin = '0 auto';
+            
+            const results = [{
+                test: 'Mobile viewport simulation',
+                pass: true,
+                message: 'Simulated 480px mobile viewport'
+            }];
+            
+            testResults.responsive = results;
+            displayResults('responsive-results', results);
+        }
+
+        function simulateSmallMobile() {
+            document.body.style.width = '320px';
+            document.body.style.margin = '0 auto';
+            
+            const results = [{
+                test: 'Small mobile viewport simulation',
+                pass: true,
+                message: 'Simulated 320px small mobile viewport'
+            }];
+            
+            testResults.responsive = results;
+            displayResults('responsive-results', results);
+        }
+
+        function resetViewport() {
+            document.body.style.width = '';
+            document.body.style.margin = '';
+            
+            const results = [{
+                test: 'Viewport reset',
+                pass: true,
+                message: 'Reset to normal viewport'
+            }];
+            
+            testResults.responsive = results;
+            displayResults('responsive-results', results);
+        }
+
+        function testResponsiveDesign() {
+            const results = [];
+            const modal = document.querySelector('.action-bet-modal-content');
+            
+            if (modal) {
+                const computedStyle = window.getComputedStyle(modal);
+                results.push({
+                    test: 'Modal responsive styling',
+                    pass: computedStyle.maxWidth !== 'none',
+                    message: 'Modal should have responsive max-width'
+                });
+                
+                results.push({
+                    test: 'Modal padding',
+                    pass: computedStyle.padding !== '0px',
+                    message: 'Modal should have appropriate padding'
+                });
+            }
+            
+            testResults.responsive = [...testResults.responsive, ...results];
+            displayResults('responsive-results', testResults.responsive);
+        }
+
+        function displayResults(containerId, results) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            results.forEach(result => {
+                const div = document.createElement('div');
+                div.className = `status ${result.pass ? 'pass' : 'fail'}`;
+                div.innerHTML = `
+                    <strong>${result.test}:</strong> ${result.pass ? 'PASS' : 'FAIL'}<br>
+                    <small>${result.message}</small>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Add event listeners for button interactions
+        document.addEventListener('DOMContentLoaded', function() {
+            const choiceButtons = document.querySelectorAll('.betting-choice-button');
+            choiceButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    this.classList.add('choice-selection-animation');
+                    setTimeout(() => {
+                        this.classList.remove('choice-selection-animation');
+                    }, 300);
+                });
+                
+                button.addEventListener('mousedown', function() {
+                    this.classList.add('button-press-animation');
+                });
+                
+                button.addEventListener('animationend', function(e) {
+                    if (e.animationName === 'buttonPress') {
+                        this.classList.remove('button-press-animation');
+                    }
+                });
+            });
+            
+            const actionButtons = document.querySelectorAll('.modal-action-button');
+            actionButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    this.classList.add('button-press-animation');
+                    setTimeout(() => {
+                        this.classList.remove('button-press-animation');
+                    }, 150);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

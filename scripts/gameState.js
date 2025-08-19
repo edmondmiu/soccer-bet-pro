@@ -21,6 +21,7 @@
  * - powerUp: Power-up state and status
  * - currentBet: Temporary bet being placed
  * - currentActionBet: Active action betting state
+ * - pause: Game pause state and timing information
  * 
  * @module gameState
  * @requires none
@@ -48,6 +49,7 @@
  * @returns {Object} returns.powerUp - Empty power-up state
  * @returns {Object|null} returns.currentBet - No active bet
  * @returns {Object} returns.currentActionBet - Inactive action bet state
+ * @returns {Object} returns.pause - Pause state with default values
  */
 export function getInitialState() {
     return {
@@ -78,6 +80,22 @@ export function getInitialState() {
         currentActionBet: {
             active: false,
             details: null,
+            timeoutId: null,
+            modalState: {
+                visible: false,
+                minimized: false,
+                startTime: null,
+                duration: null,
+                content: null,
+                timerBar: null
+            },
+            minimizedIndicator: null,
+            minimizedUpdateInterval: null,
+        },
+        pause: {
+            active: false,
+            reason: null,
+            startTime: null,
             timeoutId: null,
         },
     };
@@ -294,7 +312,7 @@ function validateStateStructure(updates) {
     try {
         const validKeys = [
             'currentScreen', 'wallet', 'classicMode', 'match', 'bets', 
-            'powerUp', 'currentBet', 'currentActionBet'
+            'powerUp', 'currentBet', 'currentActionBet', 'pause'
         ];
         
         for (const key in updates) {
@@ -341,7 +359,7 @@ function validateStateStructure(updates) {
 function validateCompleteState(state) {
     try {
         // Check required properties exist
-        const requiredProps = ['currentScreen', 'wallet', 'classicMode', 'match', 'bets', 'powerUp'];
+        const requiredProps = ['currentScreen', 'wallet', 'classicMode', 'match', 'bets', 'powerUp', 'pause'];
         for (const prop of requiredProps) {
             if (!(prop in state)) {
                 console.error(`Missing required state property: ${prop}`);
@@ -371,6 +389,82 @@ function validateCompleteState(state) {
             if (!Array.isArray(state.bets.fullMatch) || !Array.isArray(state.bets.actionBets)) {
                 console.error('Invalid bets structure: fullMatch and actionBets must be arrays');
                 return false;
+            }
+        }
+        
+        // Validate pause object structure
+        if (state.pause && typeof state.pause === 'object') {
+            const requiredPauseProps = ['active', 'reason', 'startTime', 'timeoutId'];
+            for (const prop of requiredPauseProps) {
+                if (!(prop in state.pause)) {
+                    console.error(`Missing required pause property: ${prop}`);
+                    return false;
+                }
+            }
+            
+            // Validate pause property types
+            if (typeof state.pause.active !== 'boolean') {
+                console.error(`Invalid pause.active value: ${state.pause.active}`);
+                return false;
+            }
+            
+            if (state.pause.reason !== null && typeof state.pause.reason !== 'string') {
+                console.error(`Invalid pause.reason value: ${state.pause.reason}`);
+                return false;
+            }
+            
+            if (state.pause.startTime !== null && typeof state.pause.startTime !== 'number') {
+                console.error(`Invalid pause.startTime value: ${state.pause.startTime}`);
+                return false;
+            }
+            
+            // timeoutId is managed internally by PauseManager, so it should always be null in state
+            if (state.pause.timeoutId !== null) {
+                console.error(`Invalid pause.timeoutId value: ${state.pause.timeoutId} (should be null)`);
+                return false;
+            }
+        }
+        
+        // Validate currentActionBet and modalState structure
+        if (state.currentActionBet && typeof state.currentActionBet === 'object') {
+            const requiredActionBetProps = ['active', 'details', 'timeoutId', 'modalState'];
+            for (const prop of requiredActionBetProps) {
+                if (!(prop in state.currentActionBet)) {
+                    console.error(`Missing required currentActionBet property: ${prop}`);
+                    return false;
+                }
+            }
+            
+            // Validate modalState structure
+            if (state.currentActionBet.modalState && typeof state.currentActionBet.modalState === 'object') {
+                const requiredModalProps = ['visible', 'minimized', 'startTime', 'duration', 'content', 'timerBar'];
+                for (const prop of requiredModalProps) {
+                    if (!(prop in state.currentActionBet.modalState)) {
+                        console.error(`Missing required modalState property: ${prop}`);
+                        return false;
+                    }
+                }
+                
+                // Validate modalState property types
+                if (typeof state.currentActionBet.modalState.visible !== 'boolean') {
+                    console.error(`Invalid modalState.visible value: ${state.currentActionBet.modalState.visible}`);
+                    return false;
+                }
+                
+                if (typeof state.currentActionBet.modalState.minimized !== 'boolean') {
+                    console.error(`Invalid modalState.minimized value: ${state.currentActionBet.modalState.minimized}`);
+                    return false;
+                }
+                
+                if (state.currentActionBet.modalState.startTime !== null && typeof state.currentActionBet.modalState.startTime !== 'number') {
+                    console.error(`Invalid modalState.startTime value: ${state.currentActionBet.modalState.startTime}`);
+                    return false;
+                }
+                
+                if (state.currentActionBet.modalState.duration !== null && typeof state.currentActionBet.modalState.duration !== 'number') {
+                    console.error(`Invalid modalState.duration value: ${state.currentActionBet.modalState.duration}`);
+                    return false;
+                }
             }
         }
         
@@ -432,6 +526,14 @@ export function getPowerUpState() {
  */
 export function getClassicMode() {
     return currentState.classicMode;
+}
+
+/**
+ * Gets the current pause state
+ * @returns {Object} Pause state
+ */
+export function getPauseState() {
+    return { ...currentState.pause };
 }
 
 // --- SPECIFIC STATE SETTERS ---
@@ -578,4 +680,183 @@ export function updateCurrentActionBet(actionBetUpdates) {
             ...actionBetUpdates
         }
     });
+}
+
+/**
+ * Updates pause state
+ * @param {Object} pauseUpdates - Partial pause state updates
+ */
+export function updatePauseState(pauseUpdates) {
+    updateState({
+        pause: {
+            ...currentState.pause,
+            ...pauseUpdates
+        }
+    });
+}
+
+// --- MODAL STATE MANAGEMENT ---
+
+/**
+ * Gets the current modal state
+ * @returns {Object} Current modal state (read-only copy)
+ */
+export function getModalState() {
+    return { ...currentState.currentActionBet.modalState };
+}
+
+/**
+ * Updates modal state with validation and persistence
+ * @param {Object} modalUpdates - Partial modal state updates
+ * @param {boolean} [modalUpdates.visible] - Whether modal is visible
+ * @param {boolean} [modalUpdates.minimized] - Whether modal is minimized
+ * @param {number} [modalUpdates.startTime] - Modal start timestamp
+ * @param {number} [modalUpdates.duration] - Modal duration in milliseconds
+ * @param {Object} [modalUpdates.content] - Modal content data
+ * @param {Object} [modalUpdates.timerBar] - Timer bar instance reference
+ */
+export function updateModalState(modalUpdates) {
+    try {
+        if (!modalUpdates || typeof modalUpdates !== 'object') {
+            console.warn('Invalid modal state update: updates must be an object', modalUpdates);
+            return;
+        }
+
+        // Validate modal state updates
+        if ('visible' in modalUpdates && typeof modalUpdates.visible !== 'boolean') {
+            console.warn('Invalid modal visible value:', modalUpdates.visible);
+            return;
+        }
+
+        if ('minimized' in modalUpdates && typeof modalUpdates.minimized !== 'boolean') {
+            console.warn('Invalid modal minimized value:', modalUpdates.minimized);
+            return;
+        }
+
+        if ('startTime' in modalUpdates && modalUpdates.startTime !== null && typeof modalUpdates.startTime !== 'number') {
+            console.warn('Invalid modal startTime value:', modalUpdates.startTime);
+            return;
+        }
+
+        if ('duration' in modalUpdates && modalUpdates.duration !== null && typeof modalUpdates.duration !== 'number') {
+            console.warn('Invalid modal duration value:', modalUpdates.duration);
+            return;
+        }
+
+        // Update modal state through currentActionBet
+        updateCurrentActionBet({
+            modalState: {
+                ...currentState.currentActionBet.modalState,
+                ...modalUpdates
+            }
+        });
+    } catch (error) {
+        console.error('Error updating modal state:', error);
+    }
+}
+
+/**
+ * Sets modal visibility state
+ * @param {boolean} visible - Whether modal should be visible
+ */
+export function setModalVisible(visible) {
+    updateModalState({ visible: !!visible });
+}
+
+/**
+ * Sets modal minimized state
+ * @param {boolean} minimized - Whether modal should be minimized
+ */
+export function setModalMinimized(minimized) {
+    updateModalState({ minimized: !!minimized });
+}
+
+/**
+ * Initializes modal state for a new betting opportunity
+ * @param {Object} content - Modal content data
+ * @param {number} duration - Modal duration in milliseconds
+ */
+export function initializeModalState(content, duration) {
+    const startTime = Date.now();
+    updateModalState({
+        visible: true,
+        minimized: false,
+        startTime: startTime,
+        duration: duration,
+        content: content,
+        timerBar: null
+    });
+}
+
+/**
+ * Resets modal state to initial values
+ */
+export function resetModalState() {
+    updateModalState({
+        visible: false,
+        minimized: false,
+        startTime: null,
+        duration: null,
+        content: null,
+        timerBar: null
+    });
+}
+
+/**
+ * Checks if modal is currently active (visible or minimized)
+ * @returns {boolean} True if modal is active
+ */
+export function isModalActive() {
+    const modalState = getModalState();
+    return modalState.visible || modalState.minimized;
+}
+
+/**
+ * Gets remaining time for active modal
+ * @returns {number} Remaining time in milliseconds, or 0 if expired/inactive
+ */
+export function getModalRemainingTime() {
+    const modalState = getModalState();
+    
+    if (!modalState.startTime || !modalState.duration) {
+        return 0;
+    }
+    
+    const elapsed = Date.now() - modalState.startTime;
+    return Math.max(0, modalState.duration - elapsed);
+}
+
+/**
+ * Checks if modal has expired
+ * @returns {boolean} True if modal has expired
+ */
+export function isModalExpired() {
+    return getModalRemainingTime() <= 0;
+}
+
+/**
+ * Minimizes the modal (sets visible to false, minimized to true)
+ */
+export function minimizeModal() {
+    updateModalState({
+        visible: false,
+        minimized: true
+    });
+}
+
+/**
+ * Restores the modal from minimized state (sets visible to true, minimized to false)
+ */
+export function restoreModal() {
+    updateModalState({
+        visible: true,
+        minimized: false
+    });
+}
+
+/**
+ * Closes the modal completely (resets all modal state)
+ */
+export function closeModal() {
+    resetModalState();
 }

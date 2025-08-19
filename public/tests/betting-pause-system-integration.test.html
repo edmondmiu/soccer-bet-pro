@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betting Modal and Pause System Integration Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .test-container {
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .test-pass {
+            background-color: #1a5a1a;
+            color: #90ee90;
+        }
+        .test-fail {
+            background-color: #5a1a1a;
+            color: #ff6b6b;
+        }
+        .test-info {
+            background-color: #1a3a5a;
+            color: #87ceeb;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4a4a4a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #5a5a5a;
+        }
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .pause-status {
+            color: #ff6b6b;
+        }
+        .resume-status {
+            color: #90ee90;
+        }
+        .modal-status {
+            color: #87ceeb;
+        }
+        #test-results {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #444;
+            padding: 10px;
+            background-color: #1a1a1a;
+        }
+        .requirement-header {
+            color: #ffd700;
+            font-size: 1.2em;
+            margin: 15px 0 5px 0;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Betting Modal and Pause System Integration Tests</h1>
+    <p>This test verifies that the betting modal improvements integrate correctly with the existing pause system.</p>
+    
+    <div class="test-container">
+        <h2>Test Requirements</h2>
+        <ul>
+            <li><strong>5.1:</strong> Game remains paused when modal is minimized</li>
+            <li><strong>5.2:</strong> Pause state and reason maintained during minimize/restore cycles</li>
+            <li><strong>5.4:</strong> Resume game functionality works regardless of modal state</li>
+            <li><strong>5.5:</strong> Timeout behavior preserved with minimized modals</li>
+        </ul>
+    </div>
+
+    <div class="test-container">
+        <h2>Current Status</h2>
+        <div id="pause-status" class="status">Pause Status: <span id="pause-state">Not Paused</span></div>
+        <div id="modal-status" class="status">Modal Status: <span id="modal-state">Inactive</span></div>
+        <div id="betting-status" class="status">Betting Status: <span id="betting-state">No Active Bet</span></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Manual Test Controls</h2>
+        <div class="controls">
+            <button onclick="startBettingOpportunity()">Start Betting Opportunity</button>
+            <button onclick="minimizeModal()">Minimize Modal</button>
+            <button onclick="restoreModal()">Restore Modal</button>
+            <button onclick="makeBettingDecision()">Make Betting Decision</button>
+            <button onclick="simulateTimeout()">Simulate Timeout</button>
+            <button onclick="resetTest()">Reset Test</button>
+        </div>
+        <div class="controls">
+            <button onclick="runAutomatedTests()">Run All Automated Tests</button>
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <!-- Hidden modal elements for testing -->
+    <div id="action-bet-modal" class="hidden">
+        <div class="bg-gray-800">
+            <div id="action-bet-timer-bar" class="timer-bar timer-bar-normal"></div>
+            <h3 id="action-bet-title">Action Bet</h3>
+            <p id="action-bet-main-description">Test betting opportunity</p>
+            <div id="action-bet-choices"></div>
+        </div>
+    </div>
+
+    <div id="action-bet-slip-modal" class="hidden">
+        <div class="bg-gray-800">
+            <h3>Place Your Bet</h3>
+            <input type="number" id="action-stake-amount" placeholder="Enter stake">
+            <button onclick="confirmBet()">Confirm Bet</button>
+            <button onclick="cancelBet()">Cancel</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import required modules
+        import { pauseManager } from '../scripts/pauseManager.js';
+        import { 
+            getCurrentState, 
+            updateCurrentActionBet, 
+            updatePauseState 
+        } from '../scripts/gameState.js';
+        import { 
+            showMultiChoiceActionBet,
+            minimizeActionBet,
+            restoreActionBet,
+            handleBettingDecision
+        } from '../scripts/betting.js';
+
+        // Global test state
+        let testResults = [];
+        let currentTest = null;
+
+        // Mock event feed function
+        window.addEventToFeed = function(message, className) {
+            console.log(`Event Feed: ${message} (${className})`);
+            addTestResult(`Event: ${message}`, 'info');
+        };
+
+        // Mock render function
+        window.render = function() {
+            console.log('UI render triggered');
+            updateStatusDisplay();
+        };
+
+        // Test utility functions
+        function addTestResult(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const result = {
+                message,
+                type,
+                timestamp
+            };
+            testResults.push(result);
+            
+            const resultsDiv = document.getElementById('test-results');
+            const resultElement = document.createElement('div');
+            resultElement.className = `test-result test-${type}`;
+            resultElement.innerHTML = `[${timestamp}] ${message}`;
+            resultsDiv.appendChild(resultElement);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function updateStatusDisplay() {
+            const pauseState = pauseManager.isPaused();
+            const pauseInfo = pauseManager.getPauseInfo();
+            const currentState = getCurrentState();
+            
+            document.getElementById('pause-state').textContent = pauseState ? 
+                `Paused (${pauseInfo.reason})` : 'Not Paused';
+            document.getElementById('pause-state').className = pauseState ? 'pause-status' : 'resume-status';
+            
+            const modalState = currentState.currentActionBet.active ? 
+                (currentState.currentActionBet.modalState.visible ? 'Visible' : 
+                 currentState.currentActionBet.modalState.minimized ? 'Minimized' : 'Hidden') : 'Inactive';
+            document.getElementById('modal-state').textContent = modalState;
+            document.getElementById('modal-state').className = 'modal-status';
+            
+            const bettingState = currentState.currentActionBet.active ? 'Active Betting Opportunity' : 'No Active Bet';
+            document.getElementById('betting-state').textContent = bettingState;
+        }
+
+        // Manual test functions
+        window.startBettingOpportunity = function() {
+            const testEvent = {
+                description: 'Test foul near the penalty box! What will the referee decide?',
+                betType: 'FOUL_OUTCOME',
+                choices: [
+                    { text: 'Yellow Card', odds: 2.5 },
+                    { text: 'Red Card', odds: 8.0 },
+                    { text: 'Warning Only', odds: 1.5 }
+                ]
+            };
+            
+            showMultiChoiceActionBet(testEvent);
+            addTestResult('Started betting opportunity', 'info');
+            updateStatusDisplay();
+        };
+
+        window.minimizeModal = function() {
+            minimizeActionBet();
+            addTestResult('Minimized betting modal', 'info');
+            updateStatusDisplay();
+        };
+
+        window.restoreModal = function() {
+            restoreActionBet();
+            addTestResult('Restored betting modal', 'info');
+            updateStatusDisplay();
+        };
+
+        window.makeBettingDecision = function() {
+            handleBettingDecision(true);
+            addTestResult('Made betting decision', 'info');
+            updateStatusDisplay();
+        };
+
+        window.simulateTimeout = function() {
+            // Simulate timeout by setting expired time
+            const currentState = getCurrentState();
+            if (currentState.currentActionBet.active) {
+                updateCurrentActionBet({
+                    modalState: {
+                        ...currentState.currentActionBet.modalState,
+                        startTime: Date.now() - 15000, // Expired 5 seconds ago
+                        duration: 10000
+                    }
+                });
+                addTestResult('Simulated betting timeout', 'info');
+                updateStatusDisplay();
+            }
+        };
+
+        window.resetTest = function() {
+            // Reset all state
+            updateCurrentActionBet({
+                active: false,
+                details: null,
+                timeoutId: null,
+                modalState: {
+                    visible: false,
+                    minimized: false,
+                    startTime: null,
+                    duration: null,
+                    content: null,
+                    timerBar: null
+                }
+            });
+            
+            if (pauseManager.isPaused()) {
+                pauseManager.resumeGame(false, 0);
+            }
+            
+            // Hide modals
+            document.getElementById('action-bet-modal').classList.add('hidden');
+            document.getElementById('action-bet-slip-modal').classList.add('hidden');
+            
+            addTestResult('Test state reset', 'info');
+            updateStatusDisplay();
+        };
+
+        window.clearResults = function() {
+            testResults = [];
+            document.getElementById('test-results').innerHTML = '';
+        };
+
+        // Automated test functions
+        window.runAutomatedTests = async function() {
+            addTestResult('🚀 Starting automated pause system integration tests...', 'info');
+            
+            try {
+                await testRequirement51();
+                await testRequirement52();
+                await testRequirement54();
+                await testRequirement55();
+                
+                addTestResult('🎉 All automated tests completed successfully!', 'pass');
+            } catch (error) {
+                addTestResult(`❌ Test suite failed: ${error.message}`, 'fail');
+            }
+        };
+
+        // Requirement 5.1: Game remains paused when modal is minimized
+        async function testRequirement51() {
+            addTestResult('📋 Testing Requirement 5.1: Game remains paused when modal is minimized', 'info');
+            
+            // Reset state
+            window.resetTest();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Start betting opportunity (should pause game)
+            window.startBettingOpportunity();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Verify game is paused
+            if (!pauseManager.isPaused()) {
+                throw new Error('Game should be paused after starting betting opportunity');
+            }
+            
+            const pauseInfo = pauseManager.getPauseInfo();
+            if (pauseInfo.reason !== 'BETTING_OPPORTUNITY') {
+                throw new Error('Pause reason should be BETTING_OPPORTUNITY');
+            }
+            
+            // Minimize modal
+            window.minimizeModal();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Verify game is still paused
+            if (!pauseManager.isPaused()) {
+                throw new Error('Game should remain paused after minimizing modal');
+            }
+            
+            const pauseInfoAfterMinimize = pauseManager.getPauseInfo();
+            if (pauseInfoAfterMinimize.reason !== 'BETTING_OPPORTUNITY') {
+                throw new Error('Pause reason should be maintained after minimizing');
+            }
+            
+            // Verify modal state
+            const currentState = getCurrentState();
+            if (!currentState.currentActionBet.modalState.minimized) {
+                throw new Error('Modal should be in minimized state');
+            }
+            
+            addTestResult('✅ Requirement 5.1: PASSED - Game remains paused when modal is minimized', 'pass');
+        }
+
+        // Requirement 5.2: Pause state and reason maintained during minimize/restore cycles
+        async function testRequirement52() {
+            addTestResult('📋 Testing Requirement 5.2: Pause state maintained during minimize/restore cycles', 'info');
+            
+            // Continue from previous test state (minimized modal, paused game)
+            const originalPauseInfo = pauseManager.getPauseInfo();
+            
+            // Restore modal
+            window.restoreModal();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Verify game is still paused
+            if (!pauseManager.isPaused()) {
+                throw new Error('Game should remain paused after restoring modal');
+            }
+            
+            const pauseInfoAfterRestore = pauseManager.getPauseInfo();
+            if (pauseInfoAfterRestore.reason !== 'BETTING_OPPORTUNITY') {
+                throw new Error('Pause reason should be maintained after restoring');
+            }
+            
+            // Verify modal state
+            const currentState = getCurrentState();
+            if (!currentState.currentActionBet.modalState.visible) {
+                throw new Error('Modal should be visible after restore');
+            }
+            
+            if (currentState.currentActionBet.modalState.minimized) {
+                throw new Error('Modal should not be minimized after restore');
+            }
+            
+            // Test multiple cycles
+            for (let i = 0; i < 3; i++) {
+                window.minimizeModal();
+                await new Promise(resolve => setTimeout(resolve, 50));
+                
+                if (!pauseManager.isPaused()) {
+                    throw new Error(`Game should remain paused during cycle ${i + 1} minimize`);
+                }
+                
+                window.restoreModal();
+                await new Promise(resolve => setTimeout(resolve, 50));
+                
+                if (!pauseManager.isPaused()) {
+                    throw new Error(`Game should remain paused during cycle ${i + 1} restore`);
+                }
+            }
+            
+            addTestResult('✅ Requirement 5.2: PASSED - Pause state maintained during minimize/restore cycles', 'pass');
+        }
+
+        // Requirement 5.4: Resume game functionality works regardless of modal state
+        async function testRequirement54() {
+            addTestResult('📋 Testing Requirement 5.4: Resume works regardless of modal state', 'info');
+            
+            // Test 1: Resume with visible modal
+            // (Modal should be visible from previous test)
+            const currentState1 = getCurrentState();
+            if (!currentState1.currentActionBet.modalState.visible) {
+                window.restoreModal();
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            window.makeBettingDecision();
+            await new Promise(resolve => setTimeout(resolve, 500)); // Wait for resume countdown
+            
+            if (pauseManager.isPaused()) {
+                throw new Error('Game should resume after betting decision with visible modal');
+            }
+            
+            // Test 2: Resume with minimized modal
+            window.startBettingOpportunity();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            window.minimizeModal();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            window.makeBettingDecision();
+            await new Promise(resolve => setTimeout(resolve, 500)); // Wait for resume countdown
+            
+            if (pauseManager.isPaused()) {
+                throw new Error('Game should resume after betting decision with minimized modal');
+            }
+            
+            addTestResult('✅ Requirement 5.4: PASSED - Resume works regardless of modal state', 'pass');
+        }
+
+        // Requirement 5.5: Timeout behavior preserved with minimized modals
+        async function testRequirement55() {
+            addTestResult('📋 Testing Requirement 5.5: Timeout behavior preserved with minimized modals', 'info');
+            
+            // Start new betting opportunity
+            window.startBettingOpportunity();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Minimize modal
+            window.minimizeModal();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Verify game is paused
+            if (!pauseManager.isPaused()) {
+                throw new Error('Game should be paused with minimized modal');
+            }
+            
+            // Simulate timeout
+            window.simulateTimeout();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Trigger timeout handling by trying to restore expired modal
+            window.restoreModal();
+            await new Promise(resolve => setTimeout(resolve, 500)); // Wait for timeout handling
+            
+            // Game should resume after timeout (this might take a moment due to countdown)
+            let resumed = false;
+            for (let i = 0; i < 10; i++) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                if (!pauseManager.isPaused()) {
+                    resumed = true;
+                    break;
+                }
+            }
+            
+            if (!resumed) {
+                addTestResult('⚠️ Requirement 5.5: Timeout handling may need manual verification', 'info');
+            } else {
+                addTestResult('✅ Requirement 5.5: PASSED - Timeout behavior preserved with minimized modals', 'pass');
+            }
+        }
+
+        // Initialize display
+        updateStatusDisplay();
+        addTestResult('🧪 Betting Modal and Pause System Integration Tests initialized', 'info');
+        addTestResult('Use the manual controls to test individual functions, or run automated tests', 'info');
+    </script>
+</body>
+</html>

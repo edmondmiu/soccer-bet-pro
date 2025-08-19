@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MinimizedIndicator Visual Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: #4f46e5;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: #4338ca;
+        }
+        
+        button:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .timer-display {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        h1, h2 {
+            margin-top: 0;
+        }
+        
+        .test-description {
+            opacity: 0.8;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>MinimizedIndicator Visual Test</h1>
+        <p class="test-description">
+            This page tests the MinimizedIndicator component's visual appearance, animations, and interactions.
+        </p>
+
+        <div class="test-section">
+            <h2>Basic Display Test</h2>
+            <p class="test-description">Test showing and hiding the indicator with different event types.</p>
+            <div class="test-controls">
+                <button onclick="showCornerKick()">Show Corner Kick (10s)</button>
+                <button onclick="showGoalAttempt()">Show Goal Attempt (8s)</button>
+                <button onclick="showPenalty()">Show Penalty (15s)</button>
+                <button onclick="hideIndicator()">Hide Indicator</button>
+            </div>
+            <div class="status" id="basicStatus">Ready to test basic display</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Time Update Test</h2>
+            <p class="test-description">Test real-time countdown with urgency effects.</p>
+            <div class="test-controls">
+                <button onclick="startCountdown(10)">Start 10s Countdown</button>
+                <button onclick="startCountdown(8)">Start 8s Countdown</button>
+                <button onclick="startCountdown(3)">Start 3s Countdown (Urgent)</button>
+                <button onclick="stopCountdown()">Stop Countdown</button>
+            </div>
+            <div class="timer-display" id="timerDisplay">No active timer</div>
+            <div class="status" id="countdownStatus">Ready to test countdown</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Urgency Effects Test</h2>
+            <p class="test-description">Test visual effects when time remaining is low.</p>
+            <div class="test-controls">
+                <button onclick="testUrgencyTransition()">Test Urgency Transition</button>
+                <button onclick="showUrgentIndicator()">Show Urgent (3s)</button>
+                <button onclick="showNormalIndicator()">Show Normal (10s)</button>
+            </div>
+            <div class="status" id="urgencyStatus">Ready to test urgency effects</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Click Interaction Test</h2>
+            <p class="test-description">Test click handling and callback functionality.</p>
+            <div class="test-controls">
+                <button onclick="showClickableIndicator()">Show Clickable Indicator</button>
+                <button onclick="clearClickLog()">Clear Click Log</button>
+            </div>
+            <div class="status" id="clickStatus">Click the indicator when it appears</div>
+            <div class="status" id="clickLog"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Positioning Test</h2>
+            <p class="test-description">Test custom positioning of the indicator.</p>
+            <div class="test-controls">
+                <button onclick="positionTopLeft()">Top Left</button>
+                <button onclick="positionTopRight()">Top Right (Default)</button>
+                <button onclick="positionBottomLeft()">Bottom Left</button>
+                <button onclick="positionCenter()">Center</button>
+            </div>
+            <div class="status" id="positionStatus">Ready to test positioning</div>
+        </div>
+
+        <div class="test-section">
+            <h2>Multiple Event Types Test</h2>
+            <p class="test-description">Test different event type formatting.</p>
+            <div class="test-controls">
+                <button onclick="cycleEventTypes()">Cycle Event Types</button>
+                <button onclick="showCustomEvent()">Show Custom Event</button>
+            </div>
+            <div class="status" id="eventTypeStatus">Ready to test event types</div>
+        </div>
+    </div>
+
+    <script src="../scripts/minimizedIndicator.js"></script>
+    <script>
+        let indicator = new MinimizedIndicator();
+        let countdownInterval = null;
+        let currentTime = 0;
+        let clickCount = 0;
+
+        // Basic Display Tests
+        function showCornerKick() {
+            indicator.show('CORNER_OUTCOME', 10);
+            updateStatus('basicStatus', 'Showing Corner Kick indicator with 10 seconds');
+        }
+
+        function showGoalAttempt() {
+            indicator.show('GOAL_ATTEMPT', 8);
+            updateStatus('basicStatus', 'Showing Goal Attempt indicator with 8 seconds');
+        }
+
+        function showPenalty() {
+            indicator.show('PENALTY', 15);
+            updateStatus('basicStatus', 'Showing Penalty indicator with 15 seconds');
+        }
+
+        function hideIndicator() {
+            indicator.hide();
+            updateStatus('basicStatus', 'Indicator hidden');
+        }
+
+        // Countdown Tests
+        function startCountdown(seconds) {
+            stopCountdown();
+            currentTime = seconds;
+            indicator.show('CORNER_OUTCOME', currentTime);
+            
+            countdownInterval = setInterval(() => {
+                currentTime -= 0.1;
+                if (currentTime <= 0) {
+                    currentTime = 0;
+                    stopCountdown();
+                    indicator.hide();
+                    updateStatus('countdownStatus', 'Countdown completed - indicator hidden');
+                    document.getElementById('timerDisplay').textContent = 'Countdown completed';
+                    return;
+                }
+                
+                indicator.updateTime(currentTime);
+                document.getElementById('timerDisplay').textContent = `${currentTime.toFixed(1)}s remaining`;
+                
+                if (currentTime <= 5 && currentTime > 4.9) {
+                    updateStatus('countdownStatus', 'Urgency effects should now be active');
+                }
+            }, 100);
+            
+            updateStatus('countdownStatus', `Started ${seconds}s countdown`);
+        }
+
+        function stopCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            document.getElementById('timerDisplay').textContent = 'No active timer';
+        }
+
+        // Urgency Tests
+        function testUrgencyTransition() {
+            indicator.show('CORNER_OUTCOME', 8);
+            updateStatus('urgencyStatus', 'Starting urgency transition test...');
+            
+            setTimeout(() => {
+                indicator.updateTime(5);
+                updateStatus('urgencyStatus', 'Updated to 5s - should become urgent');
+            }, 1000);
+            
+            setTimeout(() => {
+                indicator.updateTime(3);
+                updateStatus('urgencyStatus', 'Updated to 3s - urgent effects active');
+            }, 2000);
+            
+            setTimeout(() => {
+                indicator.updateTime(7);
+                updateStatus('urgencyStatus', 'Updated to 7s - urgent effects should be removed');
+            }, 3000);
+        }
+
+        function showUrgentIndicator() {
+            indicator.show('PENALTY', 3);
+            updateStatus('urgencyStatus', 'Showing urgent indicator (3s) - should pulse red');
+        }
+
+        function showNormalIndicator() {
+            indicator.show('FREE_KICK', 10);
+            updateStatus('urgencyStatus', 'Showing normal indicator (10s) - should be blue/purple');
+        }
+
+        // Click Tests
+        function showClickableIndicator() {
+            indicator.show('GOAL_ATTEMPT', 12);
+            indicator.onClick(() => {
+                clickCount++;
+                const logElement = document.getElementById('clickLog');
+                logElement.innerHTML += `<div>Click #${clickCount} at ${new Date().toLocaleTimeString()}</div>`;
+                updateStatus('clickStatus', `Indicator clicked ${clickCount} times`);
+            });
+            updateStatus('clickStatus', 'Clickable indicator shown - try clicking it!');
+        }
+
+        function clearClickLog() {
+            document.getElementById('clickLog').innerHTML = '';
+            clickCount = 0;
+            updateStatus('clickStatus', 'Click log cleared');
+        }
+
+        // Positioning Tests
+        function positionTopLeft() {
+            indicator.position(20, 20);
+            indicator.show('CORNER_OUTCOME', 8);
+            updateStatus('positionStatus', 'Positioned at top-left (20, 20)');
+        }
+
+        function positionTopRight() {
+            // Reset to default positioning
+            indicator.element.style.left = 'auto';
+            indicator.element.style.right = '20px';
+            indicator.element.style.top = '20px';
+            indicator.show('GOAL_ATTEMPT', 8);
+            updateStatus('positionStatus', 'Positioned at top-right (default)');
+        }
+
+        function positionBottomLeft() {
+            indicator.element.style.left = '20px';
+            indicator.element.style.right = 'auto';
+            indicator.element.style.top = 'auto';
+            indicator.element.style.bottom = '20px';
+            indicator.show('PENALTY', 8);
+            updateStatus('positionStatus', 'Positioned at bottom-left');
+        }
+
+        function positionCenter() {
+            indicator.position(window.innerWidth / 2 - 60, window.innerHeight / 2 - 30);
+            indicator.show('FREE_KICK', 8);
+            updateStatus('positionStatus', 'Positioned at center of screen');
+        }
+
+        // Event Type Tests
+        const eventTypes = [
+            'CORNER_OUTCOME',
+            'GOAL_ATTEMPT', 
+            'PENALTY',
+            'FREE_KICK',
+            'YELLOW_CARD',
+            'RED_CARD',
+            'SUBSTITUTION',
+            'OFFSIDE',
+            'FOUL'
+        ];
+        let eventTypeIndex = 0;
+
+        function cycleEventTypes() {
+            const eventType = eventTypes[eventTypeIndex];
+            indicator.show(eventType, 10);
+            updateStatus('eventTypeStatus', `Showing: ${eventType} (formatted as: ${indicator.formatEventType(eventType)})`);
+            eventTypeIndex = (eventTypeIndex + 1) % eventTypes.length;
+        }
+
+        function showCustomEvent() {
+            indicator.show('CUSTOM_BETTING_EVENT', 7);
+            updateStatus('eventTypeStatus', 'Showing custom event type: CUSTOM_BETTING_EVENT');
+        }
+
+        // Utility function
+        function updateStatus(elementId, message) {
+            document.getElementById(elementId).textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+        }
+
+        // Initialize
+        updateStatus('basicStatus', 'MinimizedIndicator component loaded and ready');
+    </script>
+</body>
+</html>

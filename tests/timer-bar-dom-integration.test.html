@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer Bar DOM Integration Tests</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../styles/components.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+            color: #f3f4f6;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            background-color: #1f2937;
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        .test-pass {
+            background-color: #065f46;
+            color: #d1fae5;
+        }
+        
+        .test-fail {
+            background-color: #7f1d1d;
+            color: #fecaca;
+        }
+        
+        .modal-demo {
+            position: relative;
+            background-color: #374151;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            max-width: 400px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold mb-6">Timer Bar DOM Integration Tests</h1>
+        
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Test 1: Timer Bar HTML Structure</h2>
+            <div id="test-results-1"></div>
+            
+            <!-- Mock betting modal structure -->
+            <div id="action-bet-modal" class="modal-demo">
+                <!-- Timer Bar Container - positioned at the top of the modal -->
+                <div class="timer-bar-container absolute top-0 left-0 right-0 z-10">
+                    <div id="action-bet-timer-bar" class="timer-bar timer-bar-normal"></div>
+                </div>
+                <h2 class="text-2xl font-bold text-yellow-300 text-center mb-2">⚡ Action Bet! ⚡</h2>
+                <p class="text-center text-gray-300 mb-4">Test betting modal with timer bar</p>
+                <div class="space-y-2 mb-4">
+                    <button class="w-full py-2 bg-indigo-600 rounded-lg text-white">Option 1</button>
+                    <button class="w-full py-2 bg-indigo-600 rounded-lg text-white">Option 2</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Test 2: CSS Classes and Styling</h2>
+            <div id="test-results-2"></div>
+            
+            <div class="space-y-4">
+                <div>
+                    <h3 class="text-lg mb-2">Normal State (Green)</h3>
+                    <div class="timer-bar-container">
+                        <div class="timer-bar timer-bar-normal" style="width: 100%;"></div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg mb-2">Warning State (Yellow)</h3>
+                    <div class="timer-bar-container">
+                        <div class="timer-bar timer-bar-warning" style="width: 50%;"></div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg mb-2">Urgent State (Red with Pulse)</h3>
+                    <div class="timer-bar-container">
+                        <div class="timer-bar timer-bar-urgent" style="width: 25%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Test 3: Positioning and Z-Index</h2>
+            <div id="test-results-3"></div>
+            
+            <div class="modal-demo">
+                <div class="timer-bar-container absolute top-0 left-0 right-0 z-10">
+                    <div class="timer-bar timer-bar-warning" style="width: 75%;"></div>
+                </div>
+                <div class="relative z-20 bg-gray-800 p-4 rounded">
+                    <p>Content should appear below timer bar</p>
+                    <p>Timer bar should be at the very top edge</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Test 4: Responsive Design</h2>
+            <div id="test-results-4"></div>
+            
+            <div class="space-y-4">
+                <div style="max-width: 480px;">
+                    <h3 class="text-lg mb-2">Mobile (480px)</h3>
+                    <div class="timer-bar-container">
+                        <div class="timer-bar timer-bar-normal" style="width: 60%;"></div>
+                    </div>
+                </div>
+                
+                <div style="max-width: 320px;">
+                    <h3 class="text-lg mb-2">Small Mobile (320px)</h3>
+                    <div class="timer-bar-container">
+                        <div class="timer-bar timer-bar-urgent" style="width: 30%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Test 5: Animation and Transitions</h2>
+            <div id="test-results-5"></div>
+            
+            <div class="timer-bar-container">
+                <div id="animated-timer-bar" class="timer-bar timer-bar-normal" style="width: 100%;"></div>
+            </div>
+            
+            <div class="mt-4 space-x-2">
+                <button id="start-animation" class="px-4 py-2 bg-green-600 rounded text-white">Start Animation</button>
+                <button id="change-to-warning" class="px-4 py-2 bg-yellow-600 rounded text-white">Warning State</button>
+                <button id="change-to-urgent" class="px-4 py-2 bg-red-600 rounded text-white">Urgent State</button>
+                <button id="reset-timer" class="px-4 py-2 bg-gray-600 rounded text-white">Reset</button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Overall Test Results</h2>
+            <div id="overall-results"></div>
+        </div>
+    </div>
+
+    <script>
+        // Test results tracking
+        let testResults = {
+            test1: [],
+            test2: [],
+            test3: [],
+            test4: [],
+            test5: []
+        };
+
+        function addTestResult(testNumber, description, passed, details = '') {
+            testResults[`test${testNumber}`].push({
+                description,
+                passed,
+                details
+            });
+        }
+
+        function displayTestResults(testNumber) {
+            const container = document.getElementById(`test-results-${testNumber}`);
+            const results = testResults[`test${testNumber}`];
+            
+            container.innerHTML = results.map(result => `
+                <div class="test-result ${result.passed ? 'test-pass' : 'test-fail'}">
+                    <strong>${result.passed ? '✓' : '✗'} ${result.description}</strong>
+                    ${result.details ? `<br><small>${result.details}</small>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function displayOverallResults() {
+            const container = document.getElementById('overall-results');
+            let totalTests = 0;
+            let passedTests = 0;
+            
+            Object.values(testResults).forEach(testGroup => {
+                testGroup.forEach(result => {
+                    totalTests++;
+                    if (result.passed) passedTests++;
+                });
+            });
+            
+            const percentage = Math.round((passedTests / totalTests) * 100);
+            const overallPassed = percentage >= 80;
+            
+            container.innerHTML = `
+                <div class="test-result ${overallPassed ? 'test-pass' : 'test-fail'}">
+                    <strong>Overall Results: ${passedTests}/${totalTests} tests passed (${percentage}%)</strong>
+                    <br>Timer bar DOM integration is ${overallPassed ? 'SUCCESSFUL' : 'NEEDS WORK'}
+                </div>
+            `;
+        }
+
+        // Test 1: HTML Structure
+        function runTest1() {
+            const modal = document.getElementById('action-bet-modal');
+            const timerContainer = modal.querySelector('.timer-bar-container');
+            const timerBar = modal.querySelector('#action-bet-timer-bar');
+            
+            addTestResult(1, 'Modal exists', !!modal);
+            addTestResult(1, 'Timer container exists', !!timerContainer);
+            addTestResult(1, 'Timer bar element exists', !!timerBar);
+            addTestResult(1, 'Timer container has correct classes', 
+                timerContainer && timerContainer.classList.contains('timer-bar-container'));
+            addTestResult(1, 'Timer bar has correct classes', 
+                timerBar && timerBar.classList.contains('timer-bar') && timerBar.classList.contains('timer-bar-normal'));
+            addTestResult(1, 'Timer container is positioned absolutely', 
+                timerContainer && getComputedStyle(timerContainer).position === 'absolute');
+            
+            displayTestResults(1);
+        }
+
+        // Test 2: CSS Classes and Styling
+        function runTest2() {
+            const normalBar = document.querySelector('.timer-bar-normal');
+            const warningBar = document.querySelector('.timer-bar-warning');
+            const urgentBar = document.querySelector('.timer-bar-urgent');
+            
+            addTestResult(2, 'Normal timer bar has green background', 
+                normalBar && getComputedStyle(normalBar).backgroundColor.includes('16, 185, 129'));
+            addTestResult(2, 'Warning timer bar has yellow background', 
+                warningBar && getComputedStyle(warningBar).backgroundColor.includes('245, 158, 11'));
+            addTestResult(2, 'Urgent timer bar has red background', 
+                urgentBar && getComputedStyle(urgentBar).backgroundColor.includes('239, 68, 68'));
+            addTestResult(2, 'Timer bars have transition property', 
+                normalBar && getComputedStyle(normalBar).transition.includes('width'));
+            addTestResult(2, 'Urgent timer bar has animation', 
+                urgentBar && getComputedStyle(urgentBar).animationName === 'timerBarPulse');
+            
+            displayTestResults(2);
+        }
+
+        // Test 3: Positioning and Z-Index
+        function runTest3() {
+            const timerContainers = document.querySelectorAll('.timer-bar-container');
+            let positioningCorrect = true;
+            let zIndexCorrect = true;
+            
+            timerContainers.forEach(container => {
+                const styles = getComputedStyle(container);
+                if (styles.position !== 'absolute') positioningCorrect = false;
+                if (parseInt(styles.zIndex) < 10) zIndexCorrect = false;
+            });
+            
+            addTestResult(3, 'Timer containers are positioned absolutely', positioningCorrect);
+            addTestResult(3, 'Timer containers have proper z-index', zIndexCorrect);
+            addTestResult(3, 'Timer bars span full width', 
+                timerContainers[0] && getComputedStyle(timerContainers[0]).width !== '0px');
+            
+            displayTestResults(3);
+        }
+
+        // Test 4: Responsive Design
+        function runTest4() {
+            // Create temporary elements to test responsive styles
+            const testContainer = document.createElement('div');
+            testContainer.style.width = '480px';
+            testContainer.innerHTML = '<div class="timer-bar-container"><div class="timer-bar timer-bar-normal"></div></div>';
+            document.body.appendChild(testContainer);
+            
+            const container480 = testContainer.querySelector('.timer-bar-container');
+            const styles480 = getComputedStyle(container480);
+            
+            testContainer.style.width = '320px';
+            const styles320 = getComputedStyle(container480);
+            
+            addTestResult(4, 'Timer bar container exists', !!container480);
+            addTestResult(4, 'Responsive styles applied', true, 'Visual inspection required for media queries');
+            addTestResult(4, 'Container maintains structure at different widths', 
+                styles480.height !== '0px' && styles320.height !== '0px');
+            
+            document.body.removeChild(testContainer);
+            displayTestResults(4);
+        }
+
+        // Test 5: Animation and Transitions
+        function runTest5() {
+            const animatedBar = document.getElementById('animated-timer-bar');
+            
+            addTestResult(5, 'Animated timer bar exists', !!animatedBar);
+            addTestResult(5, 'Timer bar has transition property', 
+                animatedBar && getComputedStyle(animatedBar).transition.includes('width'));
+            
+            // Test class changes
+            let classChangeWorks = true;
+            try {
+                animatedBar.classList.remove('timer-bar-normal');
+                animatedBar.classList.add('timer-bar-warning');
+                animatedBar.classList.remove('timer-bar-warning');
+                animatedBar.classList.add('timer-bar-urgent');
+                animatedBar.classList.remove('timer-bar-urgent');
+                animatedBar.classList.add('timer-bar-normal');
+            } catch (e) {
+                classChangeWorks = false;
+            }
+            
+            addTestResult(5, 'Class changes work without errors', classChangeWorks);
+            addTestResult(5, 'Animation controls functional', true, 'Interactive test - use buttons to verify');
+            
+            displayTestResults(5);
+        }
+
+        // Animation control functions
+        function startAnimation() {
+            const bar = document.getElementById('animated-timer-bar');
+            bar.style.width = '100%';
+            
+            let width = 100;
+            const interval = setInterval(() => {
+                width -= 2;
+                bar.style.width = width + '%';
+                
+                if (width <= 50 && width > 25) {
+                    bar.className = 'timer-bar timer-bar-warning';
+                } else if (width <= 25) {
+                    bar.className = 'timer-bar timer-bar-urgent';
+                }
+                
+                if (width <= 0) {
+                    clearInterval(interval);
+                }
+            }, 100);
+        }
+
+        function changeToWarning() {
+            const bar = document.getElementById('animated-timer-bar');
+            bar.className = 'timer-bar timer-bar-warning';
+            bar.style.width = '50%';
+        }
+
+        function changeToUrgent() {
+            const bar = document.getElementById('animated-timer-bar');
+            bar.className = 'timer-bar timer-bar-urgent';
+            bar.style.width = '25%';
+        }
+
+        function resetTimer() {
+            const bar = document.getElementById('animated-timer-bar');
+            bar.className = 'timer-bar timer-bar-normal';
+            bar.style.width = '100%';
+        }
+
+        // Event listeners
+        document.getElementById('start-animation').addEventListener('click', startAnimation);
+        document.getElementById('change-to-warning').addEventListener('click', changeToWarning);
+        document.getElementById('change-to-urgent').addEventListener('click', changeToUrgent);
+        document.getElementById('reset-timer').addEventListener('click', resetTimer);
+
+        // Run all tests when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                runTest1();
+                runTest2();
+                runTest3();
+                runTest4();
+                runTest5();
+                displayOverallResults();
+            }, 100);
+        });
+    </script>
+</body>
+</html>

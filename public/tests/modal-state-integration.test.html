@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal State Management Integration Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background-color: #2a2a2a;
+        }
+        
+        .test-result {
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        
+        .test-pass {
+            background-color: #1a4a1a;
+            border: 1px solid #2a6a2a;
+            color: #4ade80;
+        }
+        
+        .test-fail {
+            background-color: #4a1a1a;
+            border: 1px solid #6a2a2a;
+            color: #f87171;
+        }
+        
+        .test-info {
+            background-color: #1a3a4a;
+            border: 1px solid #2a4a6a;
+            color: #60a5fa;
+        }
+        
+        button {
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background-color: #4338ca;
+        }
+        
+        .modal-demo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background-color: #374151;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .minimized-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            z-index: 1001;
+            font-size: 14px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Modal State Management Integration Tests</h1>
+        <p>Testing modal state management functionality with DOM integration</p>
+        
+        <div class="test-section">
+            <h2>Test Controls</h2>
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="clearResults()">Clear Results</button>
+            <button onclick="showDemoModal()">Show Demo Modal</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div id="test-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Current State</h2>
+            <div id="state-display"></div>
+            <button onclick="updateStateDisplay()">Refresh State</button>
+        </div>
+    </div>
+    
+    <!-- Demo Modal -->
+    <div id="demo-modal" class="modal-demo hidden">
+        <div class="modal-content">
+            <h3>Demo Betting Modal</h3>
+            <p>This is a demo modal for testing state management</p>
+            <button onclick="minimizeDemoModal()">Minimize</button>
+            <button onclick="closeDemoModal()">Close</button>
+        </div>
+    </div>
+    
+    <!-- Minimized Indicator -->
+    <div id="minimized-indicator" class="minimized-indicator hidden" onclick="restoreDemoModal()">
+        <div>Action Bet</div>
+        <div id="indicator-time">10s</div>
+    </div>
+
+    <script type="module">
+        // Import gameState functions
+        import {
+            getCurrentState,
+            resetState,
+            getModalState,
+            updateModalState,
+            setModalVisible,
+            setModalMinimized,
+            initializeModalState,
+            resetModalState,
+            isModalActive,
+            getModalRemainingTime,
+            isModalExpired,
+            minimizeModal,
+            restoreModal,
+            closeModal
+        } from '../scripts/gameState.js';
+        
+        // Make functions available globally for testing
+        window.gameState = {
+            getCurrentState,
+            resetState,
+            getModalState,
+            updateModalState,
+            setModalVisible,
+            setModalMinimized,
+            initializeModalState,
+            resetModalState,
+            isModalActive,
+            getModalRemainingTime,
+            isModalExpired,
+            minimizeModal,
+            restoreModal,
+            closeModal
+        };
+        
+        let testResults = [];
+        let demoTimer = null;
+        
+        function addTestResult(name, passed, message = '') {
+            testResults.push({ name, passed, message });
+            displayResults();
+        }
+        
+        function displayResults() {
+            const container = document.getElementById('test-results');
+            container.innerHTML = testResults.map(result => `
+                <div class="test-result ${result.passed ? 'test-pass' : 'test-fail'}">
+                    <strong>${result.passed ? '✅' : '❌'} ${result.name}</strong>
+                    ${result.message ? `<br><small>${result.message}</small>` : ''}
+                </div>
+            `).join('');
+        }
+        
+        function clearResults() {
+            testResults = [];
+            displayResults();
+        }
+        
+        function updateStateDisplay() {
+            const state = window.gameState.getCurrentState();
+            const modalState = window.gameState.getModalState();
+            const isActive = window.gameState.isModalActive();
+            const remaining = window.gameState.getModalRemainingTime();
+            const expired = window.gameState.isModalExpired();
+            
+            document.getElementById('state-display').innerHTML = `
+                <div class="test-info">
+                    <strong>Modal State:</strong><br>
+                    Visible: ${modalState.visible}<br>
+                    Minimized: ${modalState.minimized}<br>
+                    Active: ${isActive}<br>
+                    Start Time: ${modalState.startTime ? new Date(modalState.startTime).toLocaleTimeString() : 'null'}<br>
+                    Duration: ${modalState.duration}ms<br>
+                    Remaining: ${remaining}ms<br>
+                    Expired: ${expired}<br>
+                    Content: ${modalState.content ? JSON.stringify(modalState.content) : 'null'}
+                </div>
+            `;
+        }
+        
+        // Test functions
+        function testInitialState() {
+            window.gameState.resetState();
+            const modalState = window.gameState.getModalState();
+            
+            const passed = !modalState.visible && 
+                          !modalState.minimized && 
+                          modalState.startTime === null && 
+                          modalState.duration === null &&
+                          modalState.content === null;
+            
+            addTestResult('Initial State', passed, 
+                passed ? 'Modal state initialized correctly' : 
+                `Expected initial state, got: ${JSON.stringify(modalState)}`);
+        }
+        
+        function testModalInitialization() {
+            const content = { title: 'Test Modal', betType: 'TEST' };
+            const duration = 10000;
+            
+            window.gameState.initializeModalState(content, duration);
+            const modalState = window.gameState.getModalState();
+            
+            const passed = modalState.visible && 
+                          !modalState.minimized && 
+                          modalState.duration === duration &&
+                          JSON.stringify(modalState.content) === JSON.stringify(content);
+            
+            addTestResult('Modal Initialization', passed,
+                passed ? 'Modal initialized with correct state' :
+                `Failed to initialize modal correctly: ${JSON.stringify(modalState)}`);
+        }
+        
+        function testModalMinimization() {
+            // First initialize a modal
+            window.gameState.initializeModalState({ test: 'data' }, 5000);
+            
+            // Then minimize it
+            window.gameState.minimizeModal();
+            const modalState = window.gameState.getModalState();
+            
+            const passed = !modalState.visible && modalState.minimized;
+            
+            addTestResult('Modal Minimization', passed,
+                passed ? 'Modal minimized correctly' :
+                `Expected minimized state, got visible: ${modalState.visible}, minimized: ${modalState.minimized}`);
+        }
+        
+        function testModalRestoration() {
+            // Initialize and minimize
+            window.gameState.initializeModalState({ test: 'data' }, 5000);
+            window.gameState.minimizeModal();
+            
+            // Then restore
+            window.gameState.restoreModal();
+            const modalState = window.gameState.getModalState();
+            
+            const passed = modalState.visible && !modalState.minimized;
+            
+            addTestResult('Modal Restoration', passed,
+                passed ? 'Modal restored correctly' :
+                `Expected restored state, got visible: ${modalState.visible}, minimized: ${modalState.minimized}`);
+        }
+        
+        function testStatePersistence() {
+            const content = { title: 'Persistence Test', betType: 'PERSIST' };
+            const duration = 8000;
+            
+            // Initialize
+            window.gameState.initializeModalState(content, duration);
+            const originalStartTime = window.gameState.getModalState().startTime;
+            
+            // Minimize
+            window.gameState.minimizeModal();
+            
+            // Restore
+            window.gameState.restoreModal();
+            
+            const finalState = window.gameState.getModalState();
+            const passed = finalState.startTime === originalStartTime &&
+                          finalState.duration === duration &&
+                          JSON.stringify(finalState.content) === JSON.stringify(content);
+            
+            addTestResult('State Persistence', passed,
+                passed ? 'State persisted through minimize/restore cycle' :
+                'State not properly persisted during transitions');
+        }
+        
+        function testTimerCalculations() {
+            const duration = 5000; // 5 seconds
+            window.gameState.initializeModalState({ test: 'timer' }, duration);
+            
+            const remaining = window.gameState.getModalRemainingTime();
+            const isActive = window.gameState.isModalActive();
+            const isExpired = window.gameState.isModalExpired();
+            
+            const passed = remaining > 0 && remaining <= duration && isActive && !isExpired;
+            
+            addTestResult('Timer Calculations', passed,
+                passed ? `Timer working correctly (${remaining}ms remaining)` :
+                `Timer calculations failed: remaining=${remaining}, active=${isActive}, expired=${isExpired}`);
+        }
+        
+        function testModalClose() {
+            // Initialize modal
+            window.gameState.initializeModalState({ test: 'close' }, 5000);
+            
+            // Close it
+            window.gameState.closeModal();
+            
+            const modalState = window.gameState.getModalState();
+            const isActive = window.gameState.isModalActive();
+            
+            const passed = !modalState.visible && 
+                          !modalState.minimized && 
+                          !isActive &&
+                          modalState.startTime === null;
+            
+            addTestResult('Modal Close', passed,
+                passed ? 'Modal closed and state reset correctly' :
+                'Modal close did not properly reset state');
+        }
+        
+        // Demo modal functions
+        function showDemoModal() {
+            const content = {
+                title: 'Demo Action Bet',
+                description: 'This is a demo betting opportunity',
+                betType: 'DEMO_BET'
+            };
+            
+            window.gameState.initializeModalState(content, 15000);
+            document.getElementById('demo-modal').classList.remove('hidden');
+            
+            // Start demo timer
+            startDemoTimer();
+            updateStateDisplay();
+        }
+        
+        function minimizeDemoModal() {
+            window.gameState.minimizeModal();
+            document.getElementById('demo-modal').classList.add('hidden');
+            document.getElementById('minimized-indicator').classList.remove('hidden');
+            updateStateDisplay();
+        }
+        
+        function restoreDemoModal() {
+            window.gameState.restoreModal();
+            document.getElementById('demo-modal').classList.remove('hidden');
+            document.getElementById('minimized-indicator').classList.add('hidden');
+            updateStateDisplay();
+        }
+        
+        function closeDemoModal() {
+            window.gameState.closeModal();
+            document.getElementById('demo-modal').classList.add('hidden');
+            document.getElementById('minimized-indicator').classList.add('hidden');
+            
+            if (demoTimer) {
+                clearInterval(demoTimer);
+                demoTimer = null;
+            }
+            
+            updateStateDisplay();
+        }
+        
+        function startDemoTimer() {
+            if (demoTimer) clearInterval(demoTimer);
+            
+            demoTimer = setInterval(() => {
+                const remaining = window.gameState.getModalRemainingTime();
+                const seconds = Math.ceil(remaining / 1000);
+                
+                document.getElementById('indicator-time').textContent = `${seconds}s`;
+                
+                if (remaining <= 0) {
+                    closeDemoModal();
+                }
+                
+                updateStateDisplay();
+            }, 1000);
+        }
+        
+        // Main test runner
+        function runAllTests() {
+            clearResults();
+            
+            addTestResult('Starting Tests', true, 'Running modal state management tests...');
+            
+            try {
+                testInitialState();
+                testModalInitialization();
+                testModalMinimization();
+                testModalRestoration();
+                testStatePersistence();
+                testTimerCalculations();
+                testModalClose();
+                
+                const passedTests = testResults.filter(r => r.passed).length - 1; // Subtract the "Starting Tests" entry
+                const totalTests = testResults.length - 1;
+                
+                addTestResult('Test Summary', passedTests === totalTests, 
+                    `${passedTests}/${totalTests} tests passed`);
+                
+            } catch (error) {
+                addTestResult('Test Error', false, `Error running tests: ${error.message}`);
+            }
+            
+            updateStateDisplay();
+        }
+        
+        // Make functions available globally
+        window.runAllTests = runAllTests;
+        window.clearResults = clearResults;
+        window.updateStateDisplay = updateStateDisplay;
+        window.showDemoModal = showDemoModal;
+        window.minimizeDemoModal = minimizeDemoModal;
+        window.restoreDemoModal = restoreDemoModal;
+        window.closeDemoModal = closeDemoModal;
+        
+        // Initialize display
+        updateStateDisplay();
+    </script>
+</body>
+</html>

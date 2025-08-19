@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Logic Pause Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .controls {
+            margin: 10px 0;
+        }
+        button {
+            margin: 5px;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .paused {
+            color: red;
+        }
+        .running {
+            color: green;
+        }
+        #match-info {
+            background: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Game Logic Pause Integration Test</h1>
+    
+    <div class="test-section">
+        <h2>Match State</h2>
+        <div id="match-info">
+            <div>Time: <span id="match-time">0</span> minutes</div>
+            <div>Score: <span id="match-score">0 - 0</span></div>
+            <div>Status: <span id="match-status" class="running">Running</span></div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="startTestMatch()">Start Test Match</button>
+            <button onclick="pauseGame()">Pause Game</button>
+            <button onclick="resumeGame()">Resume Game</button>
+            <button onclick="stopMatch()">Stop Match</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="test-log"></div>
+    </div>
+
+    <script type="module">
+        import { tick, startMatch, clearMatchInterval } from '../scripts/gameLogic.js';
+        import { getCurrentState, updateState, resetState } from '../scripts/gameState.js';
+        import { pauseManager } from '../scripts/pauseManager.js';
+
+        let testInterval = null;
+        let tickCount = 0;
+
+        // Mock window functions for testing
+        window.addEventToFeed = (message, className = '') => {
+            console.log(`Event: ${message}`);
+        };
+
+        window.renderMatchTimeAndScore = () => {
+            const state = getCurrentState();
+            document.getElementById('match-time').textContent = state.match.time;
+            document.getElementById('match-score').textContent = `${state.match.homeScore} - ${state.match.awayScore}`;
+        };
+
+        window.render = () => {
+            console.log('Render called');
+        };
+
+        window.showMultiChoiceActionBet = () => {};
+        window.resolveBets = () => {};
+        window.renderOdds = () => {};
+        window.renderEndGameSummary = () => {};
+        window.triggerWinAnimation = () => {};
+
+        function log(message) {
+            const logDiv = document.getElementById('test-log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus() {
+            const state = getCurrentState();
+            const statusElement = document.getElementById('match-status');
+            
+            if (state.pause.active) {
+                statusElement.textContent = `Paused (${state.pause.reason})`;
+                statusElement.className = 'paused';
+            } else if (state.match.active) {
+                statusElement.textContent = 'Running';
+                statusElement.className = 'running';
+            } else {
+                statusElement.textContent = 'Stopped';
+                statusElement.className = '';
+            }
+        }
+
+        window.startTestMatch = function() {
+            log('Starting test match...');
+            resetState();
+            
+            // Set up a simple match
+            updateState({
+                match: {
+                    active: true,
+                    time: 0,
+                    homeScore: 0,
+                    awayScore: 0,
+                    homeTeam: 'Test Home',
+                    awayTeam: 'Test Away',
+                    timeline: [
+                        { time: 5, type: 'GOAL', team: 'HOME', description: 'Test goal at 5 minutes' },
+                        { time: 10, type: 'GOAL', team: 'AWAY', description: 'Test goal at 10 minutes' }
+                    ],
+                    odds: { home: 1.85, draw: 3.50, away: 4.20 },
+                    initialOdds: { home: 1.85, draw: 3.50, away: 4.20 },
+                    initialWallet: 1000.00
+                }
+            });
+
+            // Start manual tick interval for testing
+            if (testInterval) {
+                clearInterval(testInterval);
+            }
+            
+            testInterval = setInterval(() => {
+                const state = getCurrentState();
+                if (state.match.active && state.match.time < 90) {
+                    const timeBefore = state.match.time;
+                    tick();
+                    const timeAfter = getCurrentState().match.time;
+                    
+                    if (timeAfter > timeBefore) {
+                        log(`Tick processed: ${timeBefore} → ${timeAfter}`);
+                    } else {
+                        log(`Tick skipped (paused): time remains ${timeBefore}`);
+                    }
+                    
+                    updateStatus();
+                } else {
+                    clearInterval(testInterval);
+                    testInterval = null;
+                    log('Match ended');
+                    updateStatus();
+                }
+            }, 1000); // 1 second intervals for easier observation
+
+            log('Test match started');
+            updateStatus();
+        };
+
+        window.pauseGame = function() {
+            const success = pauseManager.pauseGame('MANUAL_TEST');
+            if (success) {
+                log('Game paused manually');
+            } else {
+                log('Failed to pause game');
+            }
+            updateStatus();
+        };
+
+        window.resumeGame = function() {
+            const success = pauseManager.resumeGame();
+            if (success) {
+                log('Game resumed manually');
+            } else {
+                log('Failed to resume game');
+            }
+            updateStatus();
+        };
+
+        window.stopMatch = function() {
+            if (testInterval) {
+                clearInterval(testInterval);
+                testInterval = null;
+            }
+            clearMatchInterval();
+            updateState({
+                match: {
+                    ...getCurrentState().match,
+                    active: false
+                }
+            });
+            log('Match stopped');
+            updateStatus();
+        };
+
+        // Initialize display
+        updateStatus();
+        log('Page loaded - ready for testing');
+    </script>
+</body>
+</html>

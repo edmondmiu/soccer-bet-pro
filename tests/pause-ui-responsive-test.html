@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pause UI Responsive Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Pause Overlay Styles - Copied from game_prototype.html */
+        #pause-overlay {
+            backdrop-filter: blur(4px);
+        }
+        
+        .pause-game-dimmed {
+            filter: brightness(0.3) blur(2px);
+            transition: filter 0.3s ease-in-out;
+        }
+        
+        .pause-game-normal {
+            filter: brightness(1) blur(0);
+            transition: filter 0.3s ease-in-out;
+        }
+        
+        /* Pause countdown animation */
+        @keyframes pauseCountdownPulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .pause-countdown-animate {
+            animation: pauseCountdownPulse 1s ease-in-out;
+        }
+        
+        /* Responsive pause overlay */
+        @media (max-width: 480px) {
+            #pause-overlay .bg-gray-800 {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+            
+            #pause-title {
+                font-size: 1.5rem;
+            }
+            
+            #pause-reason {
+                font-size: 1rem;
+            }
+        }
+        
+        @media (max-width: 320px) {
+            #pause-overlay .bg-gray-800 {
+                margin: 0.5rem;
+                padding: 1rem;
+            }
+            
+            #pause-title {
+                font-size: 1.25rem;
+            }
+        }
+        
+        /* Test viewport indicators */
+        .viewport-indicator {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        /* Accessibility test styles */
+        .accessibility-test {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 antialiased">
+
+    <!-- Viewport indicator -->
+    <div class="viewport-indicator" id="viewport-indicator">
+        Viewport: <span id="viewport-size"></span>
+    </div>
+    
+    <!-- Accessibility test indicator -->
+    <div class="accessibility-test" id="accessibility-test">
+        Accessibility: <span id="accessibility-status">Testing...</span>
+    </div>
+
+    <div id="app-container" class="max-w-md mx-auto min-h-screen bg-gray-800 shadow-2xl flex flex-col">
+        
+        <!-- Mock Game Content -->
+        <div id="game-content" class="flex-grow p-4">
+            <header class="bg-gray-900 p-3 shadow-lg mb-4 rounded-lg">
+                <div class="flex justify-between items-center">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-white">45:23</div>
+                        <div class="text-sm text-gray-400">Quantum Strikers vs Celestial FC</div>
+                    </div>
+                    <div class="text-2xl font-bold text-white">2 - 1</div>
+                </div>
+            </header>
+            
+            <div class="space-y-4">
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <p class="text-white">⚽ GOAL! Quantum Strikers score in the 23rd minute!</p>
+                    <p class="text-sm text-gray-400">23' - Rodriguez finds the net with a brilliant strike</p>
+                </div>
+                
+                <div class="bg-gray-700 p-4 rounded-lg">
+                    <p class="text-white">🟨 Yellow card for Celestial FC</p>
+                    <p class="text-sm text-gray-400">19' - Johnson receives a booking for a late tackle</p>
+                </div>
+            </div>
+            
+            <div class="mt-6 grid grid-cols-3 gap-2">
+                <div class="bg-indigo-600 p-3 rounded-lg text-center">
+                    <div class="font-bold">Home</div>
+                    <div class="text-xs">Odds: 1.85</div>
+                </div>
+                <div class="bg-indigo-600 p-3 rounded-lg text-center">
+                    <div class="font-bold">Draw</div>
+                    <div class="text-xs">Odds: 3.50</div>
+                </div>
+                <div class="bg-indigo-600 p-3 rounded-lg text-center">
+                    <div class="font-bold">Away</div>
+                    <div class="text-xs">Odds: 4.20</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Test Controls -->
+        <div class="bg-gray-900 p-4 space-y-2">
+            <h3 class="text-white font-bold mb-2">Responsive Test Controls</h3>
+            <div class="grid grid-cols-2 gap-2">
+                <button id="show-pause-btn" class="py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-white font-bold transition text-sm">Show Pause</button>
+                <button id="show-countdown-btn" class="py-2 bg-green-600 hover:bg-green-700 rounded-lg text-white font-bold transition text-sm">Countdown</button>
+                <button id="hide-pause-btn" class="py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-bold transition text-sm">Hide Pause</button>
+                <button id="test-accessibility-btn" class="py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-bold transition text-sm">Test A11y</button>
+            </div>
+            
+            <div class="mt-4">
+                <h4 class="text-white font-semibold mb-2">Viewport Simulation</h4>
+                <div class="grid grid-cols-3 gap-2">
+                    <button class="viewport-btn py-1 bg-gray-600 hover:bg-gray-700 rounded text-white text-xs" data-width="320">320px</button>
+                    <button class="viewport-btn py-1 bg-gray-600 hover:bg-gray-700 rounded text-white text-xs" data-width="480">480px</button>
+                    <button class="viewport-btn py-1 bg-gray-600 hover:bg-gray-700 rounded text-white text-xs" data-width="768">768px</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pause Overlay - Exact copy from game_prototype.html -->
+    <div id="pause-overlay" class="hidden fixed inset-0 bg-black bg-opacity-80 z-40 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-xl shadow-2xl p-8 w-full max-w-sm text-center border-2 border-yellow-400">
+            <div class="mb-4">
+                <div class="text-4xl mb-2">⏸️</div>
+                <h2 id="pause-title" class="text-2xl font-bold text-yellow-300 mb-2">Game Paused</h2>
+                <p id="pause-reason" class="text-lg text-gray-300 mb-4">Betting in Progress</p>
+            </div>
+            
+            <div id="pause-waiting-message" class="mb-4">
+                <div class="flex items-center justify-center space-x-2 text-indigo-400">
+                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-400"></div>
+                    <span id="pause-waiting-text">Waiting for players...</span>
+                </div>
+            </div>
+            
+            <div id="pause-countdown" class="hidden">
+                <div class="text-3xl font-bold text-green-400 mb-2" id="pause-countdown-number">3</div>
+                <p class="text-gray-300">Resuming game...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const pauseOverlay = document.getElementById('pause-overlay');
+        const gameContent = document.getElementById('game-content');
+        const pauseWaitingMessage = document.getElementById('pause-waiting-message');
+        const pauseCountdown = document.getElementById('pause-countdown');
+        const pauseCountdownNumber = document.getElementById('pause-countdown-number');
+        const viewportSize = document.getElementById('viewport-size');
+        const accessibilityStatus = document.getElementById('accessibility-status');
+        
+        // Control buttons
+        const showPauseBtn = document.getElementById('show-pause-btn');
+        const showCountdownBtn = document.getElementById('show-countdown-btn');
+        const hidePauseBtn = document.getElementById('hide-pause-btn');
+        const testAccessibilityBtn = document.getElementById('test-accessibility-btn');
+        const viewportBtns = document.querySelectorAll('.viewport-btn');
+        
+        // Update viewport indicator
+        function updateViewportIndicator() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            viewportSize.textContent = `${width}x${height}`;
+            
+            // Update responsive breakpoint indicator
+            let breakpoint = 'Desktop';
+            if (width <= 320) breakpoint = 'Small Mobile';
+            else if (width <= 480) breakpoint = 'Mobile';
+            else if (width <= 768) breakpoint = 'Tablet';
+            
+            viewportSize.textContent = `${width}x${height} (${breakpoint})`;
+        }
+        
+        // Show pause overlay
+        function showPause() {
+            pauseOverlay.classList.remove('hidden');
+            gameContent.classList.add('pause-game-dimmed');
+            gameContent.classList.remove('pause-game-normal');
+            
+            // Reset to waiting state
+            pauseWaitingMessage.classList.remove('hidden');
+            pauseCountdown.classList.add('hidden');
+        }
+        
+        // Show countdown
+        function showCountdown() {
+            if (!pauseOverlay.classList.contains('hidden')) {
+                // Show countdown
+                pauseWaitingMessage.classList.add('hidden');
+                pauseCountdown.classList.remove('hidden');
+                
+                // Animate countdown
+                let count = 3;
+                pauseCountdownNumber.textContent = count;
+                
+                const countdownInterval = setInterval(() => {
+                    pauseCountdownNumber.classList.add('pause-countdown-animate');
+                    
+                    setTimeout(() => {
+                        pauseCountdownNumber.classList.remove('pause-countdown-animate');
+                        count--;
+                        
+                        if (count > 0) {
+                            pauseCountdownNumber.textContent = count;
+                        } else {
+                            clearInterval(countdownInterval);
+                            // Auto-hide after countdown
+                            setTimeout(() => {
+                                hidePause();
+                            }, 500);
+                        }
+                    }, 500);
+                }, 1000);
+            }
+        }
+        
+        // Hide pause overlay
+        function hidePause() {
+            pauseOverlay.classList.add('hidden');
+            gameContent.classList.remove('pause-game-dimmed');
+            gameContent.classList.add('pause-game-normal');
+        }
+        
+        // Test accessibility features
+        function testAccessibility() {
+            const tests = [];
+            
+            // Test 1: Check if overlay has proper ARIA attributes
+            const overlay = document.getElementById('pause-overlay');
+            if (overlay.getAttribute('role') || overlay.getAttribute('aria-label')) {
+                tests.push('✅ ARIA attributes');
+            } else {
+                tests.push('❌ Missing ARIA attributes');
+            }
+            
+            // Test 2: Check color contrast (simplified)
+            const title = document.getElementById('pause-title');
+            const titleStyle = window.getComputedStyle(title);
+            const titleColor = titleStyle.color;
+            if (titleColor.includes('rgb(252, 211, 77)') || titleColor.includes('#fcd34d')) {
+                tests.push('✅ High contrast colors');
+            } else {
+                tests.push('⚠️ Color contrast needs verification');
+            }
+            
+            // Test 3: Check if text is readable at different sizes
+            const fontSize = parseFloat(titleStyle.fontSize);
+            if (fontSize >= 16) {
+                tests.push('✅ Readable font size');
+            } else {
+                tests.push('❌ Font too small');
+            }
+            
+            // Test 4: Check if overlay is keyboard accessible
+            if (overlay.tabIndex >= 0 || overlay.getAttribute('tabindex')) {
+                tests.push('✅ Keyboard accessible');
+            } else {
+                tests.push('⚠️ Keyboard accessibility needs improvement');
+            }
+            
+            // Test 5: Check responsive behavior
+            const width = window.innerWidth;
+            const overlayContent = overlay.querySelector('.bg-gray-800');
+            const contentStyle = window.getComputedStyle(overlayContent);
+            
+            if (width <= 480) {
+                const margin = parseFloat(contentStyle.marginLeft);
+                if (margin >= 16) { // 1rem = 16px
+                    tests.push('✅ Mobile responsive margins');
+                } else {
+                    tests.push('❌ Mobile margins too small');
+                }
+            } else {
+                tests.push('✅ Desktop layout appropriate');
+            }
+            
+            accessibilityStatus.innerHTML = tests.join('<br>');
+        }
+        
+        // Simulate different viewport sizes
+        function simulateViewport(width) {
+            // This is a visual simulation - in real testing you'd resize the browser
+            const container = document.getElementById('app-container');
+            container.style.maxWidth = width + 'px';
+            container.style.margin = '0 auto';
+            
+            // Update indicator
+            setTimeout(updateViewportIndicator, 100);
+            
+            // Re-test accessibility for new viewport
+            setTimeout(testAccessibility, 200);
+        }
+        
+        // Event listeners
+        showPauseBtn.addEventListener('click', showPause);
+        showCountdownBtn.addEventListener('click', showCountdown);
+        hidePauseBtn.addEventListener('click', hidePause);
+        testAccessibilityBtn.addEventListener('click', testAccessibility);
+        
+        viewportBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const width = parseInt(btn.dataset.width);
+                simulateViewport(width);
+            });
+        });
+        
+        // Window resize handler
+        window.addEventListener('resize', () => {
+            updateViewportIndicator();
+            testAccessibility();
+        });
+        
+        // Initial setup
+        updateViewportIndicator();
+        testAccessibility();
+        
+        // Auto-test different scenarios
+        setTimeout(() => {
+            console.log('Running automated responsive tests...');
+            
+            // Test mobile view
+            simulateViewport(320);
+            setTimeout(() => {
+                showPause();
+                setTimeout(() => {
+                    showCountdown();
+                    setTimeout(() => {
+                        // Test tablet view
+                        simulateViewport(768);
+                        setTimeout(() => {
+                            showPause();
+                            setTimeout(hidePause, 2000);
+                        }, 1000);
+                    }, 4000);
+                }, 2000);
+            }, 1000);
+        }, 2000);
+        
+        console.log('Pause UI Responsive Test loaded successfully');
+        console.log('Use the controls to test different viewport sizes and accessibility features');
+    </script>
+
+</body>
+</html>

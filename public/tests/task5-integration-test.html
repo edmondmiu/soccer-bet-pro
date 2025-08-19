@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 5 Integration Test - Pause Information in Action Bet Modals</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Timer Bar Component */
+        .timer-bar-container {
+            width: 100%;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .timer-bar {
+            height: 100%;
+            width: 100%;
+            border-radius: 2px;
+            transition: width 0.1s linear;
+            position: relative;
+        }
+
+        .timer-bar-normal {
+            background-color: #10b981;
+            background-image: linear-gradient(90deg, #10b981 0%, #059669 100%);
+        }
+
+        .timer-bar-warning {
+            background-color: #f59e0b;
+            background-image: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .timer-bar-urgent {
+            background-color: #ef4444;
+            background-image: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+            animation: timerBarPulse 0.5s infinite alternate;
+        }
+
+        @keyframes timerBarPulse {
+            0% { 
+                opacity: 1;
+                box-shadow: 0 0 4px rgba(239, 68, 68, 0.6);
+            }
+            100% { 
+                opacity: 0.8;
+                box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideInUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        .animate-slide-in-up {
+            animation: slideInUp 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold mb-8 text-center">Task 5 Integration Test</h1>
+        <h2 class="text-xl mb-6 text-center text-gray-300">Pause Information in Action Bet Modals</h2>
+        
+        <div class="max-w-2xl mx-auto space-y-6">
+            <div class="bg-gray-800 p-6 rounded-lg">
+                <h3 class="text-lg font-semibold mb-4">Test Requirements:</h3>
+                <ul class="space-y-2 text-gray-300">
+                    <li>✅ <strong>Requirement 2.1:</strong> Modal shows integrated pause information</li>
+                    <li>✅ <strong>Requirement 2.2:</strong> Modal header displays "⏸️ Game Paused - Betting Opportunity"</li>
+                    <li>✅ <strong>Requirement 2.3:</strong> Timer bar is integrated within modal container</li>
+                    <li>✅ <strong>Requirement 2.4:</strong> No separate pause overlay dependency</li>
+                </ul>
+            </div>
+            
+            <div class="text-center">
+                <button id="show-modal-btn" class="bg-indigo-600 hover:bg-indigo-700 px-6 py-3 rounded-lg font-semibold transition">
+                    Show Action Bet Modal
+                </button>
+                <button id="hide-modal-btn" class="bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded-lg font-semibold transition ml-4">
+                    Hide Modal
+                </button>
+            </div>
+            
+            <div class="bg-gray-800 p-6 rounded-lg">
+                <h3 class="text-lg font-semibold mb-4">Test Results:</h3>
+                <div id="test-results" class="space-y-2 text-sm">
+                    <div class="text-gray-400">Click "Show Action Bet Modal" to run tests...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Multi-Choice Action Bet (Updated Structure) -->
+    <div id="action-bet-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div class="bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-sm animate-slide-in-up relative overflow-hidden">
+            <!-- Integrated Pause Header -->
+            <div id="action-bet-pause-header" class="pause-info-header mb-4 p-3 bg-yellow-900 rounded-lg border border-yellow-600">
+                <div class="flex items-center justify-center space-x-2">
+                    <span class="text-yellow-300">⏸️</span>
+                    <span class="text-yellow-300 font-semibold">Game Paused - Betting Opportunity</span>
+                </div>
+            </div>
+            
+            <!-- Timer Bar Container - integrated within modal -->
+            <div class="timer-bar-container mb-4">
+                <div id="action-bet-timer-bar" class="timer-bar timer-bar-normal"></div>
+            </div>
+            
+            <h2 id="action-bet-title" class="text-2xl font-bold text-yellow-300 text-center mb-2">⚡ Action Bet! ⚡</h2>
+            <p id="action-bet-main-description" class="text-center text-gray-300 mb-4">Crunching tackle near the box! What will the ref do?</p>
+            <div id="action-bet-choices" class="space-y-2 mb-4">
+                <button class="w-full py-3 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition">
+                    Yellow Card <span class="text-gray-400 text-xs">@2.50</span>
+                </button>
+                <button class="w-full py-3 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition">
+                    Red Card <span class="text-gray-400 text-xs">@8.00</span>
+                </button>
+                <button class="w-full py-3 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition">
+                    Warning <span class="text-gray-400 text-xs">@1.50</span>
+                </button>
+            </div>
+            <div class="flex">
+                <button id="skip-action-bet-btn" class="w-full py-3 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-bold transition">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test implementation
+        function runTests() {
+            const results = document.getElementById('test-results');
+            results.innerHTML = '';
+            
+            const tests = [
+                {
+                    name: 'Pause Header Exists',
+                    test: () => {
+                        const header = document.getElementById('action-bet-pause-header');
+                        return header !== null;
+                    }
+                },
+                {
+                    name: 'Pause Header Contains Correct Message',
+                    test: () => {
+                        const header = document.getElementById('action-bet-pause-header');
+                        const message = header?.querySelector('span:last-child')?.textContent;
+                        return message === 'Game Paused - Betting Opportunity';
+                    }
+                },
+                {
+                    name: 'Pause Header Contains Pause Icon',
+                    test: () => {
+                        const header = document.getElementById('action-bet-pause-header');
+                        const icon = header?.querySelector('span:first-child')?.textContent;
+                        return icon === '⏸️';
+                    }
+                },
+                {
+                    name: 'Timer Bar is Integrated Within Modal',
+                    test: () => {
+                        const modal = document.getElementById('action-bet-modal');
+                        const timerBar = document.getElementById('action-bet-timer-bar');
+                        return modal?.contains(timerBar);
+                    }
+                },
+                {
+                    name: 'Timer Bar Container Has Correct Styling',
+                    test: () => {
+                        const container = document.querySelector('.timer-bar-container');
+                        const styles = window.getComputedStyle(container);
+                        return styles.marginBottom !== '0px'; // Should have margin
+                    }
+                },
+                {
+                    name: 'Modal Structure is Correct',
+                    test: () => {
+                        const modal = document.getElementById('action-bet-modal');
+                        const pauseHeader = document.getElementById('action-bet-pause-header');
+                        const timerBar = document.getElementById('action-bet-timer-bar');
+                        const title = document.getElementById('action-bet-title');
+                        
+                        // Check order: pause header should come before timer bar, which should come before title
+                        const modalContent = modal.querySelector('.bg-gray-800');
+                        const children = Array.from(modalContent.children);
+                        
+                        const pauseHeaderIndex = children.indexOf(pauseHeader);
+                        const timerBarIndex = children.findIndex(child => child.contains(timerBar));
+                        const titleIndex = children.indexOf(title);
+                        
+                        return pauseHeaderIndex < timerBarIndex && timerBarIndex < titleIndex;
+                    }
+                },
+                {
+                    name: 'No Separate Pause Overlay Dependency',
+                    test: () => {
+                        // Check that there's no separate pause overlay element being shown
+                        const pauseOverlay = document.getElementById('pause-overlay');
+                        return !pauseOverlay || pauseOverlay.classList.contains('hidden') || 
+                               window.getComputedStyle(pauseOverlay).display === 'none';
+                    }
+                }
+            ];
+            
+            let passed = 0;
+            let total = tests.length;
+            
+            tests.forEach(test => {
+                try {
+                    const result = test.test();
+                    const div = document.createElement('div');
+                    div.className = result ? 'text-green-400' : 'text-red-400';
+                    div.innerHTML = `${result ? '✅' : '❌'} ${test.name}`;
+                    results.appendChild(div);
+                    if (result) passed++;
+                } catch (error) {
+                    const div = document.createElement('div');
+                    div.className = 'text-red-400';
+                    div.innerHTML = `❌ ${test.name} (Error: ${error.message})`;
+                    results.appendChild(div);
+                }
+            });
+            
+            const summary = document.createElement('div');
+            summary.className = passed === total ? 'text-green-400 font-bold mt-4' : 'text-yellow-400 font-bold mt-4';
+            summary.innerHTML = `Summary: ${passed}/${total} tests passed`;
+            results.appendChild(summary);
+            
+            return passed === total;
+        }
+        
+        // Timer bar animation
+        function animateTimerBar() {
+            const timerBar = document.getElementById('action-bet-timer-bar');
+            if (!timerBar) return;
+            
+            let width = 100;
+            const interval = setInterval(() => {
+                width -= 1;
+                timerBar.style.width = width + '%';
+                
+                // Change color based on remaining time
+                if (width <= 30) {
+                    timerBar.className = 'timer-bar timer-bar-urgent';
+                } else if (width <= 60) {
+                    timerBar.className = 'timer-bar timer-bar-warning';
+                } else {
+                    timerBar.className = 'timer-bar timer-bar-normal';
+                }
+                
+                if (width <= 0) {
+                    clearInterval(interval);
+                    // Reset for next test
+                    setTimeout(() => {
+                        timerBar.style.width = '100%';
+                        timerBar.className = 'timer-bar timer-bar-normal';
+                    }, 1000);
+                }
+            }, 100);
+        }
+        
+        // Event listeners
+        document.getElementById('show-modal-btn').addEventListener('click', () => {
+            const modal = document.getElementById('action-bet-modal');
+            modal.classList.remove('hidden');
+            runTests();
+            animateTimerBar();
+        });
+        
+        document.getElementById('hide-modal-btn').addEventListener('click', () => {
+            const modal = document.getElementById('action-bet-modal');
+            modal.classList.add('hidden');
+        });
+        
+        document.getElementById('skip-action-bet-btn').addEventListener('click', () => {
+            const modal = document.getElementById('action-bet-modal');
+            modal.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>

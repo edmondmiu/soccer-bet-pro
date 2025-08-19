@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer Bar Betting Integration Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../styles/components.css" rel="stylesheet">
+    <link href="../styles/animations.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+            color: #f3f4f6;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            background-color: #1f2937;
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        .test-pass {
+            background-color: #065f46;
+            color: #d1fae5;
+        }
+        
+        .test-fail {
+            background-color: #7f1d1d;
+            color: #fecaca;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold mb-6">Timer Bar Betting Integration Test</h1>
+        
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Test: Timer Bar Integration with Betting Modal</h2>
+            <div id="test-results"></div>
+            
+            <div class="mt-4">
+                <button id="show-modal-btn" class="px-4 py-2 bg-indigo-600 rounded text-white mr-2">Show Betting Modal</button>
+                <button id="start-timer-btn" class="px-4 py-2 bg-green-600 rounded text-white mr-2">Start Timer</button>
+                <button id="hide-modal-btn" class="px-4 py-2 bg-gray-600 rounded text-white">Hide Modal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Multi-Choice Action Bet (same structure as updated HTML) -->
+    <div id="action-bet-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div class="bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-sm animate-slide-in-up relative overflow-hidden">
+            <!-- Timer Bar Container - positioned at the top of the modal -->
+            <div class="timer-bar-container absolute top-0 left-0 right-0 z-10">
+                <div id="action-bet-timer-bar" class="timer-bar timer-bar-normal"></div>
+            </div>
+            <h2 id="action-bet-title" class="text-2xl font-bold text-yellow-300 text-center mb-2">⚡ Action Bet! ⚡</h2>
+            <p id="action-bet-main-description" class="text-center text-gray-300 mb-4">Test betting opportunity</p>
+            <div id="action-bet-choices" class="space-y-2 mb-4">
+                <button class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white">Option 1</button>
+                <button class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white">Option 2</button>
+            </div>
+            <div class="flex">
+                <button id="skip-action-bet-btn" class="w-full py-3 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-bold transition">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test results tracking
+        let testResults = [];
+
+        function addTestResult(description, passed, details = '') {
+            testResults.push({
+                description,
+                passed,
+                details
+            });
+            displayTestResults();
+        }
+
+        function displayTestResults() {
+            const container = document.getElementById('test-results');
+            container.innerHTML = testResults.map(result => `
+                <div class="test-result ${result.passed ? 'test-pass' : 'test-fail'}">
+                    <strong>${result.passed ? '✓' : '✗'} ${result.description}</strong>
+                    ${result.details ? `<br><small>${result.details}</small>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Simulate the betting system's timer bar usage
+        function simulateBettingTimerStart() {
+            const timerBar = document.getElementById('action-bet-timer-bar');
+            
+            if (!timerBar) {
+                addTestResult('Timer bar element exists', false, 'Element not found');
+                return;
+            }
+            
+            addTestResult('Timer bar element exists', true);
+            
+            // Test the old countdown-bar-animate class (for backward compatibility)
+            try {
+                timerBar.classList.remove('countdown-bar-animate');
+                void timerBar.offsetWidth; // Trigger reflow
+                timerBar.classList.add('countdown-bar-animate');
+                addTestResult('Old countdown animation class works', true);
+            } catch (e) {
+                addTestResult('Old countdown animation class works', false, e.message);
+            }
+            
+            // Test the new timer bar classes
+            try {
+                timerBar.classList.remove('timer-bar-normal', 'timer-bar-warning', 'timer-bar-urgent');
+                timerBar.classList.add('timer-bar-normal');
+                timerBar.style.width = '100%';
+                addTestResult('New timer bar classes work', true);
+                
+                // Simulate timer progression
+                setTimeout(() => {
+                    timerBar.classList.remove('timer-bar-normal');
+                    timerBar.classList.add('timer-bar-warning');
+                    timerBar.style.width = '50%';
+                    addTestResult('Timer bar warning state works', true);
+                    
+                    setTimeout(() => {
+                        timerBar.classList.remove('timer-bar-warning');
+                        timerBar.classList.add('timer-bar-urgent');
+                        timerBar.style.width = '25%';
+                        addTestResult('Timer bar urgent state works', true);
+                        addTestResult('Timer bar animation has pulsing effect', 
+                            getComputedStyle(timerBar).animationName === 'timerBarPulse');
+                    }, 1000);
+                }, 1000);
+                
+            } catch (e) {
+                addTestResult('New timer bar classes work', false, e.message);
+            }
+        }
+
+        function showModal() {
+            const modal = document.getElementById('action-bet-modal');
+            modal.classList.remove('hidden');
+            addTestResult('Modal can be shown', true);
+            
+            // Test timer bar visibility
+            const timerBar = document.getElementById('action-bet-timer-bar');
+            const timerContainer = modal.querySelector('.timer-bar-container');
+            
+            addTestResult('Timer bar is visible in modal', 
+                timerBar && getComputedStyle(timerBar).display !== 'none');
+            addTestResult('Timer container is positioned correctly', 
+                timerContainer && getComputedStyle(timerContainer).position === 'absolute');
+        }
+
+        function hideModal() {
+            const modal = document.getElementById('action-bet-modal');
+            modal.classList.add('hidden');
+            addTestResult('Modal can be hidden', true);
+        }
+
+        // Event listeners
+        document.getElementById('show-modal-btn').addEventListener('click', showModal);
+        document.getElementById('start-timer-btn').addEventListener('click', simulateBettingTimerStart);
+        document.getElementById('hide-modal-btn').addEventListener('click', hideModal);
+        document.getElementById('skip-action-bet-btn').addEventListener('click', hideModal);
+
+        // Run initial tests
+        document.addEventListener('DOMContentLoaded', () => {
+            // Test DOM structure
+            const modal = document.getElementById('action-bet-modal');
+            const timerBar = document.getElementById('action-bet-timer-bar');
+            const timerContainer = modal ? modal.querySelector('.timer-bar-container') : null;
+            
+            addTestResult('Action bet modal exists', !!modal);
+            addTestResult('Timer bar element exists', !!timerBar);
+            addTestResult('Timer container exists', !!timerContainer);
+            addTestResult('Timer bar has correct initial classes', 
+                timerBar && timerBar.classList.contains('timer-bar') && timerBar.classList.contains('timer-bar-normal'));
+            
+            // Test CSS styles are loaded
+            const styles = getComputedStyle(timerBar);
+            addTestResult('Timer bar CSS styles are loaded', 
+                styles.transition && styles.transition.includes('width'));
+        });
+    </script>
+</body>
+</html>

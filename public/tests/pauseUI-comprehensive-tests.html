@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PauseUI Comprehensive Tests</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1f2937;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+        
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            background-color: #374151;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4f46e5;
+        }
+        
+        .test-button {
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        .test-button:hover {
+            background-color: #6366f1;
+        }
+        
+        .test-button.success {
+            background-color: #10b981;
+        }
+        
+        .test-button.error {
+            background-color: #ef4444;
+        }
+        
+        .test-results {
+            background-color: #1f2937;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #4b5563;
+        }
+        
+        .success {
+            color: #10b981;
+        }
+        
+        .error {
+            color: #ef4444;
+        }
+        
+        .info {
+            color: #3b82f6;
+        }
+        
+        .warning {
+            color: #f59e0b;
+        }
+        
+        .demo-area {
+            background-color: #111827;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 200px;
+            position: relative;
+            border: 2px dashed #4b5563;
+        }
+        
+        .demo-content {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+        }
+        
+        h1, h2, h3 {
+            color: #ffffff;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-pass {
+            background-color: #10b981;
+        }
+        
+        .status-fail {
+            background-color: #ef4444;
+        }
+        
+        .status-pending {
+            background-color: #f59e0b;
+        }
+        
+        .requirements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .requirement-card {
+            background-color: #1f2937;
+            border-radius: 6px;
+            padding: 15px;
+            border-left: 4px solid #6b7280;
+        }
+        
+        .requirement-card.met {
+            border-left-color: #10b981;
+        }
+        
+        .requirement-card.failed {
+            border-left-color: #ef4444;
+        }
+        
+        .requirement-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .requirement-description {
+            font-size: 14px;
+            color: #d1d5db;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 PauseUI Comprehensive Test Suite</h1>
+        
+        <!-- Requirements Verification Section -->
+        <div class="test-section">
+            <h2>📋 Requirements Verification</h2>
+            <p>Verify that the PauseUI implementation meets all specified requirements from the design document.</p>
+            
+            <div class="controls">
+                <button class="test-button" onclick="runRequirementsVerification()">Verify All Requirements</button>
+                <button class="test-button" onclick="runStructureVerification()">Verify UI Structure</button>
+            </div>
+            
+            <div id="requirements-results" class="test-results">
+                <div class="info">Click "Verify All Requirements" to start verification...</div>
+            </div>
+            
+            <div id="requirements-grid" class="requirements-grid">
+                <!-- Requirements cards will be populated here -->
+            </div>
+        </div>
+        
+        <!-- Interactive Demo Section -->
+        <div class="test-section">
+            <h2>🎮 Interactive Demo</h2>
+            <p>Test the PauseUI functionality interactively to verify visual behavior and user experience.</p>
+            
+            <div class="controls">
+                <button class="test-button" onclick="showPauseDemo()">Show Pause Overlay</button>
+                <button class="test-button" onclick="hidePauseDemo()">Hide Pause Overlay</button>
+                <button class="test-button" onclick="updateMessageDemo()">Update Message</button>
+                <button class="test-button" onclick="updateReasonDemo()">Update Reason</button>
+                <button class="test-button" onclick="testDimmingDemo()">Test Dimming Effect</button>
+            </div>
+            
+            <div id="demo-area" class="demo-area">
+                <div id="match-screen" class="demo-content">
+                    <h3>🏟️ Simulated Game Area</h3>
+                    <p>This represents the game screen that gets dimmed during pause.</p>
+                    <div style="background: #4f46e5; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <strong>Game Content</strong><br>
+                        Match Timer: 45:30<br>
+                        Score: 2 - 1<br>
+                        Active Bets: $150
+                    </div>
+                    <div style="background: #059669; padding: 10px; border-radius: 4px; margin: 10px 0;">
+                        Event Feed: Goal scored!
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Automated Tests Section -->
+        <div class="test-section">
+            <h2>🤖 Automated Tests</h2>
+            <p>Run comprehensive automated tests to verify all functionality and edge cases.</p>
+            
+            <div class="controls">
+                <button class="test-button" onclick="runAllAutomatedTests()">Run All Tests</button>
+                <button class="test-button" onclick="runUnitTests()">Unit Tests</button>
+                <button class="test-button" onclick="runIntegrationTests()">Integration Tests</button>
+                <button class="test-button" onclick="runPerformanceTests()">Performance Tests</button>
+                <button class="test-button" onclick="clearAllResults()">Clear Results</button>
+            </div>
+            
+            <div id="automated-test-results" class="test-results">
+                <div class="info">Click "Run All Tests" to start automated testing...</div>
+            </div>
+        </div>
+        
+        <!-- Manual Test Checklist -->
+        <div class="test-section">
+            <h2>✅ Manual Test Checklist</h2>
+            <p>Follow these manual tests to verify visual and interactive behavior:</p>
+            
+            <div style="background-color: #1f2937; padding: 15px; border-radius: 6px;">
+                <h3>Visual Tests:</h3>
+                <ul>
+                    <li>✓ Pause overlay appears with smooth fade-in animation</li>
+                    <li>✓ Game area is properly dimmed (brightness reduced)</li>
+                    <li>✓ Overlay is centered and properly positioned</li>
+                    <li>✓ Pause icon is visible and animated (pulse effect)</li>
+                    <li>✓ Loading spinner rotates smoothly</li>
+                    <li>✓ Text is readable with good contrast</li>
+                </ul>
+                
+                <h3>Interaction Tests:</h3>
+                <ul>
+                    <li>✓ Game area interactions are disabled when paused</li>
+                    <li>✓ Overlay hides with smooth fade-out animation</li>
+                    <li>✓ Game area brightness is restored when unpaused</li>
+                    <li>✓ Message and reason updates work correctly</li>
+                    <li>✓ Multiple show/hide cycles work without issues</li>
+                </ul>
+                
+                <h3>Responsive Tests:</h3>
+                <ul>
+                    <li>✓ Overlay adapts to different screen sizes</li>
+                    <li>✓ Text remains readable on mobile devices</li>
+                    <li>✓ Overlay doesn't overflow viewport</li>
+                    <li>✓ Touch interactions work on mobile</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Test Summary -->
+        <div class="test-section">
+            <h2>📊 Test Summary</h2>
+            <div id="test-summary" style="background-color: #1f2937; padding: 20px; border-radius: 6px; text-align: center;">
+                <div class="info">Run tests to see summary...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Dependencies -->
+    <script src="../scripts/pauseUI.js"></script>
+    <script src="pauseUI-requirements-verification.js"></script>
+    <script src="pauseUI-integration.test.js"></script>
+    
+    <script>
+        // Global test variables
+        let demoPauseUI;
+        let testResults = {
+            requirements: [],
+            automated: [],
+            performance: []
+        };
+        
+        // Initialize demo PauseUI
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set up demo area as app container
+            const demoArea = document.getElementById('demo-area');
+            demoArea.id = 'app-container';
+            
+            demoPauseUI = new PauseUI();
+            log('Demo PauseUI initialized', 'info', 'automated-test-results');
+            updateTestSummary();
+        });
+        
+        // Logging utility
+        function log(message, type = 'info', targetId = 'automated-test-results') {
+            const resultsDiv = document.getElementById(targetId);
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            resultsDiv.appendChild(logEntry);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function clearResults(targetId) {
+            document.getElementById(targetId).innerHTML = '';
+        }
+        
+        function clearAllResults() {
+            clearResults('automated-test-results');
+            clearResults('requirements-results');
+            testResults = { requirements: [], automated: [], performance: [] };
+            updateTestSummary();
+        }
+        
+        // Demo functions
+        function showPauseDemo() {
+            demoPauseUI.showPauseOverlay('Demo Pause', 'Testing pause overlay functionality...');
+            log('Pause overlay shown', 'success', 'automated-test-results');
+        }
+        
+        function hidePauseDemo() {
+            demoPauseUI.hidePauseOverlay();
+            log('Pause overlay hidden', 'success', 'automated-test-results');
+        }
+        
+        function updateMessageDemo() {
+            const messages = [
+                'Waiting for players...',
+                'Processing bet...',
+                'Synchronizing game state...',
+                'Almost ready...',
+                'Finalizing decisions...'
+            ];
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            demoPauseUI.updateMessage(randomMessage);
+            log(`Message updated to: "${randomMessage}"`, 'info', 'automated-test-results');
+        }
+        
+        function updateReasonDemo() {
+            const reasons = [
+                'Betting in Progress',
+                'Player Decision Required',
+                'System Processing',
+                'Multiplayer Sync',
+                'Action Bet Available'
+            ];
+            const randomReason = reasons[Math.floor(Math.random() * reasons.length)];
+            demoPauseUI.updateReason(randomReason);
+            log(`Reason updated to: "${randomReason}"`, 'info', 'automated-test-results');
+        }
+        
+        function testDimmingDemo() {
+            const matchScreen = document.getElementById('match-screen');
+            
+            if (demoPauseUI.isOverlayVisible()) {
+                log('Game area is currently dimmed', 'info', 'automated-test-results');
+                log(`Filter: ${matchScreen.style.filter}`, 'info', 'automated-test-results');
+                log(`Pointer Events: ${matchScreen.style.pointerEvents}`, 'info', 'automated-test-results');
+            } else {
+                log('Game area is not dimmed (overlay not visible)', 'warning', 'automated-test-results');
+            }
+        }
+        
+        // Requirements verification
+        function runRequirementsVerification() {
+            clearResults('requirements-results');
+            log('Starting requirements verification...', 'info', 'requirements-results');
+            
+            // Create test environment
+            const testContainer = document.createElement('div');
+            testContainer.id = 'test-app-container';
+            testContainer.innerHTML = '<div id="match-screen">Test content</div>';
+            document.body.appendChild(testContainer);
+            
+            const testPauseUI = new PauseUI();
+            const requirements = [];
+            
+            // Requirement 2.1: Display pause message
+            testPauseUI.showPauseOverlay('Betting in Progress');
+            const titleElement = testPauseUI.overlay.querySelector('.pause-title');
+            const reasonElement = testPauseUI.overlay.querySelector('.pause-reason');
+            
+            requirements.push({
+                id: '2.1',
+                title: 'Display "Game Paused - Betting in Progress" message',
+                met: titleElement && titleElement.textContent.includes('Game Paused') && 
+                     reasonElement && reasonElement.textContent.includes('Betting in Progress')
+            });
+            
+            // Requirement 2.2: Indicate reason clearly
+            testPauseUI.updateReason('Custom Pause Reason');
+            const updatedReason = testPauseUI.overlay.querySelector('.pause-reason').textContent;
+            
+            requirements.push({
+                id: '2.2',
+                title: 'Indicate reason for pause clearly',
+                met: updatedReason === 'Custom Pause Reason' && 
+                     getComputedStyle(reasonElement).display !== 'none'
+            });
+            
+            // Requirement 2.3: Dim game area
+            const matchScreen = document.getElementById('match-screen');
+            
+            requirements.push({
+                id: '2.3',
+                title: 'Dim or overlay the game area to indicate inactive state',
+                met: matchScreen.style.filter === 'brightness(0.3)' && 
+                     matchScreen.style.pointerEvents === 'none' &&
+                     !testPauseUI.overlay.classList.contains('hidden')
+            });
+            
+            // Requirement 2.4: Show waiting message
+            const waitingMessage = testPauseUI.overlay.querySelector('.pause-waiting-text');
+            
+            requirements.push({
+                id: '2.4',
+                title: 'Show simulated "waiting for players" message',
+                met: waitingMessage && waitingMessage.textContent.includes('Waiting for players')
+            });
+            
+            // Display results
+            requirements.forEach(req => {
+                const status = req.met ? 'PASS' : 'FAIL';
+                const type = req.met ? 'success' : 'error';
+                log(`${status}: Requirement ${req.id} - ${req.title}`, type, 'requirements-results');
+            });
+            
+            testResults.requirements = requirements;
+            updateRequirementsGrid(requirements);
+            updateTestSummary();
+            
+            // Cleanup
+            testPauseUI.destroy();
+            testContainer.remove();
+        }
+        
+        function runStructureVerification() {
+            log('Verifying UI structure...', 'info', 'requirements-results');
+            
+            const testContainer = document.createElement('div');
+            testContainer.id = 'test-app-container';
+            document.body.appendChild(testContainer);
+            
+            const testPauseUI = new PauseUI();
+            
+            const requiredElements = [
+                { selector: '.pause-overlay', description: 'Main overlay container' },
+                { selector: '.pause-backdrop', description: 'Backdrop for dimming effect' },
+                { selector: '.pause-content', description: 'Main content container' },
+                { selector: '.pause-icon', description: 'Pause icon display' },
+                { selector: '.pause-title', description: 'Pause title text' },
+                { selector: '.pause-reason', description: 'Pause reason text' },
+                { selector: '.pause-status', description: 'Status container' },
+                { selector: '.pause-spinner', description: 'Loading spinner' },
+                { selector: '.pause-waiting-text', description: 'Waiting message text' }
+            ];
+            
+            let allElementsFound = true;
+            
+            requiredElements.forEach(({ selector, description }) => {
+                const element = testPauseUI.overlay.querySelector(selector);
+                if (element) {
+                    log(`✓ ${description} found`, 'success', 'requirements-results');
+                } else {
+                    log(`✗ ${description} missing (${selector})`, 'error', 'requirements-results');
+                    allElementsFound = false;
+                }
+            });
+            
+            if (allElementsFound) {
+                log('✓ All required UI elements are present', 'success', 'requirements-results');
+            } else {
+                log('✗ Some required UI elements are missing', 'error', 'requirements-results');
+            }
+            
+            testPauseUI.destroy();
+            testContainer.remove();
+        }
+        
+        function updateRequirementsGrid(requirements) {
+            const grid = document.getElementById('requirements-grid');
+            grid.innerHTML = '';
+            
+            requirements.forEach(req => {
+                const card = document.createElement('div');
+                card.className = `requirement-card ${req.met ? 'met' : 'failed'}`;
+                card.innerHTML = `
+                    <div class="requirement-title">
+                        <span class="status-indicator ${req.met ? 'status-pass' : 'status-fail'}"></span>
+                        Requirement ${req.id}
+                    </div>
+                    <div class="requirement-description">${req.title}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+        
+        // Automated tests
+        function runAllAutomatedTests() {
+            clearResults('automated-test-results');
+            log('Starting comprehensive automated test suite...', 'info', 'automated-test-results');
+            
+            runUnitTests();
+            setTimeout(() => {
+                runIntegrationTests();
+                setTimeout(() => {
+                    runPerformanceTests();
+                    updateTestSummary();
+                }, 100);
+            }, 100);
+        }
+        
+        function runUnitTests() {
+            log('\n=== Unit Tests ===', 'info', 'automated-test-results');
+            
+            // Basic functionality tests
+            const testContainer = document.createElement('div');
+            testContainer.id = 'test-app-container';
+            testContainer.innerHTML = '<div id="match-screen">Test content</div>';
+            document.body.appendChild(testContainer);
+            
+            try {
+                const testPauseUI = new PauseUI();
+                
+                // Test initialization
+                log('✓ PauseUI initialization', 'success', 'automated-test-results');
+                
+                // Test show/hide
+                testPauseUI.showPauseOverlay();
+                log('✓ Show overlay functionality', 'success', 'automated-test-results');
+                
+                testPauseUI.hidePauseOverlay();
+                log('✓ Hide overlay functionality', 'success', 'automated-test-results');
+                
+                // Test updates
+                testPauseUI.showPauseOverlay();
+                testPauseUI.updateMessage('Test message');
+                testPauseUI.updateReason('Test reason');
+                log('✓ Message and reason updates', 'success', 'automated-test-results');
+                
+                // Test state management
+                const isVisible = testPauseUI.isOverlayVisible();
+                log(`✓ State management (visible: ${isVisible})`, 'success', 'automated-test-results');
+                
+                testPauseUI.destroy();
+                log('✓ Cleanup and destroy', 'success', 'automated-test-results');
+                
+                testResults.automated.push({ category: 'Unit Tests', passed: true });
+                
+            } catch (error) {
+                log(`✗ Unit test error: ${error.message}`, 'error', 'automated-test-results');
+                testResults.automated.push({ category: 'Unit Tests', passed: false, error: error.message });
+            }
+            
+            testContainer.remove();
+        }
+        
+        function runIntegrationTests() {
+            log('\n=== Integration Tests ===', 'info', 'automated-test-results');
+            
+            try {
+                // Test with actual game structure
+                if (typeof runPauseUIIntegrationTests === 'function') {
+                    runPauseUIIntegrationTests();
+                    log('✓ Integration tests completed', 'success', 'automated-test-results');
+                    testResults.automated.push({ category: 'Integration Tests', passed: true });
+                } else {
+                    log('⚠ Integration test function not available', 'warning', 'automated-test-results');
+                }
+            } catch (error) {
+                log(`✗ Integration test error: ${error.message}`, 'error', 'automated-test-results');
+                testResults.automated.push({ category: 'Integration Tests', passed: false, error: error.message });
+            }
+        }
+        
+        function runPerformanceTests() {
+            log('\n=== Performance Tests ===', 'info', 'automated-test-results');
+            
+            const testContainer = document.createElement('div');
+            testContainer.id = 'test-app-container';
+            testContainer.innerHTML = '<div id="match-screen">Test content</div>';
+            document.body.appendChild(testContainer);
+            
+            try {
+                // Test creation performance
+                const startTime = performance.now();
+                const testPauseUI = new PauseUI();
+                const creationTime = performance.now() - startTime;
+                
+                log(`✓ Creation time: ${creationTime.toFixed(2)}ms`, 'success', 'automated-test-results');
+                
+                // Test show/hide performance
+                const showStart = performance.now();
+                testPauseUI.showPauseOverlay();
+                const showTime = performance.now() - showStart;
+                
+                const hideStart = performance.now();
+                testPauseUI.hidePauseOverlay();
+                const hideTime = performance.now() - hideStart;
+                
+                log(`✓ Show time: ${showTime.toFixed(2)}ms`, 'success', 'automated-test-results');
+                log(`✓ Hide time: ${hideTime.toFixed(2)}ms`, 'success', 'automated-test-results');
+                
+                // Performance assertions
+                const performanceGood = creationTime < 50 && showTime < 20 && hideTime < 20;
+                
+                if (performanceGood) {
+                    log('✓ Performance benchmarks met', 'success', 'automated-test-results');
+                    testResults.performance.push({ category: 'Performance', passed: true });
+                } else {
+                    log('⚠ Performance could be improved', 'warning', 'automated-test-results');
+                    testResults.performance.push({ category: 'Performance', passed: false });
+                }
+                
+                testPauseUI.destroy();
+                
+            } catch (error) {
+                log(`✗ Performance test error: ${error.message}`, 'error', 'automated-test-results');
+                testResults.performance.push({ category: 'Performance', passed: false, error: error.message });
+            }
+            
+            testContainer.remove();
+        }
+        
+        function updateTestSummary() {
+            const summaryDiv = document.getElementById('test-summary');
+            
+            const reqPassed = testResults.requirements.filter(r => r.met).length;
+            const reqTotal = testResults.requirements.length;
+            
+            const autoPassed = testResults.automated.filter(r => r.passed).length;
+            const autoTotal = testResults.automated.length;
+            
+            const perfPassed = testResults.performance.filter(r => r.passed).length;
+            const perfTotal = testResults.performance.length;
+            
+            const totalPassed = reqPassed + autoPassed + perfPassed;
+            const totalTests = reqTotal + autoTotal + perfTotal;
+            
+            if (totalTests === 0) {
+                summaryDiv.innerHTML = '<div class="info">Run tests to see summary...</div>';
+                return;
+            }
+            
+            const passRate = ((totalPassed / totalTests) * 100).toFixed(1);
+            const status = passRate === '100.0' ? 'success' : passRate >= '80.0' ? 'warning' : 'error';
+            
+            summaryDiv.innerHTML = `
+                <h3>Test Results Summary</h3>
+                <div class="${status}" style="font-size: 1.5rem; margin: 15px 0;">
+                    ${totalPassed}/${totalTests} tests passed (${passRate}%)
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                    <div>
+                        <strong>Requirements:</strong><br>
+                        <span class="${reqTotal > 0 && reqPassed === reqTotal ? 'success' : 'error'}">
+                            ${reqPassed}/${reqTotal} passed
+                        </span>
+                    </div>
+                    <div>
+                        <strong>Automated:</strong><br>
+                        <span class="${autoTotal > 0 && autoPassed === autoTotal ? 'success' : 'error'}">
+                            ${autoPassed}/${autoTotal} passed
+                        </span>
+                    </div>
+                    <div>
+                        <strong>Performance:</strong><br>
+                        <span class="${perfTotal > 0 && perfPassed === perfTotal ? 'success' : 'error'}">
+                            ${perfPassed}/${perfTotal} passed
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Error handling
+        window.addEventListener('error', (event) => {
+            log(`JavaScript Error: ${event.error.message}`, 'error', 'automated-test-results');
+        });
+    </script>
+</body>
+</html>

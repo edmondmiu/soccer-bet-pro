@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeout Integration Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .demo-controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .timeout-button {
+            background: #ff9800;
+        }
+        
+        .timeout-button:hover {
+            background: #f57c00;
+        }
+        
+        .manual-button {
+            background: #2196F3;
+        }
+        
+        .manual-button:hover {
+            background: #1976D2;
+        }
+        
+        .status {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+        
+        .game-area {
+            background: #e8f5e8;
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .game-area.dimmed {
+            filter: brightness(0.3);
+            pointer-events: none;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Timeout Integration Example</h1>
+        <p>This example demonstrates how PauseManager and PauseUI work together to handle timeout scenarios with warning messages.</p>
+        
+        <div class="info-box">
+            <strong>How it works:</strong>
+            <ul>
+                <li><strong>Timeout Demo:</strong> Pauses for 3 seconds, then auto-resumes with warning</li>
+                <li><strong>Manual Resume:</strong> Pauses for 5 seconds, but manually resumes after 2 seconds</li>
+                <li><strong>Clear Timeout:</strong> Pauses with timeout, then clears the timeout manually</li>
+            </ul>
+        </div>
+        
+        <div class="demo-controls">
+            <button onclick="startTimeoutDemo()" class="timeout-button">
+                Timeout Demo (3s)
+            </button>
+            <button onclick="startManualResumeDemo()" class="manual-button">
+                Manual Resume Demo
+            </button>
+            <button onclick="startClearTimeoutDemo()">
+                Clear Timeout Demo
+            </button>
+            <button onclick="resetDemo()">
+                Reset
+            </button>
+        </div>
+        
+        <div class="game-area" id="game-area">
+            <h2>🏈 Game Area</h2>
+            <p>Click a demo button to see timeout functionality in action!</p>
+        </div>
+        
+        <div class="status" id="status">
+            Status: Ready for demo
+        </div>
+    </div>
+
+    <script type="module">
+        import { PauseManager } from '../scripts/pauseManager.js';
+        import { resetState } from '../scripts/gameState.js';
+
+        // Global demo state
+        let demoManager = null;
+        let pauseUI = null;
+        let demoActive = false;
+
+        // Simple PauseUI implementation for demo
+        class DemoPauseUI {
+            constructor() {
+                this.overlay = null;
+                this.isVisible = false;
+            }
+
+            showPauseOverlay(reason = "Demo Pause", message = "Waiting...") {
+                const gameArea = document.getElementById('game-area');
+                gameArea.classList.add('dimmed');
+                
+                if (!this.overlay) {
+                    this.overlay = document.createElement('div');
+                    this.overlay.style.cssText = `
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: rgba(0, 0, 0, 0.8);
+                        color: white;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: 10px;
+                        z-index: 10;
+                    `;
+                    gameArea.appendChild(this.overlay);
+                }
+                
+                this.overlay.innerHTML = `
+                    <div style="text-align: center;">
+                        <h2>⏸️ Game Paused</h2>
+                        <p style="color: #a78bfa; font-size: 1.1em;">${reason}</p>
+                        <div style="display: flex; align-items: center; gap: 10px; justify-content: center;">
+                            <div style="width: 20px; height: 20px; border: 2px solid #4f46e5; border-top: 2px solid #a78bfa; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                            <span>${message}</span>
+                        </div>
+                    </div>
+                    <style>
+                        @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
+                    </style>
+                `;
+                
+                this.isVisible = true;
+            }
+
+            hidePauseOverlay() {
+                const gameArea = document.getElementById('game-area');
+                gameArea.classList.remove('dimmed');
+                
+                if (this.overlay && this.overlay.parentNode) {
+                    this.overlay.parentNode.removeChild(this.overlay);
+                    this.overlay = null;
+                }
+                
+                this.isVisible = false;
+            }
+
+            showTimeoutWarning(message = 'Timeout - Resuming Game', duration = 3000) {
+                const warning = document.createElement('div');
+                warning.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+                    color: white;
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    font-size: 14px;
+                    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+                    z-index: 1001;
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                `;
+                warning.innerHTML = `⚠️ ${message}`;
+                
+                document.body.appendChild(warning);
+                
+                setTimeout(() => warning.style.opacity = '1', 10);
+                
+                setTimeout(() => {
+                    warning.style.opacity = '0';
+                    setTimeout(() => {
+                        if (warning.parentNode) {
+                            warning.parentNode.removeChild(warning);
+                        }
+                    }, 300);
+                }, duration);
+            }
+        }
+
+        // Initialize demo components
+        function initDemo() {
+            resetState();
+            demoManager = new PauseManager();
+            pauseUI = new DemoPauseUI();
+            
+            // Set up timeout warning callback
+            demoManager.setTimeoutWarningCallback((message) => {
+                updateStatus(`⚠️ Timeout Warning: ${message}`);
+                pauseUI.showTimeoutWarning(message);
+            });
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = `Status: ${message}`;
+        }
+
+        // Demo functions
+        window.startTimeoutDemo = function() {
+            if (demoActive) return;
+            
+            initDemo();
+            demoActive = true;
+            
+            updateStatus('Starting timeout demo - game will pause for 3 seconds');
+            
+            // Show pause overlay
+            pauseUI.showPauseOverlay('Timeout Demo', 'Will auto-resume in 3 seconds...');
+            
+            // Start pause with 3-second timeout
+            demoManager.pauseGame('TIMEOUT_DEMO', 3000);
+            
+            // Monitor for auto-resume
+            const checkResume = setInterval(() => {
+                if (!demoManager.isPaused()) {
+                    clearInterval(checkResume);
+                    pauseUI.hidePauseOverlay();
+                    updateStatus('✅ Demo complete - game auto-resumed after timeout');
+                    demoActive = false;
+                }
+            }, 100);
+        };
+
+        window.startManualResumeDemo = function() {
+            if (demoActive) return;
+            
+            initDemo();
+            demoActive = true;
+            
+            updateStatus('Starting manual resume demo - will resume in 2 seconds');
+            
+            // Show pause overlay
+            pauseUI.showPauseOverlay('Manual Resume Demo', 'Will be manually resumed in 2 seconds...');
+            
+            // Start pause with 5-second timeout
+            demoManager.pauseGame('MANUAL_RESUME_DEMO', 5000);
+            
+            // Resume manually after 2 seconds
+            setTimeout(() => {
+                if (demoManager.isPaused()) {
+                    demoManager.resumeGame();
+                    pauseUI.hidePauseOverlay();
+                    updateStatus('✅ Demo complete - game manually resumed (no timeout warning)');
+                    demoActive = false;
+                }
+            }, 2000);
+        };
+
+        window.startClearTimeoutDemo = function() {
+            if (demoActive) return;
+            
+            initDemo();
+            demoActive = true;
+            
+            updateStatus('Starting clear timeout demo - timeout will be cleared after 1 second');
+            
+            // Show pause overlay
+            pauseUI.showPauseOverlay('Clear Timeout Demo', 'Timeout will be cleared in 1 second...');
+            
+            // Start pause with 5-second timeout
+            demoManager.pauseGame('CLEAR_TIMEOUT_DEMO', 5000);
+            
+            // Clear timeout after 1 second
+            setTimeout(() => {
+                if (demoManager.hasActiveTimeout()) {
+                    demoManager.clearTimeout();
+                    pauseUI.overlay.innerHTML = `
+                        <div style="text-align: center;">
+                            <h2>⏸️ Game Paused</h2>
+                            <p style="color: #a78bfa; font-size: 1.1em;">Clear Timeout Demo</p>
+                            <div style="color: #fbbf24;">
+                                <p>⚠️ Timeout cleared - game will remain paused</p>
+                                <p>Click Reset to continue</p>
+                            </div>
+                        </div>
+                    `;
+                    updateStatus('⚠️ Timeout cleared - game remains paused until reset');
+                    demoActive = false;
+                }
+            }, 1000);
+        };
+
+        window.resetDemo = function() {
+            if (demoManager) {
+                demoManager.resumeGame();
+            }
+            if (pauseUI) {
+                pauseUI.hidePauseOverlay();
+            }
+            
+            demoActive = false;
+            updateStatus('Ready for demo');
+            
+            // Reset game area content
+            document.getElementById('game-area').innerHTML = `
+                <h2>🏈 Game Area</h2>
+                <p>Click a demo button to see timeout functionality in action!</p>
+            `;
+        };
+
+        // Initialize on page load
+        updateStatus('Ready for demo');
+    </script>
+</body>
+</html>

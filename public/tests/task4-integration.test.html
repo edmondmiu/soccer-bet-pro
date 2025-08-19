@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 4 Integration Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        
+        .test-section {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #4a5568;
+        }
+        
+        .test-header {
+            border-bottom: 2px solid #4a5568;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .demo-area {
+            background-color: #1a1a1a;
+            border: 1px solid #4a5568;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .betting-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .bet-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        .bet-btn-home { background-color: #48bb78; color: white; }
+        .bet-btn-draw { background-color: #ed8936; color: white; }
+        .bet-btn-away { background-color: #4299e1; color: white; }
+        
+        .bet-btn:hover { opacity: 0.8; }
+        .bet-btn-selected { 
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .inline-bet-slip {
+            background-color: #2d2d2d;
+            border: 1px solid #4a5568;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .inline-bet-slip.hidden {
+            display: none;
+        }
+        
+        .quick-stakes {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .quick-stake-btn {
+            padding: 8px;
+            background-color: #4a5568;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .quick-stake-btn:hover {
+            background-color: #4299e1;
+        }
+        
+        .bet-input-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .stake-input {
+            flex: 1;
+            padding: 12px;
+            background-color: #4a5568;
+            border: 1px solid #718096;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        .confirm-btn {
+            padding: 12px 24px;
+            background-color: #48bb78;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        
+        .confirm-btn:hover {
+            background-color: #38a169;
+        }
+        
+        .test-log {
+            background-color: #1a1a1a;
+            border: 1px solid #4a5568;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .status-success { background-color: #48bb78; color: white; }
+        .status-error { background-color: #f56565; color: white; }
+        .status-info { background-color: #4299e1; color: white; }
+        
+        .memory-display {
+            background-color: #2d2d2d;
+            border: 1px solid #4a5568;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .control-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        .control-btn-primary { background-color: #4299e1; color: white; }
+        .control-btn-secondary { background-color: #718096; color: white; }
+        .control-btn-danger { background-color: #f56565; color: white; }
+        
+        .control-btn:hover { opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div class="test-section">
+        <div class="test-header">
+            <h1>🧪 Task 4 Integration Test</h1>
+            <p>Testing bet amount pre-population for full match betting</p>
+        </div>
+        
+        <div class="control-buttons">
+            <button class="control-btn control-btn-primary" onclick="runFullTest()">Run Full Test</button>
+            <button class="control-btn control-btn-secondary" onclick="resetMemory()">Reset Memory</button>
+            <button class="control-btn control-btn-secondary" onclick="showMemoryState()">Show Memory</button>
+            <button class="control-btn control-btn-danger" onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div class="memory-display" id="memoryDisplay">
+            Memory state will be shown here...
+        </div>
+        
+        <div class="demo-area">
+            <h3>🎯 Interactive Demo</h3>
+            <p>Click a betting button to test pre-population:</p>
+            
+            <div class="betting-buttons">
+                <button class="bet-btn bet-btn-home" id="full-match-btn-HOME" 
+                        data-bet-type="full-match" data-outcome="HOME" onclick="showBetSlip('HOME', 2.5)">
+                    HOME @2.5
+                </button>
+                <button class="bet-btn bet-btn-draw" id="full-match-btn-DRAW" 
+                        data-bet-type="full-match" data-outcome="DRAW" onclick="showBetSlip('DRAW', 3.2)">
+                    DRAW @3.2
+                </button>
+                <button class="bet-btn bet-btn-away" id="full-match-btn-AWAY" 
+                        data-bet-type="full-match" data-outcome="AWAY" onclick="showBetSlip('AWAY', 2.8)">
+                    AWAY @2.8
+                </button>
+            </div>
+            
+            <div class="inline-bet-slip hidden" id="inline-bet-slip">
+                <h4>Place Your Bet</h4>
+                <div class="quick-stakes">
+                    <button class="quick-stake-btn quick-stake-btn-inline" data-amount="10" onclick="setQuickStake(10)">$10</button>
+                    <button class="quick-stake-btn quick-stake-btn-inline" data-amount="25" onclick="setQuickStake(25)">$25</button>
+                    <button class="quick-stake-btn quick-stake-btn-inline" data-amount="50" onclick="setQuickStake(50)">$50</button>
+                    <button class="quick-stake-btn quick-stake-btn-inline" data-amount="100" onclick="setQuickStake(100)">$100</button>
+                </div>
+                <div class="bet-input-row">
+                    <input type="number" id="inline-stake-amount" class="stake-input" placeholder="Stake">
+                    <button id="confirm-inline-bet-btn" class="confirm-btn" onclick="confirmBet()">Confirm</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-log" id="testLog">
+            Test log will appear here...
+        </div>
+    </div>
+
+    <script type="module">
+        let testLog = '';
+        let currentBet = null;
+        let wallet = 1000; // Mock wallet balance
+        
+        // Import modules
+        let gameStateModule, bettingModule, eventsModule;
+        
+        async function initializeModules() {
+            try {
+                gameStateModule = await import('../scripts/gameState.js');
+                bettingModule = await import('../scripts/betting.js');
+                eventsModule = await import('../scripts/events.js');
+                
+                // Initialize game state
+                gameStateModule.adjustWalletBalance(wallet);
+                
+                log('✅ Modules loaded successfully');
+                showMemoryState();
+                return true;
+            } catch (error) {
+                log(`❌ Failed to load modules: ${error.message}`);
+                return false;
+            }
+        }
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            testLog += `[${timestamp}] ${message}\n`;
+            document.getElementById('testLog').textContent = testLog;
+            document.getElementById('testLog').scrollTop = document.getElementById('testLog').scrollHeight;
+        }
+        
+        function clearLog() {
+            testLog = '';
+            document.getElementById('testLog').textContent = 'Log cleared...';
+        }
+        
+        function showMemoryState() {
+            if (!gameStateModule) {
+                document.getElementById('memoryDisplay').textContent = 'Modules not loaded yet...';
+                return;
+            }
+            
+            try {
+                const fullMatchAmount = gameStateModule.getBetAmountMemory('fullMatch');
+                const opportunityAmount = gameStateModule.getBetAmountMemory('opportunity');
+                const defaultAmount = gameStateModule.getDefaultBetAmount();
+                
+                document.getElementById('memoryDisplay').innerHTML = `
+                    <strong>Bet Amount Memory:</strong><br>
+                    • Full Match: $${fullMatchAmount}<br>
+                    • Opportunity: $${opportunityAmount}<br>
+                    • Default: $${defaultAmount}
+                `;
+            } catch (error) {
+                document.getElementById('memoryDisplay').textContent = `Error reading memory: ${error.message}`;
+            }
+        }
+        
+        function resetMemory() {
+            if (!gameStateModule) {
+                log('❌ Modules not loaded');
+                return;
+            }
+            
+            try {
+                gameStateModule.resetBetAmountMemory();
+                log('🔄 Memory reset to defaults');
+                showMemoryState();
+            } catch (error) {
+                log(`❌ Failed to reset memory: ${error.message}`);
+            }
+        }
+        
+        window.showBetSlip = function(outcome, odds) {
+            if (!bettingModule) {
+                log('❌ Betting module not loaded');
+                return;
+            }
+            
+            try {
+                // Store current bet info
+                currentBet = { outcome, odds };
+                
+                // Call the actual showInlineBetSlip function
+                bettingModule.showInlineBetSlip(outcome, odds);
+                
+                // Get the pre-populated value
+                const stakeInput = document.getElementById('inline-stake-amount');
+                const prePopulatedValue = stakeInput.value;
+                
+                log(`🎯 Bet slip shown for ${outcome} @${odds}`);
+                log(`💰 Pre-populated amount: $${prePopulatedValue}`);
+                
+                // Update button styling
+                document.querySelectorAll('.bet-btn').forEach(btn => {
+                    btn.classList.remove('bet-btn-selected');
+                });
+                document.getElementById(`full-match-btn-${outcome}`).classList.add('bet-btn-selected');
+                
+                // Show the bet slip
+                document.getElementById('inline-bet-slip').classList.remove('hidden');
+                
+            } catch (error) {
+                log(`❌ Error showing bet slip: ${error.message}`);
+            }
+        };
+        
+        window.setQuickStake = function(amount) {
+            document.getElementById('inline-stake-amount').value = amount;
+            log(`⚡ Quick stake set to $${amount}`);
+        };
+        
+        window.confirmBet = function() {
+            if (!currentBet) {
+                log('❌ No bet selected');
+                return;
+            }
+            
+            const stakeInput = document.getElementById('inline-stake-amount');
+            const stake = parseFloat(stakeInput.value);
+            
+            if (isNaN(stake) || stake <= 0) {
+                log('❌ Invalid stake amount');
+                return;
+            }
+            
+            if (stake > wallet) {
+                log('❌ Insufficient funds');
+                return;
+            }
+            
+            try {
+                // Mock bet placement (since we don't have full game state)
+                wallet -= stake;
+                
+                // Update memory with the new amount
+                gameStateModule.updateBetAmountMemory('fullMatch', stake);
+                
+                log(`✅ Bet placed: ${currentBet.outcome} @${currentBet.odds} for $${stake}`);
+                log(`💳 Wallet balance: $${wallet}`);
+                
+                // Hide bet slip
+                document.getElementById('inline-bet-slip').classList.add('hidden');
+                document.querySelectorAll('.bet-btn').forEach(btn => {
+                    btn.classList.remove('bet-btn-selected');
+                });
+                
+                currentBet = null;
+                showMemoryState();
+                
+            } catch (error) {
+                log(`❌ Error confirming bet: ${error.message}`);
+            }
+        };
+        
+        window.runFullTest = async function() {
+            log('🚀 Starting full integration test...');
+            
+            if (!gameStateModule) {
+                log('❌ Modules not loaded, initializing...');
+                const success = await initializeModules();
+                if (!success) return;
+            }
+            
+            try {
+                // Test 1: Reset memory and verify default
+                log('\n📋 Test 1: Default pre-population');
+                gameStateModule.resetBetAmountMemory();
+                showBetSlip('HOME', 2.5);
+                
+                const defaultValue = document.getElementById('inline-stake-amount').value;
+                const expectedDefault = gameStateModule.getDefaultBetAmount();
+                
+                if (parseFloat(defaultValue) === expectedDefault) {
+                    log('✅ Default pre-population works');
+                } else {
+                    log(`❌ Default pre-population failed: expected ${expectedDefault}, got ${defaultValue}`);
+                }
+                
+                // Test 2: Place a bet and verify memory storage
+                log('\n📋 Test 2: Memory storage after bet');
+                document.getElementById('inline-stake-amount').value = '75';
+                confirmBet();
+                
+                const storedAmount = gameStateModule.getBetAmountMemory('fullMatch');
+                if (storedAmount === 75) {
+                    log('✅ Memory storage works');
+                } else {
+                    log(`❌ Memory storage failed: expected 75, got ${storedAmount}`);
+                }
+                
+                // Test 3: Show bet slip again and verify pre-population with stored amount
+                log('\n📋 Test 3: Pre-population with stored amount');
+                showBetSlip('AWAY', 2.8);
+                
+                const prePopulatedValue = parseFloat(document.getElementById('inline-stake-amount').value);
+                if (prePopulatedValue === 75) {
+                    log('✅ Pre-population with stored amount works');
+                } else {
+                    log(`❌ Pre-population failed: expected 75, got ${prePopulatedValue}`);
+                }
+                
+                // Test 4: Test different amount and verify it updates memory
+                log('\n📋 Test 4: Memory update with different amount');
+                document.getElementById('inline-stake-amount').value = '150';
+                confirmBet();
+                
+                const newStoredAmount = gameStateModule.getBetAmountMemory('fullMatch');
+                if (newStoredAmount === 150) {
+                    log('✅ Memory update works');
+                } else {
+                    log(`❌ Memory update failed: expected 150, got ${newStoredAmount}`);
+                }
+                
+                // Test 5: Final verification
+                log('\n📋 Test 5: Final verification');
+                showBetSlip('DRAW', 3.2);
+                
+                const finalValue = parseFloat(document.getElementById('inline-stake-amount').value);
+                if (finalValue === 150) {
+                    log('✅ Final verification passed');
+                } else {
+                    log(`❌ Final verification failed: expected 150, got ${finalValue}`);
+                }
+                
+                log('\n🎉 Full integration test completed!');
+                showMemoryState();
+                
+            } catch (error) {
+                log(`❌ Test failed: ${error.message}`);
+            }
+        };
+        
+        // Initialize on page load
+        window.addEventListener('load', async () => {
+            await initializeModules();
+            log('🎮 Integration test ready! Click "Run Full Test" or try the interactive demo.');
+        });
+        
+        // Make functions globally available
+        window.log = log;
+        window.clearLog = clearLog;
+        window.showMemoryState = showMemoryState;
+        window.resetMemory = resetMemory;
+        window.runFullTest = runFullTest;
+    </script>
+</body>
+</html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeout Integration Tests - Soccer Betting Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .test-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .demo-button {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+        }
+        
+        .clear-button {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+        }
+        
+        #test-output {
+            background-color: #1e1e1e;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+        
+        .demo-area {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-running {
+            background-color: #ffc107;
+            animation: pulse 1s infinite;
+        }
+        
+        .status-passed {
+            background-color: #28a745;
+        }
+        
+        .status-failed {
+            background-color: #dc3545;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .warning-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧪 Timeout Integration Tests</h1>
+        <p>Testing PauseManager timeout functionality with warning callbacks</p>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <div class="test-controls">
+            <button onclick="runAllTests()" id="run-tests-btn">
+                <span class="status-indicator" id="test-status"></span>
+                Run All Tests
+            </button>
+            <button onclick="runTimeoutDemo()" class="demo-button">
+                Demo: Timeout Warning
+            </button>
+            <button onclick="runManualResumeDemo()" class="demo-button">
+                Demo: Manual Resume
+            </button>
+            <button onclick="clearOutput()" class="clear-button">
+                Clear Output
+            </button>
+        </div>
+        
+        <div class="info-box">
+            <strong>Test Coverage:</strong> These tests verify that the PauseManager timeout functionality works correctly with warning callbacks, including edge cases like manual resume, zero timeouts, and error handling.
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Interactive Demo Area</h2>
+        <div class="demo-area" id="demo-area">
+            <p>Click the demo buttons above to see timeout functionality in action!</p>
+            <div id="demo-status"></div>
+        </div>
+        
+        <div class="warning-box">
+            <strong>Note:</strong> The demos will show actual timeout warnings and pause/resume behavior. Watch the demo area and browser console for real-time feedback.
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Output</h2>
+        <div id="test-output">Click "Run All Tests" to start testing...\n</div>
+    </div>
+
+    <!-- Import the required modules -->
+    <script type="module">
+        import { resetState } from '../scripts/gameState.js';
+        import { PauseManager } from '../scripts/pauseManager.js';
+        import './timeout-integration.test.js';
+
+        // Global variables for demo
+        let demoManager = null;
+        let demoWarnings = [];
+
+        // Make functions available globally
+        window.runAllTests = async function() {
+            const statusIndicator = document.getElementById('test-status');
+            const runButton = document.getElementById('run-tests-btn');
+            const output = document.getElementById('test-output');
+            
+            // Update UI to show running state
+            statusIndicator.className = 'status-indicator status-running';
+            runButton.disabled = true;
+            output.textContent = 'Running timeout integration tests...\n\n';
+            
+            try {
+                // Capture console output
+                const originalLog = console.log;
+                const originalError = console.error;
+                
+                console.log = (...args) => {
+                    output.textContent += args.join(' ') + '\n';
+                    originalLog.apply(console, args);
+                };
+                
+                console.error = (...args) => {
+                    output.textContent += 'ERROR: ' + args.join(' ') + '\n';
+                    originalError.apply(console, args);
+                };
+                
+                // Run the tests
+                const success = await window.timeoutIntegrationTests.run();
+                
+                // Restore console
+                console.log = originalLog;
+                console.error = originalError;
+                
+                // Update UI based on results
+                statusIndicator.className = success ? 'status-indicator status-passed' : 'status-indicator status-failed';
+                output.textContent += '\n' + (success ? '✅ All tests passed!' : '❌ Some tests failed!');
+                
+            } catch (error) {
+                statusIndicator.className = 'status-indicator status-failed';
+                output.textContent += '\nERROR: ' + error.message;
+            } finally {
+                runButton.disabled = false;
+            }
+        };
+
+        window.runTimeoutDemo = function() {
+            const demoArea = document.getElementById('demo-area');
+            const demoStatus = document.getElementById('demo-status');
+            
+            // Clean up previous demo
+            if (demoManager) {
+                demoManager.resumeGame();
+            }
+            
+            demoManager = new PauseManager();
+            demoWarnings = [];
+            
+            // Set up warning callback
+            demoManager.setTimeoutWarningCallback((message) => {
+                demoWarnings.push(message);
+                demoStatus.innerHTML = `<div style="color: #dc3545; font-weight: bold;">⚠️ ${message}</div>`;
+                
+                // Show timeout warning in UI
+                showTimeoutWarningDemo(message);
+            });
+            
+            demoArea.innerHTML = `
+                <h3>🎮 Timeout Demo Running</h3>
+                <p>Game paused for 3 seconds - watch for timeout warning!</p>
+                <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                    <strong>Status:</strong> <span style="color: #856404;">Paused - waiting for timeout...</span>
+                </div>
+            `;
+            
+            // Start demo with 3-second timeout
+            demoManager.pauseGame('DEMO_TIMEOUT', 3000);
+            
+            // Update demo area when timeout occurs
+            setTimeout(() => {
+                if (!demoManager.isPaused()) {
+                    demoArea.innerHTML += `
+                        <div style="background: #d1ecf1; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                            <strong>Result:</strong> <span style="color: #0c5460;">Game auto-resumed after timeout!</span><br>
+                            <strong>Warnings received:</strong> ${demoWarnings.length}
+                        </div>
+                    `;
+                }
+            }, 3500);
+        };
+
+        window.runManualResumeDemo = function() {
+            const demoArea = document.getElementById('demo-area');
+            const demoStatus = document.getElementById('demo-status');
+            
+            // Clean up previous demo
+            if (demoManager) {
+                demoManager.resumeGame();
+            }
+            
+            demoManager = new PauseManager();
+            demoWarnings = [];
+            
+            // Set up warning callback
+            demoManager.setTimeoutWarningCallback((message) => {
+                demoWarnings.push(message);
+                demoStatus.innerHTML = `<div style="color: #dc3545; font-weight: bold;">⚠️ ${message}</div>`;
+            });
+            
+            demoArea.innerHTML = `
+                <h3>🎮 Manual Resume Demo</h3>
+                <p>Game paused for 5 seconds, but will be manually resumed in 2 seconds</p>
+                <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                    <strong>Status:</strong> <span style="color: #856404;">Paused - manual resume in 2s...</span>
+                </div>
+            `;
+            
+            // Start demo with 5-second timeout
+            demoManager.pauseGame('DEMO_MANUAL_RESUME', 5000);
+            
+            // Resume manually after 2 seconds
+            setTimeout(() => {
+                demoManager.resumeGame();
+                demoArea.innerHTML += `
+                    <div style="background: #d4edda; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                        <strong>Result:</strong> <span style="color: #155724;">Game manually resumed!</span><br>
+                        <strong>Timeout warnings:</strong> ${demoWarnings.length} (should be 0)
+                    </div>
+                `;
+                demoStatus.innerHTML = '<div style="color: #28a745; font-weight: bold;">✅ Manual resume successful</div>';
+            }, 2000);
+        };
+
+        window.clearOutput = function() {
+            document.getElementById('test-output').textContent = 'Output cleared.\n';
+            document.getElementById('test-status').className = 'status-indicator';
+        };
+
+        // Helper function to show timeout warning demo
+        function showTimeoutWarningDemo(message) {
+            // Create a visual timeout warning similar to PauseUI
+            const warning = document.createElement('div');
+            warning.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+                color: white;
+                padding: 12px 24px;
+                border-radius: 8px;
+                font-weight: 600;
+                font-size: 14px;
+                box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+                z-index: 1001;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            `;
+            warning.innerHTML = `⚠️ ${message}`;
+            
+            document.body.appendChild(warning);
+            
+            // Animate in
+            setTimeout(() => warning.style.opacity = '1', 10);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                warning.style.opacity = '0';
+                setTimeout(() => {
+                    if (warning.parentNode) {
+                        warning.parentNode.removeChild(warning);
+                    }
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

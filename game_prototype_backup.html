@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soccer Bet Pro - Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for a more game-like feel */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4f46e5;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6366f1;
+        }
+        /* Animation for event feed items */
+        .feed-item-enter {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        /* Keyframe animations for modals and highlights */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideInUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        .animate-slide-in-up {
+            animation: slideInUp 0.4s ease-out forwards;
+        }
+        .power-up-glow {
+            box-shadow: 0 0 15px 5px rgba(255, 215, 0, 0.6);
+        }
+        /* Countdown timer bar */
+        @keyframes countdown {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+        .countdown-bar-animate {
+            animation: countdown 10s linear forwards;
+        }
+        .bet-btn-selected {
+            box-shadow: 0 0 0 3px #a78bfa;
+            background-color: #4338ca;
+        }
+
+        /* Confetti Animation */
+        .confetti-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            opacity: 0.7;
+            animation: fall 5s linear forwards;
+        }
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Pause Overlay Styles */
+        #pause-overlay {
+            backdrop-filter: blur(4px);
+        }
+        
+        .pause-game-dimmed {
+            filter: brightness(0.3) blur(2px);
+            transition: filter 0.3s ease-in-out;
+        }
+        
+        .pause-game-normal {
+            filter: brightness(1) blur(0);
+            transition: filter 0.3s ease-in-out;
+        }
+        
+        /* Pause countdown animation */
+        @keyframes pauseCountdownPulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .pause-countdown-animate {
+            animation: pauseCountdownPulse 1s ease-in-out;
+        }
+        
+        /* Responsive pause overlay */
+        @media (max-width: 480px) {
+            #pause-overlay .bg-gray-800 {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+            
+            #pause-title {
+                font-size: 1.5rem;
+            }
+            
+            #pause-reason {
+                font-size: 1rem;
+            }
+        }
+        
+        @media (max-width: 320px) {
+            #pause-overlay .bg-gray-800 {
+                margin: 0.5rem;
+                padding: 1rem;
+            }
+            
+            #pause-title {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 antialiased">
+
+    <div id="app-container" class="max-w-md mx-auto min-h-screen bg-gray-800 shadow-2xl flex flex-col">
+
+        <!-- Screen: Lobby -->
+        <div id="lobby-screen" class="p-4 flex-grow flex flex-col">
+            <header class="text-center mb-6">
+                <h1 class="text-3xl font-bold text-white">Game Lobby</h1>
+                <p class="text-indigo-400">Join an upcoming simulated match</p>
+            </header>
+            <div id="match-list" class="space-y-4">
+                <!-- Match cards will be injected here by JS -->
+            </div>
+             <div class="mt-auto pt-4 text-center">
+                <p class="text-sm text-gray-400">Wallet: $<span id="lobby-wallet-balance">1000.00</span></p>
+                <button id="reset-prototype-btn" class="w-full mt-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white font-bold transition">Reset Prototype</button>
+            </div>
+        </div>
+
+        <!-- Screen: Match -->
+        <div id="match-screen" class="hidden flex-grow flex flex-col h-screen">
+            <!-- Header -->
+            <header class="bg-gray-900 p-3 shadow-lg sticky top-0 z-20">
+                <div class="flex justify-between items-center">
+                    <button id="back-to-lobby" class="text-indigo-400 hover:text-indigo-300">&larr; Lobby</button>
+                    <div class="text-center">
+                        <div id="match-timer" class="text-2xl font-bold text-white">00:00</div>
+                        <div id="match-teams" class="text-sm text-gray-400">TEAM A vs TEAM B</div>
+                    </div>
+                    <div id="match-score" class="text-2xl font-bold text-white">0 - 0</div>
+                </div>
+            </header>
+
+            <!-- Sticky Bet History Section -->
+            <div id="sticky-bet-history" class="bg-gray-900 p-2 shadow-md sticky top-[68px] z-10">
+                 <h3 class="text-md font-semibold text-white mb-2 text-center">Your Active Bets</h3>
+                 <div id="bet-history-list" class="space-y-2 max-h-24 overflow-y-auto p-1 bg-gray-800 rounded-lg">
+                     <p class="text-gray-500 text-center">No bets placed yet.</p>
+                 </div>
+            </div>
+
+            <!-- Main Content: Event Feed -->
+            <main id="event-feed-container" class="flex-grow p-4 overflow-y-auto bg-gray-800">
+                <div id="event-feed" class="space-y-3">
+                    <!-- Match events will be injected here -->
+                </div>
+            </main>
+
+            <!-- Footer: Player Dashboard & Controls -->
+            <footer class="bg-gray-900 p-4 shadow-up z-10">
+                <!-- Player Dashboard -->
+                <div id="player-dashboard" class="grid grid-cols-3 gap-2 text-center mb-4">
+                    <div>
+                        <div class="text-xs text-indigo-400 uppercase">Total Staked</div>
+                        <div id="total-staked" class="text-lg font-semibold text-white">$0.00</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-gray-400 uppercase">Wallet</div>
+                        <div id="match-wallet-balance" class="text-lg font-semibold text-white">$1000.00</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-green-400 uppercase">Potential Win</div>
+                        <div id="potential-win" class="text-lg font-semibold text-green-300">$0.00</div>
+                    </div>
+                </div>
+
+                <!-- Power-Up Section -->
+                <div id="power-up-section" class="mb-4 text-center">
+                     <div class="text-xs text-yellow-400 uppercase mb-2">Power-Up</div>
+                     <button id="power-up-slot" class="w-full h-12 bg-gray-700 border-2 border-dashed border-gray-500 rounded-lg flex items-center justify-center text-gray-500 transition-all duration-300">
+                        <span>Empty Slot</span>
+                    </button>
+                </div>
+                
+                <!-- Full Match Bet Section -->
+                <div id="full-match-bet-section">
+                    <div class="text-center mb-2 text-sm font-medium text-white">Full Match Outcome Bet (1X2)</div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button id="full-match-btn-HOME" class="bet-btn p-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition" data-bet-type="full-match" data-outcome="HOME">
+                            <span class="font-bold">Home</span>
+                            <span class="text-xs block odds-display">Odds: 1.85</span>
+                        </button>
+                        <button id="full-match-btn-DRAW" class="bet-btn p-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition" data-bet-type="full-match" data-outcome="DRAW">
+                            <span class="font-bold">Draw</span>
+                            <span class="text-xs block odds-display">Odds: 3.50</span>
+                        </button>
+                        <button id="full-match-btn-AWAY" class="bet-btn p-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition" data-bet-type="full-match" data-outcome="AWAY">
+                            <span class="font-bold">Away</span>
+                            <span class="text-xs block odds-display">Odds: 4.20</span>
+                        </button>
+                    </div>
+                    <!-- Inline Bet Slip for Full Match -->
+                    <div id="inline-bet-slip" class="hidden mt-3">
+                        <div class="grid grid-cols-4 gap-2 mb-2">
+                             <button class="quick-stake-btn-inline w-full py-2 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition" data-amount="10">$10</button>
+                             <button class="quick-stake-btn-inline w-full py-2 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition" data-amount="25">$25</button>
+                             <button class="quick-stake-btn-inline w-full py-2 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition" data-amount="50">$50</button>
+                             <button class="quick-stake-btn-inline w-full py-2 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition" data-amount="100">$100</button>
+                        </div>
+                        <div class="flex gap-2">
+                             <input type="number" id="inline-stake-amount" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-3 text-center text-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Stake">
+                             <button id="confirm-inline-bet-btn" class="w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg text-white font-bold transition">Confirm</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Classic Mode Toggle -->
+                <div class="mt-4 text-center">
+                    <label for="classic-mode-toggle" class="flex items-center justify-center cursor-pointer">
+                        <span class="text-sm text-gray-400 mr-3">Classic Mode</span>
+                        <div class="relative">
+                            <input type="checkbox" id="classic-mode-toggle" class="sr-only">
+                            <div class="block bg-gray-600 w-14 h-8 rounded-full"></div>
+                            <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div>
+                        </div>
+                    </label>
+                </div>
+            </footer>
+        </div>
+
+    </div>
+
+    <!-- Modal: Action Bet Slip (repurposed from full match) -->
+    <div id="action-bet-slip-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div class="bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-sm animate-slide-in-up">
+            <h2 id="action-slip-title" class="text-2xl font-bold text-white text-center mb-4">Place Action Bet</h2>
+            <p id="action-slip-description" class="text-center text-gray-300 mb-6">Description of the bet</p>
+            <div class="mb-6">
+                <label for="action-slip-amount" class="block text-sm font-medium text-indigo-400 mb-2 text-center">Stake Amount</label>
+                <div class="grid grid-cols-4 gap-2 mb-3">
+                    <button class="quick-stake-btn-action-slip w-full py-2 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition" data-amount="10">$10</button>
+                    <button class="quick-stake-btn-action-slip w-full py-2 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition" data-amount="25">$25</button>
+                    <button class="quick-stake-btn-action-slip w-full py-2 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition" data-amount="50">$50</button>
+                    <button class="quick-stake-btn-action-slip w-full py-2 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition" data-amount="100">$100</button>
+                </div>
+                <input type="number" id="action-slip-amount" class="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-3 text-center text-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Or enter amount">
+            </div>
+            <div class="flex space-x-2">
+                <button id="cancel-action-slip-btn" class="w-full py-3 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-bold transition">Cancel</button>
+                <button id="confirm-action-slip-btn" class="w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg text-white font-bold transition">Confirm Bet</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal: Multi-Choice Action Bet -->
+    <div id="action-bet-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div class="bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-sm animate-slide-in-up relative overflow-hidden">
+            <!-- Timer Bar Container - positioned at the top of the modal -->
+            <div class="timer-bar-container absolute top-0 left-0 right-0 z-10">
+                <div id="action-bet-timer-bar" class="timer-bar timer-bar-normal"></div>
+            </div>
+            <h2 id="action-bet-title" class="text-2xl font-bold text-yellow-300 text-center mb-2">⚡ Action Bet! ⚡</h2>
+            <p id="action-bet-main-description" class="text-center text-gray-300 mb-4">Description of the bet</p>
+            <div id="action-bet-choices" class="space-y-2 mb-4">
+                <!-- Dynamic choices will be injected here -->
+            </div>
+            <div class="flex">
+                <button id="skip-action-bet-btn" class="w-full py-3 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-bold transition">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Match End -->
+    <div id="match-end-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div class="bg-gray-800 rounded-xl shadow-2xl p-8 w-full max-w-sm text-center animate-slide-in-up relative">
+            <div id="confetti-container" class="confetti-container"></div>
+            <h2 class="text-3xl font-bold text-white mb-2">Full Time!</h2>
+            <p id="match-end-score" class="text-xl text-gray-300 mb-4">Final Score: 1 - 0</p>
+            <div id="match-end-winnings" class="text-2xl font-bold text-green-400 mb-4">You won $185.00!</div>
+            <div class="mb-6">
+                <h4 class="text-lg font-semibold text-white mb-2">Bet Summary</h4>
+                <div id="match-end-bet-summary" class="space-y-2 max-h-40 overflow-y-auto p-2 bg-gray-900 rounded-lg text-left">
+                    <!-- Bet summary will be injected here -->
+                </div>
+            </div>
+            <button id="return-to-lobby-btn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-bold transition">Return to Lobby</button>
+        </div>
+    </div>
+
+    <!-- Pause Overlay -->
+    <div id="pause-overlay" class="hidden fixed inset-0 bg-black bg-opacity-80 z-40 flex items-center justify-center p-4" 
+         role="dialog" 
+         aria-modal="true" 
+         aria-labelledby="pause-title" 
+         aria-describedby="pause-reason">
+        <div class="bg-gray-800 rounded-xl shadow-2xl p-8 w-full max-w-sm text-center border-2 border-yellow-400">
+            <div class="mb-4">
+                <div class="text-4xl mb-2" aria-hidden="true">⏸️</div>
+                <h2 id="pause-title" class="text-2xl font-bold text-yellow-300 mb-2">Game Paused</h2>
+                <p id="pause-reason" class="text-lg text-gray-300 mb-4">Betting in Progress</p>
+            </div>
+            
+            <div id="pause-waiting-message" class="mb-4">
+                <div class="flex items-center justify-center space-x-2 text-indigo-400">
+                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-400" aria-hidden="true"></div>
+                    <span id="pause-waiting-text">Waiting for players...</span>
+                </div>
+            </div>
+            
+            <div id="pause-countdown" class="hidden">
+                <div class="text-3xl font-bold text-green-400 mb-2" id="pause-countdown-number" aria-live="polite">3</div>
+                <p class="text-gray-300">Resuming game...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import MinimizedIndicator component -->
+    <script src="scripts/minimizedIndicator.js"></script>
+    
+    <!-- Import TimerBar component -->
+    <script src="scripts/timerBar.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- DOM ELEMENTS ---
+        const lobbyScreen = document.getElementById('lobby-screen');
+        const matchScreen = document.getElementById('match-screen');
+        const actionBetSlipModal = document.getElementById('action-bet-slip-modal');
+        const actionBetModal = document.getElementById('action-bet-modal');
+        const matchEndModal = document.getElementById('match-end-modal');
+        const inlineBetSlip = document.getElementById('inline-bet-slip');
+        const inlineStakeAmount = document.getElementById('inline-stake-amount');
+        const confettiContainer = document.getElementById('confetti-container');
+
+        // --- GAME STATE ---
+        let state;
+
+        function getInitialState() {
+            return {
+                currentScreen: 'lobby',
+                wallet: 1000.00,
+                classicMode: false,
+                match: {
+                    active: false,
+                    time: 0,
+                    homeScore: 0,
+                    awayScore: 0,
+                    homeTeam: '',
+                    awayTeam: '',
+                    timeline: [],
+                    odds: { home: 1.85, draw: 3.50, away: 4.20 },
+                    initialOdds: { home: 1.85, draw: 3.50, away: 4.20 },
+                    initialWallet: 1000.00,
+                },
+                bets: {
+                    fullMatch: [],
+                    actionBets: [],
+                },
+                powerUp: {
+                    held: null,
+                    applied: false,
+                },
+                currentBet: null,
+                currentActionBet: {
+                    active: false,
+                    details: null,
+                    timeoutId: null,
+                },
+            };
+        }
+        
+        state = getInitialState();
+
+        // --- SIMULATION DATA ---
+        const MOCK_MATCHES = [
+            { home: 'Quantum Strikers', away: 'Celestial FC' },
+            { home: 'Nova United', away: 'Vortex Rovers' },
+        ];
+        
+        // --- GAME LOGIC & SIMULATION ---
+
+        let matchInterval;
+
+        function startGame(matchData) {
+            resetMatchState(matchData);
+            state.currentScreen = 'match';
+            matchInterval = setInterval(tick, 500);
+            render();
+        }
+
+        function tick() {
+            // Check if game is paused - if so, don't process game logic
+            if (window.pauseManager && window.pauseManager.isPaused()) {
+                return;
+            }
+            
+            state.match.time++;
+            
+            const eventsToProcess = state.match.timeline.filter(event => event.time === state.match.time);
+            eventsToProcess.forEach(processMatchEvent);
+
+            if (state.match.time % 5 === 0) {
+                updateOdds();
+            }
+
+            if (state.match.time >= 90) {
+                endMatch();
+            }
+            
+            renderMatchTimeAndScore();
+        }
+
+        function processMatchEvent(event) {
+            addEventToFeed(event.description);
+            
+            switch(event.type) {
+                case 'GOAL':
+                    if (event.team === 'HOME') state.match.homeScore++;
+                    else state.match.awayScore++;
+                    break;
+                case 'MULTI_CHOICE_ACTION_BET':
+                    if (!state.classicMode && !state.currentActionBet.active) {
+                        showMultiChoiceActionBet(event);
+                    }
+                    break;
+                case 'RESOLUTION':
+                    resolveBets(event.betType, event.result);
+                    break;
+            }
+        }
+        
+        function endMatch() {
+            clearInterval(matchInterval);
+            if(state.currentActionBet.timeoutId) clearTimeout(state.currentActionBet.timeoutId);
+            state.match.active = false;
+            addEventToFeed("The referee blows the final whistle. Full Time!");
+            
+            let totalWinnings = 0;
+            let finalOutcome;
+            if (state.match.homeScore > state.match.awayScore) finalOutcome = 'HOME';
+            else if (state.match.homeScore < state.match.awayScore) finalOutcome = 'AWAY';
+            else finalOutcome = 'DRAW';
+
+            // Finalize full match bet statuses for summary
+            state.bets.fullMatch.forEach(bet => {
+                bet.status = (bet.outcome === finalOutcome) ? 'WON' : 'LOST';
+            });
+
+            // Calculate winnings
+            state.bets.fullMatch.forEach(bet => {
+                if (bet.status === 'WON') {
+                    totalWinnings += bet.stake * bet.odds;
+                }
+            });
+
+            let resultMessage;
+            if (totalWinnings > 0) {
+                if (state.powerUp.applied) {
+                    const originalWinnings = totalWinnings;
+                    totalWinnings *= 2;
+                     resultMessage = `YOU WON! Your 2x Power-Up turned $${originalWinnings.toFixed(2)} into $${totalWinnings.toFixed(2)}!`;
+                } else {
+                    resultMessage = `Congratulations! You won a total of $${totalWinnings.toFixed(2)}!`;
+                }
+                state.wallet += totalWinnings;
+            } else {
+                 resultMessage = "None of your full match bets won. Better luck next time.";
+            }
+            
+            // Show summary
+            document.getElementById('match-end-score').textContent = `Final Score: ${state.match.homeScore} - ${state.match.awayScore}`;
+            document.getElementById('match-end-winnings').innerHTML = resultMessage;
+            renderEndGameSummary(finalOutcome);
+            
+            // Trigger win animation if profitable
+            if(state.wallet > state.match.initialWallet) {
+                triggerWinAnimation();
+            }
+
+            matchEndModal.classList.remove('hidden');
+        }
+
+        function placeBet(type, outcome, odds, stake, betType = null) {
+            if (stake <= 0 || stake > state.wallet) {
+                addEventToFeed("Invalid stake amount.", "text-red-400");
+                return;
+            }
+
+            state.wallet -= stake;
+
+            if (type === 'full-match') {
+                state.bets.fullMatch.push({ outcome, stake, odds });
+            } else if (type === 'action') {
+                const newBet = { description: outcome, stake, odds, status: 'PENDING', betType };
+                state.bets.actionBets.push(newBet);
+                
+                // Resume game when action bet is placed
+                if (window.pauseManager) {
+                    window.pauseManager.resumeGame();
+                }
+            }
+            render();
+        }
+
+        function resolveBets(betType, result) {
+            // Use map to create a new array with updated statuses, ensuring a clean state update
+            const updatedActionBets = state.bets.actionBets.map(bet => {
+                // If this isn't the bet we're looking for, return it unchanged
+                if (bet.betType !== betType || bet.status !== 'PENDING') {
+                    return bet;
+                }
+        
+                // It's the right type and pending, so resolve it
+                if (bet.description === result) {
+                    bet.status = 'WON';
+                    const winnings = bet.stake * bet.odds;
+                    state.wallet += winnings;
+                    addEventToFeed(`✅ Action Bet Won: '${bet.description}'. You won $${winnings.toFixed(2)}!`, 'text-green-400');
+                    
+                    if (!state.powerUp.held && !state.classicMode && Math.random() > 0.2) {
+                        awardPowerUp('2x_MULTIPLIER');
+                    }
+                } else {
+                    bet.status = 'LOST';
+                    addEventToFeed(`❌ Action Bet Lost: '${bet.description}'.`, 'text-red-400');
+                }
+                return bet;
+            });
+        
+            state.bets.actionBets = updatedActionBets;
+            render();
+        }
+        
+        function awardPowerUp(type) {
+            state.powerUp.held = type;
+            addEventToFeed(`⭐ POWER-UP AWARDED: 2x Winnings Multiplier!`, 'text-yellow-300 font-bold');
+            renderPowerUp();
+        }
+        
+        function usePowerUp() {
+            if (state.powerUp.held && state.bets.fullMatch.length > 0 && !state.powerUp.applied) {
+                state.powerUp.applied = true;
+                state.powerUp.held = null;
+                addEventToFeed(`⚡ POWER-UP APPLIED to your full match bets! Potential winnings are now doubled.`, 'text-yellow-300 font-bold');
+                render();
+            } else if (state.bets.fullMatch.length === 0) {
+                addEventToFeed(`Place a Full Match Bet before using a Power-Up!`, 'text-yellow-400');
+            }
+        }
+
+        function updateOdds() {
+            if (!state.match.active) return;
+            const { time, homeScore, awayScore, odds, initialOdds } = state.match;
+            const timeFactor = time / 90;
+
+            if (homeScore > awayScore) {
+                odds.home = Math.max(1.05, initialOdds.home - (initialOdds.home - 1.05) * timeFactor * 1.5);
+                odds.draw = initialOdds.draw + 2 * timeFactor;
+                odds.away = initialOdds.away + 3 * timeFactor;
+            } else if (awayScore > homeScore) {
+                odds.away = Math.max(1.05, initialOdds.away - (initialOdds.away - 1.05) * timeFactor * 1.5);
+                odds.draw = initialOdds.draw + 2 * timeFactor;
+                odds.home = initialOdds.home + 3 * timeFactor;
+            } else {
+                odds.home = initialOdds.home - (initialOdds.home * 0.1 * timeFactor);
+                odds.away = initialOdds.away - (initialOdds.away * 0.1 * timeFactor);
+                odds.draw = Math.max(1.5, initialOdds.draw - (initialOdds.draw - 1.5) * timeFactor);
+            }
+            renderOdds();
+        }
+
+        function resetMatchState(matchData) {
+            state.match = {
+                active: true,
+                time: 0,
+                homeScore: 0,
+                awayScore: 0,
+                homeTeam: matchData.home,
+                awayTeam: matchData.away,
+                timeline: generateMatchTimeline(matchData),
+                odds: { home: 1.85, draw: 3.50, away: 4.20 },
+                initialOdds: { home: 1.85, draw: 3.50, away: 4.20 },
+                initialWallet: state.wallet,
+            };
+            state.bets = { fullMatch: [], actionBets: [] };
+            state.powerUp = { held: null, applied: false };
+            
+            document.getElementById('event-feed').innerHTML = '';
+            document.getElementById('match-timer').textContent = '00:00';
+            document.getElementById('match-score').textContent = '0 - 0';
+        }
+        
+        function backToLobby() {
+            clearInterval(matchInterval);
+            if(state.currentActionBet.timeoutId) clearTimeout(state.currentActionBet.timeoutId);
+            state.currentScreen = 'lobby';
+            render();
+        }
+        
+        function resetPrototype() {
+            clearInterval(matchInterval);
+            state = getInitialState();
+            actionBetSlipModal.classList.add('hidden');
+            actionBetModal.classList.add('hidden');
+            matchEndModal.classList.add('hidden');
+            render();
+        }
+
+        // --- UI RENDERING ---
+
+        function render() {
+            lobbyScreen.classList.toggle('hidden', state.currentScreen !== 'lobby');
+            matchScreen.classList.toggle('hidden', state.currentScreen !== 'match');
+            
+            if (state.currentScreen === 'lobby') {
+                renderLobby();
+            } else if (state.currentScreen === 'match') {
+                renderMatchScreen();
+            }
+        }
+
+        function renderLobby() {
+            const matchList = document.getElementById('match-list');
+            matchList.innerHTML = '';
+            MOCK_MATCHES.forEach((match) => {
+                const matchCard = document.createElement('div');
+                matchCard.className = 'bg-gray-700 p-4 rounded-lg shadow-md cursor-pointer hover:bg-indigo-700 transition';
+                matchCard.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="font-bold text-white text-lg">${match.home} vs ${match.away}</div>
+                            <div class="text-sm text-gray-400">Simulated Match</div>
+                        </div>
+                        <span class="text-lg font-bold text-green-400">JOIN &rarr;</span>
+                    </div>
+                `;
+                matchCard.onclick = () => startGame(match);
+                matchList.appendChild(matchCard);
+            });
+            document.getElementById('lobby-wallet-balance').textContent = state.wallet.toFixed(2);
+        }
+
+        function renderMatchScreen() {
+            document.getElementById('match-teams').textContent = `${state.match.homeTeam} vs ${state.match.awayTeam}`;
+            renderMatchTimeAndScore();
+            renderDashboard();
+            renderPowerUp();
+            renderOdds();
+            renderBetHistory();
+        }
+        
+        function renderMatchTimeAndScore() {
+            const minutes = Math.floor(state.match.time).toString().padStart(2, '0');
+            document.getElementById('match-timer').textContent = `${minutes}'`;
+            document.getElementById('match-score').textContent = `${state.match.homeScore} - ${state.match.awayScore}`;
+        }
+        
+        function renderDashboard() {
+            const fullMatchStakes = state.bets.fullMatch.reduce((sum, bet) => sum + bet.stake, 0);
+            const actionBetStakes = state.bets.actionBets.reduce((sum, bet) => sum + bet.stake, 0);
+            const totalStaked = fullMatchStakes + actionBetStakes;
+
+            let potentialWin = state.bets.fullMatch.reduce((sum, bet) => sum + (bet.stake * bet.odds), 0);
+
+            if (state.powerUp.applied) {
+                potentialWin *= 2;
+            }
+            
+            document.getElementById('total-staked').textContent = `$${totalStaked.toFixed(2)}`;
+            document.getElementById('potential-win').textContent = `$${potentialWin.toFixed(2)}`;
+            document.getElementById('match-wallet-balance').textContent = `$${state.wallet.toFixed(2)}`;
+        }
+        
+        function renderPowerUp() {
+            const slot = document.getElementById('power-up-slot');
+            if (state.classicMode) {
+                slot.innerHTML = `<span>Power-Ups Disabled</span>`;
+                slot.className = 'w-full h-12 bg-gray-800 border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center text-gray-600 cursor-not-allowed';
+                slot.classList.remove('power-up-glow');
+                slot.onclick = null;
+            } else if (state.powerUp.held) {
+                slot.innerHTML = `<span class="font-bold text-yellow-300">⚡ 2x WINNINGS ⚡</span>`;
+                slot.className = 'w-full h-12 bg-indigo-600 border-2 border-yellow-400 rounded-lg flex items-center justify-center cursor-pointer transition-all duration-300';
+                slot.classList.add('power-up-glow');
+                slot.onclick = usePowerUp;
+            } else {
+                slot.innerHTML = `<span>Empty Slot</span>`;
+                slot.className = 'w-full h-12 bg-gray-700 border-2 border-dashed border-gray-500 rounded-lg flex items-center justify-center text-gray-500 transition-all duration-300';
+                slot.classList.remove('power-up-glow');
+                slot.onclick = null;
+            }
+        }
+
+        function renderOdds() {
+            document.querySelector('#full-match-btn-HOME .odds-display').textContent = `Odds: ${state.match.odds.home.toFixed(2)}`;
+            document.querySelector('#full-match-btn-DRAW .odds-display').textContent = `Odds: ${state.match.odds.draw.toFixed(2)}`;
+            document.querySelector('#full-match-btn-AWAY .odds-display').textContent = `Odds: ${state.match.odds.away.toFixed(2)}`;
+        }
+
+        function renderBetHistory() {
+            const list = document.getElementById('bet-history-list');
+            list.innerHTML = '';
+
+            const allBets = [...state.bets.fullMatch, ...state.bets.actionBets];
+
+            if (allBets.length === 0) {
+                list.innerHTML = '<p class="text-gray-500 text-center">No bets placed yet.</p>';
+                return;
+            }
+
+            allBets.forEach(bet => {
+                const item = document.createElement('div');
+                let betText, statusText = '', statusClass = '';
+                
+                if (bet.betType) {
+                    betText = `${bet.description}`;
+                    if (bet.status === 'WON') {
+                        statusText = `<span class="font-bold text-green-400">WIN</span>`;
+                        statusClass = 'border-l-4 border-green-500';
+                    } else if (bet.status === 'LOST') {
+                        statusText = `<span class="font-bold text-red-400">LOSE</span>`;
+                        statusClass = 'border-l-4 border-red-500';
+                    } else { // PENDING
+                        statusText = `<span class="font-bold text-gray-400">...</span>`;
+                        statusClass = 'border-l-4 border-gray-500';
+                    }
+                } else { // Full match bet
+                    betText = `Match: ${bet.outcome} Win/Draw`;
+                    statusClass = 'border-l-4 border-indigo-500';
+                }
+
+                item.className = `p-2 bg-gray-700 rounded-md text-xs flex justify-between items-center ${statusClass}`;
+                item.innerHTML = `
+                    <div>
+                        <span>${betText}</span>
+                        <span class="ml-2 text-gray-400">($${bet.stake.toFixed(2)} @ ${bet.odds.toFixed(2)})</span>
+                    </div>
+                    ${statusText}
+                `;
+                list.appendChild(item);
+            });
+        }
+        
+        function renderEndGameSummary() {
+            const summaryContainer = document.getElementById('match-end-bet-summary');
+            summaryContainer.innerHTML = '';
+            const allBets = [...state.bets.fullMatch, ...state.bets.actionBets];
+
+            allBets.forEach(bet => {
+                const item = document.createElement('div');
+                let betText, resultText, resultClass;
+
+                const stakeText = `$${bet.stake.toFixed(2)} @ ${bet.odds.toFixed(2)}`;
+                if (bet.betType) { // Action Bet
+                    betText = bet.description;
+                } else { // Full Match Bet
+                    betText = `Match: ${bet.outcome} Win/Draw`;
+                }
+
+                if (bet.status === 'WON') {
+                    let winAmount = bet.stake * bet.odds;
+                    if (!bet.betType && state.powerUp.applied) { // Apply powerup only to full match bets
+                        winAmount *= 2;
+                    }
+                    resultText = `+ $${winAmount.toFixed(2)}`;
+                    resultClass = 'text-green-400';
+                } else { // LOST or PENDING (for any unresolved action bets)
+                    resultText = `- $${bet.stake.toFixed(2)}`;
+                    resultClass = 'text-red-400';
+                }
+
+                item.className = `p-2 bg-gray-800 rounded-md text-sm flex justify-between items-center`;
+                item.innerHTML = `
+                    <div>
+                        <p>${betText}</p>
+                        <p class="text-xs text-gray-500">${stakeText}</p>
+                    </div>
+                    <p class="font-bold ${resultClass}">${resultText}</p>
+                `;
+                summaryContainer.appendChild(item);
+            });
+        }
+
+
+        function addEventToFeed(text, customClass = '') {
+            const feed = document.getElementById('event-feed');
+            const item = document.createElement('div');
+            item.className = `p-3 bg-gray-700 rounded-lg text-sm shadow ${customClass} feed-item-enter`;
+            item.textContent = text;
+            feed.appendChild(item);
+            
+            requestAnimationFrame(() => {
+                item.style.opacity = 1;
+                item.style.transform = 'translateY(0)';
+            });
+
+            feed.parentElement.scrollTop = feed.parentElement.scrollHeight;
+        }
+        
+        function showActionBetSlip(type, outcome, odds, betType = null) {
+            state.currentBet = { type, outcome, odds, betType };
+            document.getElementById('action-slip-title').textContent = 'Place Action Bet';
+            document.getElementById('action-slip-description').textContent = `You are betting on: ${outcome}`;
+            document.getElementById('action-slip-amount').value = '';
+            actionBetSlipModal.classList.remove('hidden');
+            document.getElementById('action-slip-amount').focus();
+        }
+
+        function showInlineBetSlip(outcome, odds) {
+            state.currentBet = { type: 'full-match', outcome, odds };
+            inlineBetSlip.classList.remove('hidden');
+            inlineStakeAmount.value = '';
+            inlineStakeAmount.focus();
+
+            document.querySelectorAll('[data-bet-type="full-match"]').forEach(btn => {
+                btn.classList.remove('bet-btn-selected');
+            });
+            document.getElementById(`full-match-btn-${outcome}`).classList.add('bet-btn-selected');
+        }
+
+        function hideInlineBetSlip() {
+            inlineBetSlip.classList.add('hidden');
+            document.querySelectorAll('[data-bet-type="full-match"]').forEach(btn => {
+                btn.classList.remove('bet-btn-selected');
+            });
+            state.currentBet = null;
+        }
+        
+        function showMultiChoiceActionBet(event) {
+            // Pause the game when betting opportunity appears
+            if (window.pauseManager) {
+                window.pauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            }
+            
+            state.currentActionBet = {
+                active: true,
+                details: event,
+                timeoutId: null,
+            };
+
+            document.getElementById('action-bet-title').textContent = '⚡ Foul Event! ⚡';
+            document.getElementById('action-bet-main-description').textContent = event.description;
+            const choicesContainer = document.getElementById('action-bet-choices');
+            choicesContainer.innerHTML = '';
+
+            event.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.className = 'w-full py-3 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition';
+                button.innerHTML = `${choice.text} <span class="text-gray-400 text-xs">@${choice.odds.toFixed(2)}</span>`;
+                button.onclick = () => {
+                    hideActionBet();
+                    showActionBetSlip('action', choice.text, choice.odds, event.betType);
+                };
+                choicesContainer.appendChild(button);
+            });
+
+            actionBetModal.classList.remove('hidden');
+
+            const timerBar = document.getElementById('action-bet-timer-bar');
+            timerBar.classList.remove('countdown-bar-animate');
+            void timerBar.offsetWidth; // Trigger reflow
+            timerBar.classList.add('countdown-bar-animate');
+
+            state.currentActionBet.timeoutId = setTimeout(() => hideActionBet(true), 10000);
+        }
+
+        function hideActionBet(timedOut = false) {
+            if (!state.currentActionBet.active) return;
+            if (timedOut) {
+                addEventToFeed(`Action Bet on '${state.currentActionBet.details.description}' timed out.`, 'text-gray-400');
+            }
+            clearTimeout(state.currentActionBet.timeoutId);
+            state.currentActionBet.active = false;
+            state.currentActionBet.details = null;
+            state.currentActionBet.timeoutId = null;
+            actionBetModal.classList.add('hidden');
+            
+            // Resume the game when betting opportunity ends
+            if (window.pauseManager) {
+                window.pauseManager.resumeGame();
+            }
+        }
+
+        function triggerWinAnimation() {
+            confettiContainer.innerHTML = '';
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = `${Math.random() * 100}%`;
+                confetti.style.animationDelay = `${Math.random() * 2}s`;
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                confettiContainer.appendChild(confetti);
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        document.getElementById('back-to-lobby').addEventListener('click', backToLobby);
+        document.getElementById('return-to-lobby-btn').addEventListener('click', () => {
+            matchEndModal.classList.add('hidden');
+            backToLobby();
+        });
+        document.getElementById('reset-prototype-btn').addEventListener('click', resetPrototype);
+
+
+        // Action Bet Slip listeners
+        document.getElementById('cancel-action-slip-btn').addEventListener('click', () => actionBetSlipModal.classList.add('hidden'));
+        document.getElementById('confirm-action-slip-btn').addEventListener('click', () => {
+            const stake = parseFloat(document.getElementById('action-slip-amount').value);
+            if (state.currentBet) {
+                placeBet(state.currentBet.type, state.currentBet.outcome, state.currentBet.odds, stake, state.currentBet.betType);
+                state.currentBet = null;
+            }
+            actionBetSlipModal.classList.add('hidden');
+        });
+        document.querySelectorAll('#action-bet-slip-modal .quick-stake-btn-action-slip').forEach(button => {
+            button.addEventListener('click', (e) => {
+                document.getElementById('action-slip-amount').value = e.currentTarget.dataset.amount;
+            });
+        });
+
+        // Inline Full Match Bet listeners
+        document.getElementById('confirm-inline-bet-btn').addEventListener('click', () => {
+            const stake = parseFloat(inlineStakeAmount.value);
+            if (state.currentBet) {
+                placeBet(state.currentBet.type, state.currentBet.outcome, state.currentBet.odds, stake);
+            }
+            hideInlineBetSlip();
+        });
+         document.querySelectorAll('#inline-bet-slip .quick-stake-btn-inline').forEach(button => {
+            button.addEventListener('click', (e) => {
+                inlineStakeAmount.value = e.currentTarget.dataset.amount;
+            });
+        });
+
+
+        // Action bet modal listeners
+        document.getElementById('skip-action-bet-btn').addEventListener('click', () => hideActionBet());
+        
+        // Full match bet buttons
+        document.querySelectorAll('[data-bet-type="full-match"]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const outcome = e.currentTarget.dataset.outcome;
+                const odds = state.match.odds[outcome.toLowerCase()];
+                showInlineBetSlip(outcome, odds);
+            });
+        });
+        
+        // Classic mode toggle
+        const toggle = document.getElementById('classic-mode-toggle');
+        toggle.addEventListener('change', () => {
+            state.classicMode = toggle.checked;
+            const dot = toggle.nextElementSibling.nextElementSibling;
+            if (state.classicMode) {
+                dot.style.transform = 'translateX(24px)';
+                addEventToFeed("Classic Mode Enabled: Power-Ups are disabled for this match.", "text-gray-400 italic");
+            } else {
+                dot.style.transform = 'translateX(0)';
+                addEventToFeed("Standard Mode Enabled: Power-Ups are active.", "text-gray-400 italic");
+            }
+            renderPowerUp();
+        });
+
+        // --- UTILITY: MATCH TIMELINE GENERATOR ---
+        function generateMatchTimeline(matchData) {
+            let timeline = [];
+            timeline.push({ time: 1, type: 'KICK_OFF', description: 'The match has kicked off!' });
+
+            let eventTimes = new Set();
+            for (let time = 5; time < 90; time += (Math.floor(Math.random() * 10) + 8)) {
+                 if (time > 88) break;
+                 eventTimes.add(time);
+            }
+            
+            Array.from(eventTimes).sort((a,b) => a-b).forEach(time => {
+                const rand = Math.random();
+                if (rand < 0.20) {
+                    const team = Math.random() > 0.5 ? 'HOME' : 'AWAY';
+                    timeline.push({ time, type: 'GOAL', team, description: `GOAL! A stunning strike for the ${team === 'HOME' ? matchData.home : matchData.away}!` });
+                } else if (rand < 0.65) {
+                    const foulOutcomes = [
+                        { result: 'Yellow Card', text: 'The ref shows a Yellow Card!', odds: 2.5 },
+                        { result: 'Red Card', text: 'It\'s a RED CARD! The player is off!', odds: 8.0 },
+                        { result: 'Warning', text: 'The referee gives a stern warning.', odds: 1.5 },
+                    ];
+                    const outcomeRand = Math.random();
+                    let chosenOutcome;
+                    if (outcomeRand < 0.6) chosenOutcome = foulOutcomes[0]; // Yellow
+                    else if (outcomeRand < 0.9) chosenOutcome = foulOutcomes[2]; // Warning
+                    else chosenOutcome = foulOutcomes[1]; // Red
+
+                    timeline.push({
+                        time,
+                        type: 'MULTI_CHOICE_ACTION_BET',
+                        betType: 'FOUL_OUTCOME',
+                        description: 'Crunching tackle near the box! What will the ref do?',
+                        choices: [
+                            { text: 'Yellow Card', odds: 2.5 },
+                            { text: 'Red Card', odds: 8.0 },
+                            { text: 'Warning', odds: 1.5 },
+                        ],
+                    });
+                    // Add the resolution event a few seconds later
+                    timeline.push({ time: time + 4, type: 'RESOLUTION', betType: 'FOUL_OUTCOME', result: chosenOutcome.result, description: chosenOutcome.text });
+                } else {
+                    const eventTypes = ['A great save by the keeper!', 'The shot goes just wide!', 'A crunching tackle in midfield.', 'A promising attack breaks down.'];
+                    timeline.push({ time, type: 'COMMENTARY', description: eventTypes[Math.floor(Math.random() * eventTypes.length)] });
+                }
+            });
+            
+            return timeline.sort((a, b) => a.time - b.time);
+        }
+
+        // --- INITIALIZE APP ---
+        render();
+    });
+    </script>
+    
+    <!-- Pause System Scripts -->
+    <script type="module">
+        import { pauseManager } from './scripts/pauseManager.js';
+        import { pauseUI } from './scripts/pauseUI.js';
+        
+        // Make pause system available globally
+        window.pauseManager = pauseManager;
+        window.pauseUI = pauseUI;
+        
+        // Initialize pause system
+        pauseManager.initialize();
+        pauseUI.initialize();
+    </script>
+</body>
+</html>

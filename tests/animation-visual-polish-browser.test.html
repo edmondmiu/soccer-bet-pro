@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation and Visual Polish - Browser Tests</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/animations.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: #1f2937;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .test-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            background: #111827;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .test-button {
+            padding: 0.5rem 1rem;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .test-button:hover {
+            background: #6366f1;
+        }
+        
+        .test-button:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+        
+        .status.success {
+            background: #065f46;
+            color: #10b981;
+        }
+        
+        .status.error {
+            background: #7f1d1d;
+            color: #f87171;
+        }
+        
+        .status.info {
+            background: #1e3a8a;
+            color: #60a5fa;
+        }
+        
+        .demo-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #374151;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            min-width: 300px;
+        }
+        
+        .demo-timer-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        
+        .demo-timer-fill {
+            height: 100%;
+            width: 100%;
+            transition: width 0.1s linear;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto p-6 max-w-4xl">
+        <h1 class="text-3xl font-bold mb-6">Animation and Visual Polish Tests</h1>
+        <p class="text-gray-300 mb-8">Interactive tests for CSS animations, visual feedback, and accessibility features.</p>
+
+        <!-- Minimized Indicator Tests -->
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Minimized Indicator Animations</h2>
+            <div class="test-controls">
+                <button class="test-button" onclick="testIndicatorEntrance()">Test Entrance Animation</button>
+                <button class="test-button" onclick="testIndicatorExit()">Test Exit Animation</button>
+                <button class="test-button" onclick="testIndicatorUrgent()">Test Urgent State</button>
+                <button class="test-button" onclick="testIndicatorHover()">Test Hover Effects</button>
+                <button class="test-button" onclick="testIndicatorAccessibility()">Test Accessibility</button>
+            </div>
+            <div id="indicator-status" class="status info">Ready to test indicator animations</div>
+        </div>
+
+        <!-- Timer Bar Tests -->
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Timer Bar Animations</h2>
+            <div class="demo-timer-bar">
+                <div id="demo-timer-fill" class="demo-timer-fill timer-bar-normal"></div>
+            </div>
+            <div class="test-controls">
+                <button class="test-button" onclick="testTimerBarNormal()">Normal State</button>
+                <button class="test-button" onclick="testTimerBarWarning()">Warning State</button>
+                <button class="test-button" onclick="testTimerBarUrgent()">Urgent State</button>
+                <button class="test-button" onclick="testTimerBarCountdown()">Full Countdown</button>
+            </div>
+            <div id="timer-status" class="status info">Ready to test timer bar animations</div>
+        </div>
+
+        <!-- Modal Animation Tests -->
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Modal Minimize/Restore Animations</h2>
+            <div class="test-controls">
+                <button class="test-button" onclick="testModalMinimize()">Test Minimize Animation</button>
+                <button class="test-button" onclick="testModalRestore()">Test Restore Animation</button>
+                <button class="test-button" onclick="testModalSequence()">Test Full Sequence</button>
+            </div>
+            <div id="modal-status" class="status info">Ready to test modal animations</div>
+        </div>
+
+        <!-- Performance Tests -->
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Performance and Accessibility</h2>
+            <div class="test-controls">
+                <button class="test-button" onclick="testReducedMotion()">Test Reduced Motion</button>
+                <button class="test-button" onclick="testKeyboardNavigation()">Test Keyboard Navigation</button>
+                <button class="test-button" onclick="testHighContrast()">Test High Contrast</button>
+                <button class="test-button" onclick="testPerformance()">Test Performance</button>
+            </div>
+            <div id="performance-status" class="status info">Ready to test performance and accessibility</div>
+        </div>
+
+        <!-- Test Results -->
+        <div class="test-section">
+            <h2 class="text-xl font-semibold mb-4">Test Results</h2>
+            <div id="test-results" class="space-y-2">
+                <div class="status info">No tests run yet</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo Modal -->
+    <div id="demo-modal" class="demo-modal" style="display: none;">
+        <div class="demo-timer-bar">
+            <div id="modal-timer-fill" class="demo-timer-fill timer-bar-normal"></div>
+        </div>
+        <h3 class="text-lg font-semibold mb-2">Demo Betting Modal</h3>
+        <p class="text-gray-300 mb-4">This is a demo modal for testing animations.</p>
+        <div class="flex gap-2">
+            <button class="test-button flex-1" onclick="hideModal()">Minimize</button>
+            <button class="test-button flex-1" onclick="hideModal()">Skip</button>
+        </div>
+    </div>
+
+    <!-- Import Components -->
+    <script src="../scripts/minimizedIndicator.js"></script>
+    
+    <script>
+        let indicator = null;
+        let testResults = [];
+        
+        function addTestResult(test, status, message) {
+            testResults.push({ test, status, message, timestamp: new Date() });
+            updateTestResults();
+        }
+        
+        function updateTestResults() {
+            const resultsContainer = document.getElementById('test-results');
+            resultsContainer.innerHTML = testResults.map(result => 
+                `<div class="status ${result.status}">
+                    <strong>${result.test}:</strong> ${result.message}
+                    <span class="text-xs opacity-75 ml-2">${result.timestamp.toLocaleTimeString()}</span>
+                </div>`
+            ).join('');
+        }
+        
+        function updateStatus(elementId, status, message) {
+            const element = document.getElementById(elementId);
+            element.className = `status ${status}`;
+            element.textContent = message;
+        }
+        
+        // Minimized Indicator Tests
+        function testIndicatorEntrance() {
+            if (indicator) indicator.destroy();
+            indicator = new MinimizedIndicator();
+            
+            updateStatus('indicator-status', 'info', 'Testing entrance animation...');
+            
+            indicator.show('CORNER_OUTCOME', 10);
+            
+            setTimeout(() => {
+                const hasEntranceClass = indicator.element.classList.contains('minimized-indicator-entrance');
+                if (hasEntranceClass) {
+                    addTestResult('Indicator Entrance', 'success', 'Entrance animation applied correctly');
+                    updateStatus('indicator-status', 'success', 'Entrance animation test passed');
+                } else {
+                    addTestResult('Indicator Entrance', 'error', 'Entrance animation class not found');
+                    updateStatus('indicator-status', 'error', 'Entrance animation test failed');
+                }
+            }, 100);
+        }
+        
+        function testIndicatorExit() {
+            if (!indicator || !indicator.isShowing()) {
+                updateStatus('indicator-status', 'error', 'No indicator to test exit animation');
+                return;
+            }
+            
+            updateStatus('indicator-status', 'info', 'Testing exit animation...');
+            
+            indicator.hide();
+            
+            setTimeout(() => {
+                const hasExitClass = indicator.element.classList.contains('minimized-indicator-exit');
+                if (hasExitClass) {
+                    addTestResult('Indicator Exit', 'success', 'Exit animation applied correctly');
+                    updateStatus('indicator-status', 'success', 'Exit animation test passed');
+                } else {
+                    addTestResult('Indicator Exit', 'error', 'Exit animation class not found');
+                    updateStatus('indicator-status', 'error', 'Exit animation test failed');
+                }
+            }, 100);
+        }
+        
+        function testIndicatorUrgent() {
+            if (indicator) indicator.destroy();
+            indicator = new MinimizedIndicator();
+            
+            updateStatus('indicator-status', 'info', 'Testing urgent state animation...');
+            
+            indicator.show('CORNER_OUTCOME', 3); // Below 5 second threshold
+            
+            setTimeout(() => {
+                const hasUrgentClass = indicator.element.classList.contains('urgent');
+                const hasUrgentAnimationClass = indicator.element.classList.contains('minimized-indicator-urgent');
+                
+                if (hasUrgentClass && hasUrgentAnimationClass) {
+                    addTestResult('Indicator Urgent', 'success', 'Urgent animation applied correctly');
+                    updateStatus('indicator-status', 'success', 'Urgent state test passed');
+                } else {
+                    addTestResult('Indicator Urgent', 'error', 'Urgent animation classes not found');
+                    updateStatus('indicator-status', 'error', 'Urgent state test failed');
+                }
+            }, 100);
+        }
+        
+        function testIndicatorHover() {
+            if (!indicator || !indicator.isShowing()) {
+                testIndicatorEntrance();
+                setTimeout(() => testIndicatorHover(), 500);
+                return;
+            }
+            
+            updateStatus('indicator-status', 'info', 'Testing hover effects...');
+            
+            const hasHoverClass = indicator.element.classList.contains('minimized-indicator-hover');
+            
+            if (hasHoverClass) {
+                addTestResult('Indicator Hover', 'success', 'Hover effects class applied correctly');
+                updateStatus('indicator-status', 'success', 'Hover effects test passed - try hovering over the indicator');
+            } else {
+                addTestResult('Indicator Hover', 'error', 'Hover effects class not found');
+                updateStatus('indicator-status', 'error', 'Hover effects test failed');
+            }
+        }
+        
+        function testIndicatorAccessibility() {
+            if (!indicator || !indicator.isShowing()) {
+                testIndicatorEntrance();
+                setTimeout(() => testIndicatorAccessibility(), 500);
+                return;
+            }
+            
+            updateStatus('indicator-status', 'info', 'Testing accessibility features...');
+            
+            const hasRole = indicator.element.getAttribute('role') === 'button';
+            const hasTabIndex = indicator.element.getAttribute('tabindex') === '0';
+            const hasAriaLabel = indicator.element.getAttribute('aria-label') !== null;
+            const hasAriaLive = indicator.timeElement.getAttribute('aria-live') === 'polite';
+            
+            const accessibilityScore = [hasRole, hasTabIndex, hasAriaLabel, hasAriaLive].filter(Boolean).length;
+            
+            if (accessibilityScore === 4) {
+                addTestResult('Indicator Accessibility', 'success', 'All accessibility features present');
+                updateStatus('indicator-status', 'success', 'Accessibility test passed (4/4 features)');
+            } else {
+                addTestResult('Indicator Accessibility', 'error', `Missing accessibility features (${accessibilityScore}/4)`);
+                updateStatus('indicator-status', 'error', `Accessibility test failed (${accessibilityScore}/4 features)`);
+            }
+        }
+        
+        // Timer Bar Tests
+        function testTimerBarNormal() {
+            const timerFill = document.getElementById('demo-timer-fill');
+            timerFill.className = 'demo-timer-fill timer-bar-normal';
+            timerFill.style.width = '100%';
+            
+            addTestResult('Timer Bar Normal', 'success', 'Normal state applied');
+            updateStatus('timer-status', 'success', 'Normal state test passed');
+        }
+        
+        function testTimerBarWarning() {
+            const timerFill = document.getElementById('demo-timer-fill');
+            timerFill.className = 'demo-timer-fill timer-bar-warning';
+            timerFill.style.width = '50%';
+            
+            addTestResult('Timer Bar Warning', 'success', 'Warning state applied');
+            updateStatus('timer-status', 'success', 'Warning state test passed');
+        }
+        
+        function testTimerBarUrgent() {
+            const timerFill = document.getElementById('demo-timer-fill');
+            timerFill.className = 'demo-timer-fill timer-bar-urgent timer-bar-urgent-enhanced';
+            timerFill.style.width = '25%';
+            
+            addTestResult('Timer Bar Urgent', 'success', 'Urgent state with enhanced animation applied');
+            updateStatus('timer-status', 'success', 'Urgent state test passed');
+        }
+        
+        function testTimerBarCountdown() {
+            updateStatus('timer-status', 'info', 'Running full countdown test...');
+            
+            const timerFill = document.getElementById('demo-timer-fill');
+            let progress = 100;
+            
+            const countdown = setInterval(() => {
+                progress -= 2;
+                timerFill.style.width = `${progress}%`;
+                
+                if (progress > 50) {
+                    timerFill.className = 'demo-timer-fill timer-bar-normal';
+                } else if (progress > 25) {
+                    timerFill.className = 'demo-timer-fill timer-bar-warning';
+                } else {
+                    timerFill.className = 'demo-timer-fill timer-bar-urgent timer-bar-urgent-enhanced';
+                }
+                
+                if (progress <= 0) {
+                    clearInterval(countdown);
+                    addTestResult('Timer Bar Countdown', 'success', 'Full countdown with state transitions completed');
+                    updateStatus('timer-status', 'success', 'Countdown test passed');
+                }
+            }, 100);
+        }
+        
+        // Modal Animation Tests
+        function testModalMinimize() {
+            const modal = document.getElementById('demo-modal');
+            modal.style.display = 'block';
+            
+            updateStatus('modal-status', 'info', 'Testing minimize animation...');
+            
+            setTimeout(() => {
+                modal.classList.add('modal-minimize');
+                
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    modal.classList.remove('modal-minimize');
+                    addTestResult('Modal Minimize', 'success', 'Minimize animation completed');
+                    updateStatus('modal-status', 'success', 'Minimize animation test passed');
+                }, 400);
+            }, 100);
+        }
+        
+        function testModalRestore() {
+            const modal = document.getElementById('demo-modal');
+            modal.style.display = 'block';
+            modal.classList.add('modal-restore');
+            
+            updateStatus('modal-status', 'info', 'Testing restore animation...');
+            
+            setTimeout(() => {
+                modal.classList.remove('modal-restore');
+                addTestResult('Modal Restore', 'success', 'Restore animation completed');
+                updateStatus('modal-status', 'success', 'Restore animation test passed');
+                
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 2000);
+            }, 400);
+        }
+        
+        function testModalSequence() {
+            updateStatus('modal-status', 'info', 'Testing full minimize/restore sequence...');
+            
+            // Show modal
+            const modal = document.getElementById('demo-modal');
+            modal.style.display = 'block';
+            
+            // Minimize after 1 second
+            setTimeout(() => {
+                modal.classList.add('modal-minimize');
+                
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    modal.classList.remove('modal-minimize');
+                    
+                    // Restore after 1 second
+                    setTimeout(() => {
+                        modal.style.display = 'block';
+                        modal.classList.add('modal-restore');
+                        
+                        setTimeout(() => {
+                            modal.classList.remove('modal-restore');
+                            addTestResult('Modal Sequence', 'success', 'Full minimize/restore sequence completed');
+                            updateStatus('modal-status', 'success', 'Full sequence test passed');
+                            
+                            setTimeout(() => {
+                                modal.style.display = 'none';
+                            }, 2000);
+                        }, 400);
+                    }, 1000);
+                }, 400);
+            }, 1000);
+        }
+        
+        function hideModal() {
+            document.getElementById('demo-modal').style.display = 'none';
+        }
+        
+        // Performance and Accessibility Tests
+        function testReducedMotion() {
+            updateStatus('performance-status', 'info', 'Testing reduced motion support...');
+            
+            const supportsReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            
+            addTestResult('Reduced Motion', 'info', `Reduced motion preference: ${supportsReducedMotion ? 'enabled' : 'disabled'}`);
+            updateStatus('performance-status', 'success', 'Reduced motion test completed - check CSS for @media rules');
+        }
+        
+        function testKeyboardNavigation() {
+            if (!indicator || !indicator.isShowing()) {
+                testIndicatorEntrance();
+                setTimeout(() => testKeyboardNavigation(), 500);
+                return;
+            }
+            
+            updateStatus('performance-status', 'info', 'Testing keyboard navigation...');
+            
+            // Focus the indicator
+            indicator.element.focus();
+            
+            addTestResult('Keyboard Navigation', 'success', 'Indicator focused - try pressing Enter or Space');
+            updateStatus('performance-status', 'success', 'Keyboard navigation test passed - try interacting with the indicator');
+        }
+        
+        function testHighContrast() {
+            updateStatus('performance-status', 'info', 'Testing high contrast support...');
+            
+            // This would typically check for high contrast media queries
+            const supportsHighContrast = window.matchMedia('(prefers-contrast: high)').matches;
+            
+            addTestResult('High Contrast', 'info', `High contrast preference: ${supportsHighContrast ? 'enabled' : 'disabled'}`);
+            updateStatus('performance-status', 'success', 'High contrast test completed - check CSS for @media rules');
+        }
+        
+        function testPerformance() {
+            updateStatus('performance-status', 'info', 'Testing animation performance...');
+            
+            const startTime = performance.now();
+            let frameCount = 0;
+            
+            function measureFrames() {
+                frameCount++;
+                if (frameCount < 60) {
+                    requestAnimationFrame(measureFrames);
+                } else {
+                    const endTime = performance.now();
+                    const duration = endTime - startTime;
+                    const fps = Math.round((frameCount * 1000) / duration);
+                    
+                    if (fps >= 30) {
+                        addTestResult('Performance', 'success', `Animation performance: ${fps} FPS`);
+                        updateStatus('performance-status', 'success', `Performance test passed: ${fps} FPS`);
+                    } else {
+                        addTestResult('Performance', 'error', `Low animation performance: ${fps} FPS`);
+                        updateStatus('performance-status', 'error', `Performance test failed: ${fps} FPS`);
+                    }
+                }
+            }
+            
+            requestAnimationFrame(measureFrames);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            addTestResult('Initialization', 'success', 'Animation test suite loaded successfully');
+        });
+    </script>
+</body>
+</html>

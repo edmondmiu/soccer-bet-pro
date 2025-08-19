@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MinimizedIndicator Integration Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .test-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .betting-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            color: black;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            min-width: 300px;
+            display: none;
+        }
+        
+        .betting-modal.show {
+            display: block;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .minimize-btn, .close-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        
+        .minimize-btn:hover, .close-btn:hover {
+            background: #5a6268;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            background: #4f46e5;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: #4338ca;
+        }
+        
+        button:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .integration-info {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        h1, h2 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>MinimizedIndicator Integration Test</h1>
+        <p>This test demonstrates how the MinimizedIndicator component integrates with a betting modal system.</p>
+
+        <div class="integration-info">
+            <h2>Integration Scenario</h2>
+            <p>This test simulates a betting modal that can be minimized, showing a floating indicator with time remaining and event information. The indicator provides visual feedback and allows users to restore the modal.</p>
+        </div>
+
+        <div class="controls">
+            <button onclick="showBettingModal('CORNER_OUTCOME', 15)">Show Corner Kick Betting (15s)</button>
+            <button onclick="showBettingModal('GOAL_ATTEMPT', 10)">Show Goal Attempt Betting (10s)</button>
+            <button onclick="showBettingModal('PENALTY', 20)">Show Penalty Betting (20s)</button>
+            <button onclick="showBettingModal('FREE_KICK', 8)">Show Free Kick Betting (8s)</button>
+        </div>
+
+        <div class="controls">
+            <button onclick="minimizeModal()">Minimize Current Modal</button>
+            <button onclick="restoreModal()">Restore Modal</button>
+            <button onclick="closeModal()">Close Modal</button>
+        </div>
+
+        <div class="status" id="status">Ready to test integration</div>
+
+        <!-- Simulated Betting Modal -->
+        <div id="bettingModal" class="betting-modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Betting Modal</h3>
+                <div>
+                    <button class="minimize-btn" onclick="minimizeModal()">−</button>
+                    <button class="close-btn" onclick="closeModal()">×</button>
+                </div>
+            </div>
+            <div id="modalContent">
+                <p>Place your bet for this event:</p>
+                <div style="margin: 15px 0;">
+                    <button style="margin: 5px;">Yes</button>
+                    <button style="margin: 5px;">No</button>
+                </div>
+                <div id="timeRemaining" style="font-weight: bold; color: #dc3545;">Time remaining: --</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../scripts/minimizedIndicator.js"></script>
+    <script>
+        let indicator = new MinimizedIndicator();
+        let currentEventType = '';
+        let currentTimeRemaining = 0;
+        let countdownInterval = null;
+        let isModalMinimized = false;
+
+        // Set up indicator click handler to restore modal
+        indicator.onClick(() => {
+            restoreModal();
+            updateStatus('Modal restored by clicking indicator');
+        });
+
+        function showBettingModal(eventType, timeRemaining) {
+            currentEventType = eventType;
+            currentTimeRemaining = timeRemaining;
+            isModalMinimized = false;
+
+            // Show modal
+            const modal = document.getElementById('bettingModal');
+            const title = document.getElementById('modalTitle');
+            
+            title.textContent = `${formatEventType(eventType)} Betting`;
+            modal.classList.add('show');
+
+            // Start countdown
+            startCountdown();
+            
+            updateStatus(`Opened ${eventType} betting modal with ${timeRemaining}s remaining`);
+        }
+
+        function minimizeModal() {
+            if (currentTimeRemaining <= 0) {
+                updateStatus('Cannot minimize - no active betting session');
+                return;
+            }
+
+            const modal = document.getElementById('bettingModal');
+            modal.classList.remove('show');
+            isModalMinimized = true;
+
+            // Show minimized indicator
+            indicator.show(currentEventType, currentTimeRemaining);
+            
+            updateStatus(`Modal minimized - indicator shown with ${Math.ceil(currentTimeRemaining)}s remaining`);
+        }
+
+        function restoreModal() {
+            if (!isModalMinimized) {
+                updateStatus('Modal is not minimized');
+                return;
+            }
+
+            const modal = document.getElementById('bettingModal');
+            modal.classList.add('show');
+            isModalMinimized = false;
+
+            // Hide indicator
+            indicator.hide();
+            
+            updateStatus('Modal restored - indicator hidden');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('bettingModal');
+            modal.classList.remove('show');
+            isModalMinimized = false;
+
+            // Hide indicator and stop countdown
+            indicator.hide();
+            stopCountdown();
+            
+            updateStatus('Modal closed - betting session ended');
+        }
+
+        function startCountdown() {
+            stopCountdown(); // Clear any existing countdown
+            
+            countdownInterval = setInterval(() => {
+                currentTimeRemaining -= 0.1;
+                
+                if (currentTimeRemaining <= 0) {
+                    currentTimeRemaining = 0;
+                    stopCountdown();
+                    closeModal();
+                    updateStatus('Betting time expired - modal closed automatically');
+                    return;
+                }
+
+                // Update modal display if visible
+                if (!isModalMinimized) {
+                    const timeDisplay = document.getElementById('timeRemaining');
+                    timeDisplay.textContent = `Time remaining: ${Math.ceil(currentTimeRemaining)}s`;
+                    
+                    // Add urgency styling
+                    if (currentTimeRemaining <= 5) {
+                        timeDisplay.style.color = '#dc3545';
+                        timeDisplay.style.fontWeight = 'bold';
+                    }
+                }
+
+                // Update indicator if minimized
+                if (isModalMinimized) {
+                    indicator.updateTime(currentTimeRemaining);
+                }
+            }, 100);
+        }
+
+        function stopCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+        }
+
+        function formatEventType(eventType) {
+            const eventTypeMap = {
+                'CORNER_OUTCOME': 'Corner Kick',
+                'GOAL_ATTEMPT': 'Goal Attempt',
+                'PENALTY': 'Penalty',
+                'FREE_KICK': 'Free Kick',
+                'YELLOW_CARD': 'Yellow Card',
+                'RED_CARD': 'Red Card'
+            };
+            return eventTypeMap[eventType] || eventType.replace(/_/g, ' ').toLowerCase()
+                .replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function updateStatus(message) {
+            const status = document.getElementById('status');
+            status.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+        }
+
+        // Test automatic scenarios
+        function runAutomaticTests() {
+            updateStatus('Starting automatic integration tests...');
+            
+            setTimeout(() => {
+                showBettingModal('CORNER_OUTCOME', 12);
+            }, 1000);
+            
+            setTimeout(() => {
+                minimizeModal();
+            }, 3000);
+            
+            setTimeout(() => {
+                restoreModal();
+            }, 6000);
+            
+            setTimeout(() => {
+                minimizeModal();
+            }, 8000);
+            
+            setTimeout(() => {
+                // Let it expire automatically
+                updateStatus('Waiting for automatic expiration...');
+            }, 10000);
+        }
+
+        // Add automatic test button
+        window.addEventListener('load', () => {
+            const controls = document.querySelector('.controls');
+            const autoTestBtn = document.createElement('button');
+            autoTestBtn.textContent = 'Run Automatic Test Sequence';
+            autoTestBtn.onclick = runAutomaticTests;
+            autoTestBtn.style.background = '#28a745';
+            controls.appendChild(autoTestBtn);
+        });
+
+        updateStatus('Integration test ready - try the buttons above');
+    </script>
+</body>
+</html>

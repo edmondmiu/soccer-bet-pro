@@ -17,3 +17,258 @@
     box-shadow: 0 0 0 3px #a78bfa;
     background-color: #4338ca;
 }
+
+/* Pause Overlay Components */
+#pause-overlay {
+    backdrop-filter: blur(4px);
+}
+
+.pause-game-dimmed {
+    filter: brightness(0.3) blur(2px);
+    transition: filter 0.3s ease-in-out;
+}
+
+.pause-game-normal {
+    filter: brightness(1) blur(0);
+    transition: filter 0.3s ease-in-out;
+}
+
+/* Responsive pause overlay */
+@media (max-width: 480px) {
+    #pause-overlay .bg-gray-800 {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+    
+    #pause-title {
+        font-size: 1.5rem;
+    }
+    
+    #pause-reason {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 320px) {
+    #pause-overlay .bg-gray-800 {
+        margin: 0.5rem;
+        padding: 1rem;
+    }
+    
+    #pause-title {
+        font-size: 1.25rem;
+    }
+}
+
+/* Timer Bar Component */
+.timer-bar-container {
+    width: 100%;
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.timer-bar {
+    height: 100%;
+    width: 100%;
+    border-radius: 2px;
+    transition: width 0.1s linear;
+    position: relative;
+}
+
+.timer-bar-normal {
+    background-color: #10b981;
+    background-image: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+
+.timer-bar-warning {
+    background-color: #f59e0b;
+    background-image: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+}
+
+.timer-bar-urgent {
+    background-color: #ef4444;
+    background-image: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+    animation: timerBarPulse 0.5s infinite alternate;
+}
+
+@keyframes timerBarPulse {
+    0% { 
+        opacity: 1;
+        box-shadow: 0 0 4px rgba(239, 68, 68, 0.6);
+    }
+    100% { 
+        opacity: 0.8;
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+    }
+}
+
+/* Responsive timer bar */
+@media (max-width: 480px) {
+    .timer-bar-container {
+        height: 3px;
+        margin-bottom: 10px;
+    }
+}
+
+@media (max-width: 320px) {
+    .timer-bar-container {
+        height: 2px;
+        margin-bottom: 8px;
+    }
+}
+
+/* Enhanced Minimized Indicator Styles */
+.minimized-indicator {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-radius: 12px;
+    padding: 8px 12px;
+    cursor: pointer;
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+    user-select: none;
+    min-width: 120px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.minimized-indicator:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.minimized-indicator:active {
+    transform: scale(0.98) translateY(0);
+    transition: all 0.1s ease;
+}
+
+.minimized-indicator.urgent {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    animation: urgentPulse 1s infinite, urgentGlow 2s infinite;
+    border-color: rgba(248, 113, 113, 0.3);
+}
+
+.minimized-indicator.urgent:hover {
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+}
+
+.indicator-event-type {
+    font-size: 12px;
+    opacity: 0.9;
+    margin-bottom: 2px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.indicator-time {
+    font-size: 16px;
+    font-weight: bold;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Enhanced Modal Animations */
+.action-bet-modal-container {
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform-origin: center center;
+}
+
+.action-bet-modal-container.minimizing {
+    animation: modalMinimize 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.action-bet-modal-container.restoring {
+    animation: modalRestore 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Enhanced Timer Bar Urgent State */
+.timer-bar-urgent-enhanced {
+    background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+    animation: timerBarUrgentPulse 0.8s infinite;
+    position: relative;
+}
+
+.timer-bar-urgent-enhanced::after {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(90deg, #f87171, #ef4444);
+    border-radius: 3px;
+    z-index: -1;
+    opacity: 0.5;
+    animation: timerBarUrgentPulse 0.8s infinite reverse;
+}
+
+/* Responsive adjustments for minimized indicator */
+@media (max-width: 480px) {
+    .minimized-indicator {
+        top: 10px;
+        right: 10px;
+        padding: 6px 10px;
+        font-size: 13px;
+        min-width: 100px;
+    }
+    
+    .indicator-event-type {
+        font-size: 11px;
+    }
+    
+    .indicator-time {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 320px) {
+    .minimized-indicator {
+        top: 5px;
+        right: 5px;
+        padding: 4px 8px;
+        font-size: 12px;
+        min-width: 80px;
+    }
+    
+    .indicator-event-type {
+        font-size: 10px;
+    }
+    
+    .indicator-time {
+        font-size: 13px;
+    }
+}
+
+/* Focus states for accessibility */
+.minimized-indicator:focus {
+    outline: 2px solid #fbbf24;
+    outline-offset: 2px;
+}
+
+.minimized-indicator:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .minimized-indicator {
+        border: 2px solid currentColor;
+        background: #000;
+        color: #fff;
+    }
+    
+    .minimized-indicator.urgent {
+        background: #800;
+        border-color: #f00;
+    }
+}

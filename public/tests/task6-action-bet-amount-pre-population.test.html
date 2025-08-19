@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 6: Action Bet Amount Pre-population Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        
+        .test-container {
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .test-title {
+            color: #4CAF50;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #3a3a3a;
+            border-radius: 5px;
+        }
+        
+        .test-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .test-button:hover {
+            background-color: #45a049;
+        }
+        
+        .test-results {
+            background-color: #1e1e1e;
+            border: 1px solid #444;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .success {
+            color: #4CAF50;
+        }
+        
+        .error {
+            color: #f44336;
+        }
+        
+        .warning {
+            color: #ff9800;
+        }
+        
+        .info {
+            color: #2196F3;
+        }
+        
+        .demo-section {
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .betting-form {
+            background-color: #3a3a3a;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #555;
+            border-radius: 3px;
+            background-color: #4a4a4a;
+            color: white;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Task 6: Action Bet Amount Pre-population Test</h1>
+    
+    <div class="test-container">
+        <div class="test-title">Requirements Verification</div>
+        <p>This test verifies the implementation of Task 6:</p>
+        <ul>
+            <li><strong>3.2:</strong> Store opportunity bet amounts separately from full match bets</li>
+            <li><strong>3.4:</strong> Pre-populate opportunity betting forms with last amount</li>
+            <li><strong>3.6:</strong> Validate and handle errors for pre-populated amounts</li>
+        </ul>
+    </div>
+
+    <div class="demo-section">
+        <div class="test-title">Interactive Demo</div>
+        
+        <div class="betting-form">
+            <h3>Full Match Betting (should use fullMatch memory)</h3>
+            <div class="form-group">
+                <label for="full-match-outcome">Outcome:</label>
+                <select id="full-match-outcome">
+                    <option value="HOME">Home Win</option>
+                    <option value="DRAW">Draw</option>
+                    <option value="AWAY">Away Win</option>
+                </select>
+            </div>
+            <button class="test-button" onclick="showFullMatchBetSlip()">Show Full Match Bet Slip</button>
+        </div>
+        
+        <div class="betting-form">
+            <h3>Action Betting (should use opportunity memory)</h3>
+            <div class="form-group">
+                <label for="action-outcome">Outcome:</label>
+                <select id="action-outcome">
+                    <option value="Yellow Card">Yellow Card</option>
+                    <option value="Red Card">Red Card</option>
+                    <option value="Free Kick">Free Kick</option>
+                    <option value="Corner">Corner</option>
+                </select>
+            </div>
+            <button class="test-button" onclick="showActionBetSlip()">Show Action Bet Slip</button>
+        </div>
+        
+        <div class="betting-form">
+            <h3>Memory Management</h3>
+            <button class="test-button" onclick="setFullMatchMemory()">Set Full Match Memory ($75)</button>
+            <button class="test-button" onclick="setOpportunityMemory()">Set Opportunity Memory ($40)</button>
+            <button class="test-button" onclick="showCurrentMemory()">Show Current Memory</button>
+            <button class="test-button" onclick="resetMemory()">Reset Memory</button>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <div class="test-title">Automated Tests</div>
+        <button class="test-button" onclick="runTest1()">Test 1: Pre-population Functionality</button>
+        <button class="test-button" onclick="runTest2()">Test 2: Separate Memory Storage</button>
+        <button class="test-button" onclick="runTest3()">Test 3: Bet Amount Storage</button>
+        <button class="test-button" onclick="runTest4()">Test 4: Error Handling</button>
+        <button class="test-button" onclick="runTest5()">Test 5: Validation</button>
+        <button class="test-button" onclick="runAllTests()">Run All Tests</button>
+        
+        <div id="test-results" class="test-results"></div>
+    </div>
+
+    <!-- Mock DOM elements for testing -->
+    <div id="inline-bet-slip" class="hidden modal">
+        <div class="modal-content">
+            <h3>Full Match Bet Slip</h3>
+            <div class="form-group">
+                <label for="inline-stake-amount">Stake Amount:</label>
+                <input type="number" id="inline-stake-amount" placeholder="Enter amount">
+            </div>
+            <button class="test-button" onclick="placeFullMatchBet()">Place Bet</button>
+            <button class="test-button" onclick="hideInlineBetSlip()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="action-bet-slip-modal" class="hidden modal">
+        <div class="modal-content">
+            <h3 id="action-slip-title">Place Action Bet</h3>
+            <p id="action-slip-description">Description</p>
+            <div class="form-group">
+                <label for="action-slip-amount">Stake Amount:</label>
+                <input type="number" id="action-slip-amount" placeholder="Enter amount">
+            </div>
+            <button class="test-button" onclick="placeActionBet()">Place Bet</button>
+            <button class="test-button" onclick="hideActionBetSlip()">Cancel</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { 
+            getCurrentState, 
+            updateState, 
+            resetState,
+            getBetAmountMemory,
+            updateBetAmountMemory,
+            getDefaultBetAmount,
+            validateBetAmount
+        } from '../scripts/gameState.js';
+        
+        import { 
+            showActionBetSlip,
+            showInlineBetSlip,
+            placeBet
+        } from '../scripts/betting.js';
+
+        // Make functions available globally for onclick handlers
+        window.gameState = {
+            getCurrentState,
+            updateState,
+            resetState,
+            getBetAmountMemory,
+            updateBetAmountMemory,
+            getDefaultBetAmount,
+            validateBetAmount
+        };
+        
+        window.betting = {
+            showActionBetSlip,
+            showInlineBetSlip,
+            placeBet
+        };
+
+        // Demo functions
+        window.showFullMatchBetSlip = function() {
+            const outcome = document.getElementById('full-match-outcome').value;
+            const odds = { HOME: 2.5, DRAW: 3.2, AWAY: 4.1 }[outcome];
+            showInlineBetSlip(outcome, odds);
+        };
+
+        window.showActionBetSlip = function() {
+            const outcome = document.getElementById('action-outcome').value;
+            const odds = { 'Yellow Card': 2.5, 'Red Card': 8.0, 'Free Kick': 1.8, 'Corner': 3.5 }[outcome];
+            showActionBetSlip('action', outcome, odds, 'TEST_OUTCOME');
+        };
+
+        window.hideInlineBetSlip = function() {
+            document.getElementById('inline-bet-slip').classList.add('hidden');
+        };
+
+        window.hideActionBetSlip = function() {
+            document.getElementById('action-bet-slip-modal').classList.add('hidden');
+        };
+
+        window.placeFullMatchBet = function() {
+            const amount = parseFloat(document.getElementById('inline-stake-amount').value);
+            if (amount && amount > 0) {
+                const outcome = document.getElementById('full-match-outcome').value;
+                const odds = { HOME: 2.5, DRAW: 3.2, AWAY: 4.1 }[outcome];
+                
+                // Update wallet to ensure bet can be placed
+                updateState({ wallet: 1000 });
+                
+                const success = placeBet('full-match', outcome, odds, amount);
+                if (success) {
+                    logResult(`Full match bet placed: ${outcome} $${amount}`, 'success');
+                } else {
+                    logResult('Failed to place full match bet', 'error');
+                }
+                hideInlineBetSlip();
+            } else {
+                logResult('Please enter a valid amount', 'warning');
+            }
+        };
+
+        window.placeActionBet = function() {
+            const amount = parseFloat(document.getElementById('action-slip-amount').value);
+            if (amount && amount > 0) {
+                const outcome = document.getElementById('action-outcome').value;
+                const odds = { 'Yellow Card': 2.5, 'Red Card': 8.0, 'Free Kick': 1.8, 'Corner': 3.5 }[outcome];
+                
+                // Update wallet to ensure bet can be placed
+                updateState({ wallet: 1000 });
+                
+                const success = placeBet('action', outcome, odds, amount, 'TEST_OUTCOME');
+                if (success) {
+                    logResult(`Action bet placed: ${outcome} $${amount}`, 'success');
+                } else {
+                    logResult('Failed to place action bet', 'error');
+                }
+                hideActionBetSlip();
+            } else {
+                logResult('Please enter a valid amount', 'warning');
+            }
+        };
+
+        window.setFullMatchMemory = function() {
+            updateBetAmountMemory('fullMatch', 75);
+            logResult('Set full match memory to $75', 'info');
+        };
+
+        window.setOpportunityMemory = function() {
+            updateBetAmountMemory('opportunity', 40);
+            logResult('Set opportunity memory to $40', 'info');
+        };
+
+        window.showCurrentMemory = function() {
+            const fullMatch = getBetAmountMemory('fullMatch');
+            const opportunity = getBetAmountMemory('opportunity');
+            logResult(`Current memory - Full Match: $${fullMatch}, Opportunity: $${opportunity}`, 'info');
+        };
+
+        window.resetMemory = function() {
+            resetState();
+            logResult('Memory reset to defaults', 'info');
+        };
+
+        // Test functions
+        window.logResult = function(message, type = 'info') {
+            const results = document.getElementById('test-results');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            results.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            results.scrollTop = results.scrollHeight;
+        };
+
+        window.runTest1 = function() {
+            logResult('=== Test 1: Pre-population Functionality ===', 'info');
+            
+            try {
+                // Reset state
+                resetState();
+                
+                // Set opportunity memory
+                updateBetAmountMemory('opportunity', 60);
+                
+                // Show action bet slip
+                showActionBetSlip('action', 'Yellow Card', 2.5, 'TEST_OUTCOME');
+                
+                // Check if amount is pre-populated
+                const amountInput = document.getElementById('action-slip-amount');
+                const expectedAmount = '60';
+                
+                if (amountInput.value === expectedAmount) {
+                    logResult('✅ Action bet amount pre-population: PASSED', 'success');
+                    logResult(`   Expected: ${expectedAmount}, Got: ${amountInput.value}`, 'success');
+                } else {
+                    logResult('❌ Action bet amount pre-population: FAILED', 'error');
+                    logResult(`   Expected: ${expectedAmount}, Got: ${amountInput.value}`, 'error');
+                }
+                
+                hideActionBetSlip();
+            } catch (error) {
+                logResult(`❌ Test 1 failed with error: ${error.message}`, 'error');
+            }
+        };
+
+        window.runTest2 = function() {
+            logResult('=== Test 2: Separate Memory Storage ===', 'info');
+            
+            try {
+                // Reset state
+                resetState();
+                
+                // Set different amounts for different bet types
+                updateBetAmountMemory('fullMatch', 100);
+                updateBetAmountMemory('opportunity', 75);
+                
+                // Verify they are stored separately
+                const fullMatchAmount = getBetAmountMemory('fullMatch');
+                const opportunityAmount = getBetAmountMemory('opportunity');
+                
+                if (fullMatchAmount === 100 && opportunityAmount === 75) {
+                    logResult('✅ Separate memory for bet types: PASSED', 'success');
+                    logResult(`   Full match: ${fullMatchAmount}, Opportunity: ${opportunityAmount}`, 'success');
+                } else {
+                    logResult('❌ Separate memory for bet types: FAILED', 'error');
+                    logResult(`   Full match: ${fullMatchAmount}, Opportunity: ${opportunityAmount}`, 'error');
+                }
+            } catch (error) {
+                logResult(`❌ Test 2 failed with error: ${error.message}`, 'error');
+            }
+        };
+
+        window.runTest3 = function() {
+            logResult('=== Test 3: Bet Amount Storage ===', 'info');
+            
+            try {
+                // Reset state and set wallet
+                resetState();
+                updateState({ wallet: 1000 });
+                
+                // Place an action bet
+                const success = placeBet('action', 'Red Card', 5.0, 30, 'TEST_OUTCOME');
+                
+                if (success) {
+                    // Verify the amount was stored in opportunity memory
+                    const storedAmount = getBetAmountMemory('opportunity');
+                    
+                    if (storedAmount === 30) {
+                        logResult('✅ Action bet amount storage: PASSED', 'success');
+                        logResult(`   Stored amount: ${storedAmount}`, 'success');
+                    } else {
+                        logResult('❌ Action bet amount storage: FAILED', 'error');
+                        logResult(`   Expected: 30, Got: ${storedAmount}`, 'error');
+                    }
+                } else {
+                    logResult('❌ Action bet amount storage: FAILED - bet placement failed', 'error');
+                }
+            } catch (error) {
+                logResult(`❌ Test 3 failed with error: ${error.message}`, 'error');
+            }
+        };
+
+        window.runTest4 = function() {
+            logResult('=== Test 4: Error Handling ===', 'info');
+            
+            try {
+                // Reset state
+                resetState();
+                
+                // Corrupt the bet amount memory to test error handling
+                updateState({
+                    betAmountMemory: {
+                        fullMatch: 'invalid',
+                        opportunity: null,
+                        lastUpdated: Date.now()
+                    }
+                });
+                
+                // Show action bet slip - should fallback to default
+                showActionBetSlip('action', 'Yellow Card', 2.5, 'TEST_OUTCOME');
+                
+                // Verify fallback to default amount
+                const amountInput = document.getElementById('action-slip-amount');
+                const expectedDefault = '25'; // Default amount
+                
+                if (amountInput.value === expectedDefault) {
+                    logResult('✅ Error handling for pre-populated amounts: PASSED', 'success');
+                    logResult(`   Fallback to default: ${amountInput.value}`, 'success');
+                } else {
+                    logResult('❌ Error handling for pre-populated amounts: FAILED', 'error');
+                    logResult(`   Expected: ${expectedDefault}, Got: ${amountInput.value}`, 'error');
+                }
+                
+                hideActionBetSlip();
+            } catch (error) {
+                logResult(`❌ Test 4 failed with error: ${error.message}`, 'error');
+            }
+        };
+
+        window.runTest5 = function() {
+            logResult('=== Test 5: Validation ===', 'info');
+            
+            try {
+                // Test various invalid amounts
+                const testCases = [
+                    { amount: -10, description: 'negative amount' },
+                    { amount: 0, description: 'zero amount' },
+                    { amount: 'invalid', description: 'string amount' },
+                    { amount: null, description: 'null amount' },
+                    { amount: undefined, description: 'undefined amount' },
+                    { amount: 15000, description: 'excessive amount' }
+                ];
+                
+                let passedTests = 0;
+                
+                testCases.forEach(testCase => {
+                    const isValid = validateBetAmount(testCase.amount);
+                    
+                    if (!isValid) {
+                        logResult(`   ✅ Correctly rejected ${testCase.description}: ${testCase.amount}`, 'success');
+                        passedTests++;
+                    } else {
+                        logResult(`   ❌ Incorrectly accepted ${testCase.description}: ${testCase.amount}`, 'error');
+                    }
+                });
+                
+                // Test valid amounts
+                const validAmounts = [1, 25, 50, 100, 500];
+                validAmounts.forEach(amount => {
+                    const isValid = validateBetAmount(amount);
+                    
+                    if (isValid) {
+                        logResult(`   ✅ Correctly accepted valid amount: ${amount}`, 'success');
+                        passedTests++;
+                    } else {
+                        logResult(`   ❌ Incorrectly rejected valid amount: ${amount}`, 'error');
+                    }
+                });
+                
+                if (passedTests === testCases.length + validAmounts.length) {
+                    logResult('✅ Validation of pre-populated amounts: PASSED', 'success');
+                } else {
+                    logResult('❌ Validation of pre-populated amounts: FAILED', 'error');
+                }
+            } catch (error) {
+                logResult(`❌ Test 5 failed with error: ${error.message}`, 'error');
+            }
+        };
+
+        window.runAllTests = function() {
+            logResult('=== Running All Task 6 Tests ===', 'info');
+            logResult('', 'info');
+            
+            runTest1();
+            setTimeout(() => runTest2(), 100);
+            setTimeout(() => runTest3(), 200);
+            setTimeout(() => runTest4(), 300);
+            setTimeout(() => runTest5(), 400);
+            
+            setTimeout(() => {
+                logResult('', 'info');
+                logResult('=== All Task 6 Tests Completed ===', 'info');
+            }, 500);
+        };
+
+        // Initialize
+        logResult('Task 6 test environment initialized', 'info');
+        logResult('Use the interactive demo to test bet amount pre-population', 'info');
+        logResult('Run automated tests to verify all requirements', 'info');
+    </script>
+</body>
+</html>

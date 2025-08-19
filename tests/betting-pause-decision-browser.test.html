@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betting Decision Flow with Pause Integration - Browser Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.secondary {
+            background-color: #2196F3;
+        }
+        button.secondary:hover {
+            background-color: #1976D2;
+        }
+        button.danger {
+            background-color: #f44336;
+        }
+        button.danger:hover {
+            background-color: #d32f2f;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .status.error {
+            background-color: #f44336;
+            color: white;
+        }
+        .status.info {
+            background-color: #2196F3;
+            color: white;
+        }
+        .status.warning {
+            background-color: #ff9800;
+            color: white;
+        }
+        .log {
+            background-color: #333;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .game-state {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .state-item {
+            background-color: #333;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .state-label {
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 5px;
+        }
+        .hidden {
+            display: none;
+        }
+        
+        /* Mock betting modal styles */
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #4CAF50;
+            z-index: 1000;
+            min-width: 300px;
+        }
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .timer-bar-container {
+            width: 100%;
+            height: 4px;
+            background-color: #555;
+            border-radius: 2px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .timer-bar {
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 0.1s ease-out;
+        }
+        .timer-bar-warning {
+            background-color: #ff9800;
+        }
+        .timer-bar-urgent {
+            background-color: #f44336;
+        }
+        .countdown-bar-animate {
+            animation: countdown 10s linear forwards;
+        }
+        @keyframes countdown {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Betting Decision Flow with Pause Integration - Browser Test</h1>
+    <p>This test validates that betting decision handlers properly integrate with the pause system.</p>
+
+    <!-- Test Status -->
+    <div id="test-status" class="status info">
+        Ready to run tests
+    </div>
+
+    <!-- Game State Display -->
+    <div class="test-section">
+        <h3>Game State</h3>
+        <div class="game-state">
+            <div class="state-item">
+                <div class="state-label">Pause Status</div>
+                <div id="pause-status">Not Paused</div>
+            </div>
+            <div class="state-item">
+                <div class="state-label">Wallet Balance</div>
+                <div id="wallet-balance">$1000.00</div>
+            </div>
+            <div class="state-item">
+                <div class="state-label">Active Bets</div>
+                <div id="active-bets">0</div>
+            </div>
+            <div class="state-item">
+                <div class="state-label">Current Action Bet</div>
+                <div id="current-action-bet">None</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Controls -->
+    <div class="test-section">
+        <h3>Test Controls</h3>
+        <div class="test-controls">
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="resetGameState()" class="secondary">Reset Game State</button>
+            <button onclick="clearLog()" class="danger">Clear Log</button>
+        </div>
+    </div>
+
+    <!-- Individual Test Sections -->
+    <div class="test-section">
+        <h3>Betting Decision Completion Tests</h3>
+        <div class="test-controls">
+            <button onclick="testBetPlacementResume()">Test Bet Placement Resume</button>
+            <button onclick="testSkipTimeoutResume()">Test Skip/Timeout Resume</button>
+            <button onclick="testErrorResume()">Test Error Resume</button>
+            <button onclick="testNotPausedHandling()">Test Not Paused Handling</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Action Bet Integration Tests</h3>
+        <div class="test-controls">
+            <button onclick="testActionBetPlacement()">Test Action Bet Placement</button>
+            <button onclick="testInvalidStakeHandling()">Test Invalid Stake Handling</button>
+            <button onclick="testBetPlacementError()">Test Bet Placement Error</button>
+            <button onclick="testFullMatchBetNoResume()">Test Full Match Bet (No Resume)</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Modal Integration Tests</h3>
+        <div class="test-controls">
+            <button onclick="testShowBettingModal()">Test Show Betting Modal</button>
+            <button onclick="testHideModalNormal()">Test Hide Modal (Normal)</button>
+            <button onclick="testHideModalTimeout()">Test Hide Modal (Timeout)</button>
+            <button onclick="testModalError()">Test Modal Error Handling</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>Complete Flow Tests</h3>
+        <div class="test-controls">
+            <button onclick="testCompleteBettingFlow()">Test Complete Betting Flow</button>
+            <button onclick="testCompleteSkipFlow()">Test Complete Skip Flow</button>
+            <button onclick="testMultipleBettingDecisions()">Test Multiple Betting Decisions</button>
+        </div>
+    </div>
+
+    <!-- Test Log -->
+    <div class="test-section">
+        <h3>Test Log</h3>
+        <div id="test-log" class="log">Test log will appear here...\n</div>
+    </div>
+
+    <!-- Mock DOM Elements -->
+    <div id="action-bet-slip-modal" class="hidden"></div>
+    <div id="action-bet-modal" class="hidden">
+        <div class="timer-bar-container">
+            <div id="action-bet-timer-bar" class="timer-bar"></div>
+        </div>
+        <div id="action-bet-title">Action Bet</div>
+        <div id="action-bet-main-description">Description</div>
+        <div id="action-bet-choices"></div>
+    </div>
+
+    <script type="module">
+        // Import the main game module
+        import { SoccerBettingGame } from '../scripts/main.js';
+
+        // Global test state
+        let game;
+        let testResults = [];
+
+        // Initialize game for testing
+        async function initializeTestGame() {
+            try {
+                game = new SoccerBettingGame();
+                await game.initialize();
+                
+                // Override some methods for testing
+                game.addEventToFeed = function(message, className) {
+                    log(`Event: ${message} (${className || 'default'})`);
+                };
+                
+                game.render = function() {
+                    updateGameStateDisplay();
+                };
+                
+                log('Test game initialized successfully');
+                updateGameStateDisplay();
+                return true;
+            } catch (error) {
+                log(`Error initializing test game: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Utility functions
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('test-log');
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logElement.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusElement = document.getElementById('test-status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+        }
+
+        function updateGameStateDisplay() {
+            if (!game) return;
+            
+            document.getElementById('pause-status').textContent = 
+                game.pauseManager && game.pauseManager.isPaused() ? 'PAUSED' : 'Not Paused';
+            document.getElementById('wallet-balance').textContent = 
+                `$${game.state.wallet.toFixed(2)}`;
+            document.getElementById('active-bets').textContent = 
+                game.state.bets.actionBets.length + game.state.bets.fullMatch.length;
+            document.getElementById('current-action-bet').textContent = 
+                game.state.currentActionBet.active ? 'Active' : 'None';
+        }
+
+        function clearLog() {
+            document.getElementById('test-log').textContent = '';
+        }
+
+        function resetGameState() {
+            if (!game) return;
+            
+            game.state = game.getInitialState();
+            if (game.pauseManager && game.pauseManager.isPaused()) {
+                game.pauseManager.resumeGame(false, 0);
+            }
+            updateGameStateDisplay();
+            log('Game state reset');
+        }
+
+        // Test functions
+        window.testBetPlacementResume = async function() {
+            log('Testing bet placement resume...');
+            
+            if (!game.pauseManager) {
+                log('Pause manager not available', 'error');
+                return;
+            }
+            
+            // Pause the game
+            game.pauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            log('Game paused for betting');
+            
+            // Test the resume handler
+            game.handleBettingDecisionComplete('bet_placed');
+            
+            // Wait a moment for async operations
+            setTimeout(() => {
+                const isPaused = game.pauseManager.isPaused();
+                if (!isPaused) {
+                    log('✅ Game resumed correctly after bet placement', 'success');
+                } else {
+                    log('❌ Game did not resume after bet placement', 'error');
+                }
+                updateGameStateDisplay();
+            }, 100);
+        };
+
+        window.testSkipTimeoutResume = async function() {
+            log('Testing skip/timeout resume...');
+            
+            if (!game.pauseManager) {
+                log('Pause manager not available', 'error');
+                return;
+            }
+            
+            // Pause the game
+            game.pauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            log('Game paused for betting');
+            
+            // Test the resume handler
+            game.handleBettingDecisionComplete('skip_or_timeout');
+            
+            // Wait a moment for async operations
+            setTimeout(() => {
+                const isPaused = game.pauseManager.isPaused();
+                if (!isPaused) {
+                    log('✅ Game resumed correctly after skip/timeout', 'success');
+                } else {
+                    log('❌ Game did not resume after skip/timeout', 'error');
+                }
+                updateGameStateDisplay();
+            }, 100);
+        };
+
+        window.testErrorResume = async function() {
+            log('Testing error resume...');
+            
+            if (!game.pauseManager) {
+                log('Pause manager not available', 'error');
+                return;
+            }
+            
+            // Pause the game
+            game.pauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            log('Game paused for betting');
+            
+            // Test the resume handler
+            game.handleBettingDecisionComplete('error');
+            
+            // Wait a moment for async operations
+            setTimeout(() => {
+                const isPaused = game.pauseManager.isPaused();
+                if (!isPaused) {
+                    log('✅ Game resumed correctly after error', 'success');
+                } else {
+                    log('❌ Game did not resume after error', 'error');
+                }
+                updateGameStateDisplay();
+            }, 100);
+        };
+
+        window.testNotPausedHandling = function() {
+            log('Testing not paused handling...');
+            
+            if (!game.pauseManager) {
+                log('Pause manager not available', 'error');
+                return;
+            }
+            
+            // Ensure game is not paused
+            if (game.pauseManager.isPaused()) {
+                game.pauseManager.resumeGame(false, 0);
+            }
+            
+            // Test the resume handler when not paused
+            game.handleBettingDecisionComplete('bet_placed');
+            
+            const isPaused = game.pauseManager.isPaused();
+            if (!isPaused) {
+                log('✅ Correctly handled case when game is not paused', 'success');
+            } else {
+                log('❌ Incorrectly paused game when it should not be paused', 'error');
+            }
+            updateGameStateDisplay();
+        };
+
+        window.testActionBetPlacement = function() {
+            log('Testing action bet placement...');
+            
+            if (!game.pauseManager) {
+                log('Pause manager not available', 'error');
+                return;
+            }
+            
+            // Pause the game and set up initial state
+            game.pauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            const initialWallet = game.state.wallet;
+            const initialBetCount = game.state.bets.actionBets.length;
+            
+            // Place an action bet
+            const result = game.placeBet('action', 'Yellow Card', 2.5, 10, 'FOUL_OUTCOME');
+            
+            setTimeout(() => {
+                const isPaused = game.pauseManager.isPaused();
+                const walletChanged = game.state.wallet === initialWallet - 10;
+                const betAdded = game.state.bets.actionBets.length === initialBetCount + 1;
+                
+                if (result && !isPaused && walletChanged && betAdded) {
+                    log('✅ Action bet placement and resume worked correctly', 'success');
+                } else {
+                    log(`❌ Action bet placement failed: result=${result}, paused=${isPaused}, wallet=${walletChanged}, bet=${betAdded}`, 'error');
+                }
+                updateGameStateDisplay();
+            }, 100);
+        };
+
+        window.testInvalidStakeHandling = function() {
+            log('Testing invalid stake handling...');
+            
+            if (!game.pauseManager) {
+                log('Pause manager not available', 'error');
+                return;
+            }
+            
+            // Pause the game and set up initial state
+            game.pauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            const initialWallet = game.state.wallet;
+            const initialBetCount = game.state.bets.actionBets.length;
+            
+            // Try to place bet with invalid stake
+            const result = game.placeBet('action', 'Yellow Card', 2.5, 9999, 'FOUL_OUTCOME');
+            
+            const isPaused = game.pauseManager.isPaused();
+            const walletUnchanged = game.state.wallet === initialWallet;
+            const noBetAdded = game.state.bets.actionBets.length === initialBetCount;
+            
+            if (!result && isPaused && walletUnchanged && noBetAdded) {
+                log('✅ Invalid stake handled correctly (game remains paused)', 'success');
+            } else {
+                log(`❌ Invalid stake handling failed: result=${result}, paused=${isPaused}, wallet=${walletUnchanged}, bet=${noBetAdded}`, 'error');
+            }
+            updateGameStateDisplay();
+        };
+
+        window.testBetPlacementError = function() {
+            log('Testing bet placement error handling...');
+            
+            if (!game.pauseManager) {
+                log('Pause manager not available', 'error');
+                return;
+            }
+            
+            // Pause the game and corrupt state to force error
+            game.pauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            const originalWallet = game.state.wallet;
+            game.state.wallet = null; // Force error
+            
+            // Try to place bet
+            const result = game.placeBet('action', 'Yellow Card', 2.5, 10, 'FOUL_OUTCOME');
+            
+            setTimeout(() => {
+                const isPaused = game.pauseManager.isPaused();
+                
+                // Restore wallet
+                game.state.wallet = originalWallet;
+                
+                if (!result && !isPaused) {
+                    log('✅ Bet placement error handled correctly (game resumed)', 'success');
+                } else {
+                    log(`❌ Bet placement error handling failed: result=${result}, paused=${isPaused}`, 'error');
+                }
+                updateGameStateDisplay();
+            }, 100);
+        };
+
+        window.testFullMatchBetNoResume = function() {
+            log('Testing full match bet (should not affect pause state)...');
+            
+            if (!game.pauseManager) {
+                log('Pause manager not available', 'error');
+                return;
+            }
+            
+            // Pause the game
+            game.pauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            const initialWallet = game.state.wallet;
+            const initialBetCount = game.state.bets.fullMatch.length;
+            
+            // Place a full match bet
+            const result = game.placeBet('full-match', 'HOME', 2.0, 20);
+            
+            const isPaused = game.pauseManager.isPaused();
+            const walletChanged = game.state.wallet === initialWallet - 20;
+            const betAdded = game.state.bets.fullMatch.length === initialBetCount + 1;
+            
+            if (result && isPaused && walletChanged && betAdded) {
+                log('✅ Full match bet placed correctly (game remains paused)', 'success');
+            } else {
+                log(`❌ Full match bet failed: result=${result}, paused=${isPaused}, wallet=${walletChanged}, bet=${betAdded}`, 'error');
+            }
+            updateGameStateDisplay();
+        };
+
+        window.testShowBettingModal = function() {
+            log('Testing betting modal display...');
+            
+            const mockEvent = {
+                description: 'Test foul event',
+                betType: 'FOUL_OUTCOME',
+                choices: [
+                    { text: 'Yellow Card', odds: 2.5 },
+                    { text: 'Red Card', odds: 8.0 },
+                    { text: 'Warning', odds: 1.5 }
+                ]
+            };
+            
+            try {
+                game.showMultiChoiceActionBet(mockEvent);
+                
+                const modal = document.getElementById('action-bet-modal');
+                const isVisible = !modal.classList.contains('hidden');
+                const isPaused = game.pauseManager && game.pauseManager.isPaused();
+                
+                if (isVisible && game.state.currentActionBet.active) {
+                    log('✅ Betting modal displayed correctly', 'success');
+                } else {
+                    log(`❌ Betting modal display failed: visible=${isVisible}, active=${game.state.currentActionBet.active}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error showing betting modal: ${error.message}`, 'error');
+            }
+            updateGameStateDisplay();
+        };
+
+        window.testHideModalNormal = function() {
+            log('Testing hide modal (normal)...');
+            
+            if (!game.pauseManager) {
+                log('Pause manager not available', 'error');
+                return;
+            }
+            
+            // Set up active betting state
+            game.pauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            game.state.currentActionBet = {
+                active: true,
+                details: { description: 'Test Event' },
+                timeoutId: null
+            };
+            
+            // Hide the modal
+            game.hideActionBet(false);
+            
+            setTimeout(() => {
+                const isPaused = game.pauseManager.isPaused();
+                const isActive = game.state.currentActionBet.active;
+                
+                if (!isPaused && !isActive) {
+                    log('✅ Modal hidden correctly (game resumed)', 'success');
+                } else {
+                    log(`❌ Modal hiding failed: paused=${isPaused}, active=${isActive}`, 'error');
+                }
+                updateGameStateDisplay();
+            }, 100);
+        };
+
+        window.testHideModalTimeout = function() {
+            log('Testing hide modal (timeout)...');
+            
+            if (!game.pauseManager) {
+                log('Pause manager not available', 'error');
+                return;
+            }
+            
+            // Set up active betting state
+            game.pauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            game.state.currentActionBet = {
+                active: true,
+                details: { description: 'Test Event' },
+                timeoutId: null
+            };
+            
+            // Hide the modal with timeout flag
+            game.hideActionBet(true);
+            
+            setTimeout(() => {
+                const isPaused = game.pauseManager.isPaused();
+                const isActive = game.state.currentActionBet.active;
+                
+                if (!isPaused && !isActive) {
+                    log('✅ Modal timeout handled correctly (game resumed)', 'success');
+                } else {
+                    log(`❌ Modal timeout handling failed: paused=${isPaused}, active=${isActive}`, 'error');
+                }
+                updateGameStateDisplay();
+            }, 100);
+        };
+
+        window.testModalError = function() {
+            log('Testing modal error handling...');
+            
+            if (!game.pauseManager) {
+                log('Pause manager not available', 'error');
+                return;
+            }
+            
+            // Set up state and force error
+            game.pauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            game.state.currentActionBet = null; // Force error
+            
+            // Try to hide modal
+            game.hideActionBet(false);
+            
+            setTimeout(() => {
+                const isPaused = game.pauseManager.isPaused();
+                
+                if (!isPaused) {
+                    log('✅ Modal error handled correctly (game resumed)', 'success');
+                } else {
+                    log(`❌ Modal error handling failed: paused=${isPaused}`, 'error');
+                }
+                updateGameStateDisplay();
+            }, 100);
+        };
+
+        window.testCompleteBettingFlow = function() {
+            log('Testing complete betting flow...');
+            
+            if (!game.pauseManager) {
+                log('Pause manager not available', 'error');
+                return;
+            }
+            
+            // Start with paused game
+            game.pauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            const initialWallet = game.state.wallet;
+            
+            // Place bet
+            const result = game.placeBet('action', 'Yellow Card', 2.5, 10, 'FOUL_OUTCOME');
+            
+            setTimeout(() => {
+                const isPaused = game.pauseManager.isPaused();
+                const walletChanged = game.state.wallet === initialWallet - 10;
+                const betAdded = game.state.bets.actionBets.length > 0;
+                
+                if (result && !isPaused && walletChanged && betAdded) {
+                    log('✅ Complete betting flow successful', 'success');
+                } else {
+                    log(`❌ Complete betting flow failed: result=${result}, paused=${isPaused}, wallet=${walletChanged}, bet=${betAdded}`, 'error');
+                }
+                updateGameStateDisplay();
+            }, 100);
+        };
+
+        window.testCompleteSkipFlow = function() {
+            log('Testing complete skip flow...');
+            
+            if (!game.pauseManager) {
+                log('Pause manager not available', 'error');
+                return;
+            }
+            
+            // Start with paused game and active betting
+            game.pauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            game.state.currentActionBet = {
+                active: true,
+                details: { description: 'Test Event' },
+                timeoutId: null
+            };
+            const initialBetCount = game.state.bets.actionBets.length;
+            
+            // Skip betting
+            game.hideActionBet(false);
+            
+            setTimeout(() => {
+                const isPaused = game.pauseManager.isPaused();
+                const isActive = game.state.currentActionBet.active;
+                const noBetAdded = game.state.bets.actionBets.length === initialBetCount;
+                
+                if (!isPaused && !isActive && noBetAdded) {
+                    log('✅ Complete skip flow successful', 'success');
+                } else {
+                    log(`❌ Complete skip flow failed: paused=${isPaused}, active=${isActive}, bet=${noBetAdded}`, 'error');
+                }
+                updateGameStateDisplay();
+            }, 100);
+        };
+
+        window.testMultipleBettingDecisions = function() {
+            log('Testing multiple betting decisions...');
+            
+            if (!game.pauseManager) {
+                log('Pause manager not available', 'error');
+                return;
+            }
+            
+            const initialWallet = game.state.wallet;
+            let successCount = 0;
+            
+            // First betting decision
+            game.pauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            const result1 = game.placeBet('action', 'Yellow Card', 2.5, 10, 'FOUL_OUTCOME');
+            
+            setTimeout(() => {
+                if (result1 && !game.pauseManager.isPaused()) {
+                    successCount++;
+                }
+                
+                // Second betting decision
+                game.pauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+                const result2 = game.placeBet('action', 'Goal', 3.0, 15, 'SHOT_OUTCOME');
+                
+                setTimeout(() => {
+                    if (result2 && !game.pauseManager.isPaused()) {
+                        successCount++;
+                    }
+                    
+                    const walletChanged = game.state.wallet === initialWallet - 25;
+                    const betsAdded = game.state.bets.actionBets.length >= 2;
+                    
+                    if (successCount === 2 && walletChanged && betsAdded) {
+                        log('✅ Multiple betting decisions handled correctly', 'success');
+                    } else {
+                        log(`❌ Multiple betting decisions failed: success=${successCount}/2, wallet=${walletChanged}, bets=${betsAdded}`, 'error');
+                    }
+                    updateGameStateDisplay();
+                }, 150);
+            }, 150);
+        };
+
+        window.runAllTests = async function() {
+            log('Running all tests...');
+            updateStatus('Running tests...', 'info');
+            
+            const tests = [
+                testBetPlacementResume,
+                testSkipTimeoutResume,
+                testErrorResume,
+                testNotPausedHandling,
+                testActionBetPlacement,
+                testInvalidStakeHandling,
+                testBetPlacementError,
+                testFullMatchBetNoResume,
+                testShowBettingModal,
+                testHideModalNormal,
+                testHideModalTimeout,
+                testModalError,
+                testCompleteBettingFlow,
+                testCompleteSkipFlow,
+                testMultipleBettingDecisions
+            ];
+            
+            for (let i = 0; i < tests.length; i++) {
+                resetGameState();
+                await new Promise(resolve => setTimeout(resolve, 200));
+                tests[i]();
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+            
+            updateStatus('All tests completed', 'success');
+            log('All tests completed');
+        };
+
+        // Initialize when page loads
+        window.addEventListener('load', async () => {
+            updateStatus('Initializing test environment...', 'info');
+            const success = await initializeTestGame();
+            if (success) {
+                updateStatus('Test environment ready', 'success');
+            } else {
+                updateStatus('Failed to initialize test environment', 'error');
+            }
+        });
+
+        // Make functions available globally
+        window.resetGameState = resetGameState;
+        window.clearLog = clearLog;
+    </script>
+</body>
+</html>

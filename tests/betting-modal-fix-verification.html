@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betting Modal Fix Verification</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .status.warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .game-link {
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .game-link:hover {
+            background-color: #218838;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .before, .after {
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .before {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        .after {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .step {
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 10px 15px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Betting Modal Fix Verification</h1>
+    <p>This page helps verify that betting modals are now visible and not covered by the pause overlay.</p>
+    
+    <div class="test-container">
+        <h2>🔧 Fix Status</h2>
+        <div id="fix-status" class="status info">Checking fix status...</div>
+        <button onclick="checkFixStatus()">Check Fix Status</button>
+    </div>
+
+    <div class="test-container">
+        <h2>🔄 What Was Fixed</h2>
+        <div class="comparison">
+            <div class="before">
+                <h3>❌ Before (Issue)</h3>
+                <ul>
+                    <li>Betting modal appeared</li>
+                    <li>Pause overlay covered the betting modal</li>
+                    <li>Users couldn't click betting options</li>
+                    <li>Game appeared stuck</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h3>✅ After (Fixed)</h3>
+                <ul>
+                    <li>Betting modal appears</li>
+                    <li>Pause overlay is hidden automatically</li>
+                    <li>Users can click betting options</li>
+                    <li>Game flows smoothly</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>🎮 Testing Instructions</h2>
+        <p>Follow these steps to verify the fix:</p>
+        
+        <div class="step">
+            <strong>Step 1:</strong> Click the "Play Game" button below to open the game
+        </div>
+        
+        <div class="step">
+            <strong>Step 2:</strong> Click "JOIN" on any match to start the game
+        </div>
+        
+        <div class="step">
+            <strong>Step 3:</strong> Wait for a betting opportunity to appear (usually within 30-60 seconds)
+        </div>
+        
+        <div class="step">
+            <strong>Step 4:</strong> When a betting modal appears, verify you can:
+            <ul>
+                <li>See the betting options clearly</li>
+                <li>Click on betting choices</li>
+                <li>Enter stake amounts</li>
+                <li>Complete or skip the bet</li>
+            </ul>
+        </div>
+        
+        <a href="https://soccer-bet-pro.web.app/game" target="_blank" class="game-link">
+            🚀 Play Game (Opens in New Tab)
+        </a>
+    </div>
+
+    <div class="test-container">
+        <h2>✅ Expected Behavior</h2>
+        <div class="status success">
+            ✅ Betting modals appear on top of everything<br>
+            ✅ No "Game Paused" overlay covering betting options<br>
+            ✅ All betting buttons are clickable<br>
+            ✅ Timer bar shows countdown for betting decisions<br>
+            ✅ Game resumes normally after betting decisions
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>⚠️ If You Still See Issues</h2>
+        <div class="status warning">
+            ⚠️ Betting modal appears but is covered by pause overlay<br>
+            ⚠️ Cannot click on betting options<br>
+            ⚠️ "Game Paused" text visible over betting interface
+        </div>
+        <p>If you see these issues:</p>
+        <ol>
+            <li>Try refreshing the page (Ctrl+F5 or Cmd+Shift+R)</li>
+            <li>Clear browser cache and try again</li>
+            <li>Check browser console for errors (F12 → Console)</li>
+            <li>Try a different browser</li>
+        </ol>
+    </div>
+
+    <div class="test-container">
+        <h2>🔍 Technical Details</h2>
+        <h3>What the Fix Does:</h3>
+        <ul>
+            <li><strong>Smart Overlay Management:</strong> Pause overlay is hidden when betting modals are shown</li>
+            <li><strong>Z-Index Layering:</strong> Betting modals (z-50) are above pause overlay (z-40)</li>
+            <li><strong>Modal Detection:</strong> System checks if betting modals are visible before showing pause overlay</li>
+            <li><strong>Automatic Restoration:</strong> Pause overlay reappears when betting modals are closed (if game is still paused)</li>
+        </ul>
+        
+        <h3>Affected Components:</h3>
+        <ul>
+            <li>Multi-choice action betting modal</li>
+            <li>Action bet slip modal</li>
+            <li>Inline full-match betting interface</li>
+            <li>Pause overlay display logic</li>
+        </ul>
+    </div>
+
+    <div class="test-container">
+        <h2>🎯 Test Scenarios</h2>
+        <p>Try these specific scenarios to fully test the fix:</p>
+        
+        <div class="step">
+            <strong>Scenario 1 - Action Betting:</strong>
+            <ol>
+                <li>Wait for a foul event (usually appears as "Crunching tackle near the box!")</li>
+                <li>Betting modal should appear with options like "Yellow Card", "Red Card", "Warning"</li>
+                <li>Click on any option to place a bet</li>
+                <li>Enter a stake amount and confirm</li>
+            </ol>
+        </div>
+        
+        <div class="step">
+            <strong>Scenario 2 - Full Match Betting:</strong>
+            <ol>
+                <li>At the start of the match, click on "Home", "Draw", or "Away" buttons</li>
+                <li>Inline betting interface should appear</li>
+                <li>Enter a stake amount and confirm the bet</li>
+            </ol>
+        </div>
+        
+        <div class="step">
+            <strong>Scenario 3 - Skip Betting:</strong>
+            <ol>
+                <li>When a betting opportunity appears, click "Skip"</li>
+                <li>Game should resume normally with countdown</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        async function checkFixStatus() {
+            const statusElement = document.getElementById('fix-status');
+            statusElement.textContent = 'Checking...';
+            statusElement.className = 'status info';
+            
+            try {
+                // Check if the fix is deployed
+                const response = await fetch('https://soccer-bet-pro.web.app/scripts/main.js');
+                const content = await response.text();
+                
+                // Check for all fix components
+                const checks = [
+                    { name: 'Helper method', check: content.includes('isBettingModalVisible()') },
+                    { name: 'Conditional pause overlay', check: content.includes('!this.isBettingModalVisible()') },
+                    { name: 'Pause overlay hiding', check: content.includes('Hide pause overlay if it\'s visible since betting modal should be on top') },
+                    { name: 'Pause overlay restoration', check: content.includes('Show pause overlay again if game is still paused and no other betting modals are visible') }
+                ];
+                
+                const passedChecks = checks.filter(check => check.check).length;
+                const totalChecks = checks.length;
+                
+                if (passedChecks === totalChecks) {
+                    statusElement.textContent = `✅ Fix is fully deployed (${passedChecks}/${totalChecks} checks passed)`;
+                    statusElement.className = 'status success';
+                } else {
+                    statusElement.textContent = `⚠️ Fix partially deployed (${passedChecks}/${totalChecks} checks passed)`;
+                    statusElement.className = 'status warning';
+                    
+                    // Show which checks failed
+                    const failedChecks = checks.filter(check => !check.check);
+                    console.log('Failed checks:', failedChecks.map(check => check.name));
+                }
+            } catch (error) {
+                statusElement.textContent = '❌ Error checking fix status: ' + error.message;
+                statusElement.className = 'status error';
+            }
+        }
+        
+        // Auto-check on page load
+        window.addEventListener('load', checkFixStatus);
+    </script>
+</body>
+</html>

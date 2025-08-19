@@ -46,7 +46,8 @@ import {
     getCurrentState, 
     setCurrentScreen,
     setClassicMode,
-    getClassicMode
+    getClassicMode,
+    updateBetAmountMemory
 } from './gameState.js';
 
 import { 
@@ -185,6 +186,14 @@ function handleConfirmInlineBet() {
         );
         
         if (success) {
+            // Store bet amount in memory for future full match bets
+            try {
+                updateBetAmountMemory('fullMatch', stake);
+            } catch (error) {
+                console.error('Error updating bet amount memory:', error);
+                // Continue even if memory update fails - bet was still placed successfully
+            }
+            
             hideInlineBetSlip();
         }
     }

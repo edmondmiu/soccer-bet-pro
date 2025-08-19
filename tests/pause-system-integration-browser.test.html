@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pause System Integration Tests</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .test-container {
+            background: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4f46e5;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .test-success {
+            background-color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+        .test-error {
+            background-color: #7f1d1d;
+            border-left: 4px solid #ef4444;
+        }
+        .test-info {
+            background-color: #1e3a8a;
+            border-left: 4px solid #3b82f6;
+        }
+        .test-warning {
+            background-color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #4338ca;
+        }
+        button:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-success { background-color: #10b981; }
+        .status-error { background-color: #ef4444; }
+        .status-warning { background-color: #f59e0b; }
+        .status-info { background-color: #3b82f6; }
+        #test-output {
+            max-height: 600px;
+            overflow-y: auto;
+            background: #111;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Pause System Integration Tests</h1>
+    <p>Task 3: Import and initialize existing pause system modules</p>
+    
+    <div class="test-container">
+        <h2>Test Controls</h2>
+        <button onclick="runModuleImportTests()">Test Module Imports</button>
+        <button onclick="runInitializationTests()">Test Initialization</button>
+        <button onclick="runIntegrationTests()">Test Integration</button>
+        <button onclick="runErrorHandlingTests()">Test Error Handling</button>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="clearOutput()">Clear Output</button>
+    </div>
+
+    <div class="test-container">
+        <h2>Test Results</h2>
+        <div id="test-output"></div>
+    </div>
+
+    <!-- Mock DOM structure for testing -->
+    <div id="app-container" style="display: none;">
+        <div id="lobby-screen" class="hidden"></div>
+        <div id="match-screen" class="hidden">
+            <div id="event-feed"></div>
+            <div id="match-timer">00:00</div>
+            <div id="match-score">0 - 0</div>
+        </div>
+        <div id="action-bet-modal" class="hidden">
+            <div id="action-bet-title"></div>
+            <div id="action-bet-main-description"></div>
+            <div id="action-bet-choices"></div>
+            <div id="action-bet-timer-bar"></div>
+        </div>
+        <div id="action-bet-slip-modal" class="hidden"></div>
+        <div id="match-end-modal" class="hidden"></div>
+        <div id="inline-bet-slip" class="hidden"></div>
+        <div id="confetti-container"></div>
+    </div>
+
+    <script type="module">
+        let testOutput = document.getElementById('test-output');
+        let testCount = 0;
+        let passCount = 0;
+        let failCount = 0;
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const statusClass = `status-${type}`;
+            const resultClass = `test-${type}`;
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = `test-result ${resultClass}`;
+            logEntry.innerHTML = `
+                <span class="status-indicator ${statusClass}"></span>
+                [${timestamp}] ${message}
+            `;
+            
+            testOutput.appendChild(logEntry);
+            testOutput.scrollTop = testOutput.scrollHeight;
+        }
+
+        function clearOutput() {
+            testOutput.innerHTML = '';
+            testCount = 0;
+            passCount = 0;
+            failCount = 0;
+        }
+
+        function updateTestStats() {
+            const stats = `Tests: ${testCount} | Passed: ${passCount} | Failed: ${failCount}`;
+            document.title = `Pause System Tests - ${stats}`;
+        }
+
+        async function runTest(testName, testFunction) {
+            testCount++;
+            try {
+                log(`🧪 Running: ${testName}`, 'info');
+                await testFunction();
+                passCount++;
+                log(`✅ PASS: ${testName}`, 'success');
+                return true;
+            } catch (error) {
+                failCount++;
+                log(`❌ FAIL: ${testName} - ${error.message}`, 'error');
+                console.error(`Test failed: ${testName}`, error);
+                return false;
+            } finally {
+                updateTestStats();
+            }
+        }
+
+        // Test 1: Module Import Tests
+        window.runModuleImportTests = async function() {
+            log('📦 Starting Module Import Tests...', 'info');
+            
+            await runTest('Import pauseManager module', async () => {
+                const { pauseManager } = await import('../scripts/pauseManager.js');
+                
+                if (!pauseManager) throw new Error('pauseManager not imported');
+                if (typeof pauseManager.pauseGame !== 'function') throw new Error('pauseGame method missing');
+                if (typeof pauseManager.resumeGame !== 'function') throw new Error('resumeGame method missing');
+                if (typeof pauseManager.isPaused !== 'function') throw new Error('isPaused method missing');
+                if (typeof pauseManager.getPauseInfo !== 'function') throw new Error('getPauseInfo method missing');
+            });
+
+            await runTest('Import pauseUI module', async () => {
+                const { pauseUI } = await import('../scripts/pauseUI.js');
+                
+                if (!pauseUI) throw new Error('pauseUI not imported');
+                if (typeof pauseUI.showPauseOverlay !== 'function') throw new Error('showPauseOverlay method missing');
+                if (typeof pauseUI.hidePauseOverlay !== 'function') throw new Error('hidePauseOverlay method missing');
+                if (typeof pauseUI.showTimeoutWarning !== 'function') throw new Error('showTimeoutWarning method missing');
+                if (typeof pauseUI.showResumeCountdown !== 'function') throw new Error('showResumeCountdown method missing');
+            });
+
+            await runTest('Import main game module', async () => {
+                const { SoccerBettingGame } = await import('../scripts/main.js');
+                
+                if (!SoccerBettingGame) throw new Error('SoccerBettingGame not imported');
+                if (typeof SoccerBettingGame !== 'function') throw new Error('SoccerBettingGame is not a constructor');
+                
+                const game = new SoccerBettingGame();
+                if (!game) throw new Error('Failed to create game instance');
+                if (typeof game.initialize !== 'function') throw new Error('initialize method missing');
+            });
+
+            log('📦 Module Import Tests Complete', 'success');
+        };
+
+        // Test 2: Initialization Tests
+        window.runInitializationTests = async function() {
+            log('🚀 Starting Initialization Tests...', 'info');
+            
+            await runTest('Initialize pause system successfully', async () => {
+                // Clear any existing global references
+                delete window.pauseManager;
+                delete window.pauseUI;
+                
+                const { SoccerBettingGame } = await import('../scripts/main.js');
+                const game = new SoccerBettingGame();
+                
+                await game.initialize();
+                
+                if (!game.pauseManager) throw new Error('pauseManager not initialized');
+                if (!game.pauseUI) throw new Error('pauseUI not initialized');
+                if (!window.pauseManager) throw new Error('Global pauseManager not set');
+                if (!window.pauseUI) throw new Error('Global pauseUI not set');
+                
+                // Clean up any active pauses
+                if (game.pauseManager.isPaused()) {
+                    await game.pauseManager.resumeGame(false);
+                }
+            });
+
+            await runTest('Set up pause system callbacks', async () => {
+                const { SoccerBettingGame } = await import('../scripts/main.js');
+                const game = new SoccerBettingGame();
+                
+                await game.initialize();
+                
+                if (typeof game.pauseManager.setTimeoutWarningCallback !== 'function') {
+                    throw new Error('setTimeoutWarningCallback method missing');
+                }
+                if (typeof game.pauseManager.setCountdownCallback !== 'function') {
+                    throw new Error('setCountdownCallback method missing');
+                }
+                
+                // Clean up
+                if (game.pauseManager.isPaused()) {
+                    await game.pauseManager.resumeGame(false);
+                }
+            });
+
+            await runTest('Handle initialization errors gracefully', async () => {
+                const { SoccerBettingGame } = await import('../scripts/main.js');
+                const game = new SoccerBettingGame();
+                
+                // Simulate failure by nullifying pause system
+                game.pauseManager = null;
+                
+                // Should not throw error
+                await game.initialize();
+                
+                // Should have fallback implementations
+                if (!game.pauseManager) throw new Error('Fallback pauseManager not created');
+                if (!game.pauseUI) throw new Error('Fallback pauseUI not created');
+                if (typeof game.pauseManager.pauseGame !== 'function') throw new Error('Fallback pauseGame missing');
+                
+                // Fallback should return safe values
+                const pauseResult = game.pauseManager.pauseGame();
+                if (pauseResult !== false) throw new Error('Fallback pauseGame should return false');
+                
+                const isPaused = game.pauseManager.isPaused();
+                if (isPaused !== false) throw new Error('Fallback isPaused should return false');
+            });
+
+            log('🚀 Initialization Tests Complete', 'success');
+        };
+
+        // Test 3: Integration Tests
+        window.runIntegrationTests = async function() {
+            log('🔗 Starting Integration Tests...', 'info');
+            
+            await runTest('Pause and resume game correctly', async () => {
+                const { SoccerBettingGame } = await import('../scripts/main.js');
+                const game = new SoccerBettingGame();
+                await game.initialize();
+                
+                // Test pause
+                const pauseResult = game.pauseManager.pauseGame('TEST_PAUSE', 5000);
+                if (!pauseResult) throw new Error('pauseGame returned false');
+                if (!game.pauseManager.isPaused()) throw new Error('Game not paused after pauseGame call');
+                
+                // Test pause info
+                const pauseInfo = game.pauseManager.getPauseInfo();
+                if (!pauseInfo.active) throw new Error('Pause info shows inactive');
+                if (pauseInfo.reason !== 'TEST_PAUSE') throw new Error('Pause reason incorrect');
+                if (!pauseInfo.startTime) throw new Error('Pause start time not set');
+                
+                // Test resume
+                const resumeResult = await game.pauseManager.resumeGame(false);
+                if (!resumeResult) throw new Error('resumeGame returned false');
+                if (game.pauseManager.isPaused()) throw new Error('Game still paused after resumeGame call');
+            });
+
+            await runTest('Integrate with game tick logic', async () => {
+                const { SoccerBettingGame } = await import('../scripts/main.js');
+                const game = new SoccerBettingGame();
+                await game.initialize();
+                
+                // Set up mock match
+                game.state.match.active = true;
+                game.state.match.time = 10;
+                
+                // Pause the game
+                game.pauseManager.pauseGame('TICK_TEST', 5000);
+                const initialTime = game.state.match.time;
+                
+                // Tick should not advance time when paused
+                game.tick();
+                if (game.state.match.time !== initialTime) {
+                    throw new Error('Game time advanced while paused');
+                }
+                
+                // Resume and tick should advance time
+                await game.pauseManager.resumeGame(false);
+                game.tick();
+                if (game.state.match.time !== initialTime + 1) {
+                    throw new Error('Game time did not advance after resume');
+                }
+            });
+
+            await runTest('Handle betting event pause integration', async () => {
+                const { SoccerBettingGame } = await import('../scripts/main.js');
+                const game = new SoccerBettingGame();
+                await game.initialize();
+                
+                // Create mock betting event
+                const mockEvent = {
+                    type: 'MULTI_CHOICE_ACTION_BET',
+                    description: 'Test betting event',
+                    choices: [
+                        { text: 'Option 1', odds: 2.0 },
+                        { text: 'Option 2', odds: 3.0 }
+                    ],
+                    betType: 'TEST_BET'
+                };
+                
+                // Show betting modal should pause the game
+                game.showMultiChoiceActionBet(mockEvent);
+                
+                if (!game.pauseManager.isPaused()) {
+                    throw new Error('Game not paused after showing betting modal');
+                }
+                if (!game.state.currentActionBet.active) {
+                    throw new Error('Action bet not marked as active');
+                }
+                
+                // Hide betting modal should resume the game
+                game.hideActionBet();
+                
+                // Wait a moment for async resume
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                if (game.pauseManager.isPaused()) {
+                    throw new Error('Game still paused after hiding betting modal');
+                }
+                if (game.state.currentActionBet.active) {
+                    throw new Error('Action bet still marked as active');
+                }
+            });
+
+            log('🔗 Integration Tests Complete', 'success');
+        };
+
+        // Test 4: Error Handling Tests
+        window.runErrorHandlingTests = async function() {
+            log('🛡️ Starting Error Handling Tests...', 'info');
+            
+            await runTest('Handle module import failures gracefully', async () => {
+                const { SoccerBettingGame } = await import('../scripts/main.js');
+                const game = new SoccerBettingGame();
+                
+                // Simulate import failure
+                game.pauseManager = null;
+                game.pauseUI = null;
+                
+                // Should not throw error
+                await game.initialize();
+                
+                // Should have fallback implementations
+                if (!game.pauseManager) throw new Error('Fallback pauseManager not created');
+                if (!game.pauseUI) throw new Error('Fallback pauseUI not created');
+                if (typeof game.pauseManager.pauseGame !== 'function') throw new Error('Fallback pauseGame missing');
+                if (typeof game.pauseUI.showPauseOverlay !== 'function') throw new Error('Fallback showPauseOverlay missing');
+                
+                // Fallback methods should return safe values
+                if (game.pauseManager.pauseGame() !== false) throw new Error('Fallback pauseGame should return false');
+                if (game.pauseManager.isPaused() !== false) throw new Error('Fallback isPaused should return false');
+            });
+
+            await runTest('Handle pause system failures during gameplay', async () => {
+                const { SoccerBettingGame } = await import('../scripts/main.js');
+                const game = new SoccerBettingGame();
+                await game.initialize();
+                
+                // Mock pause system failure
+                const originalPauseGame = game.pauseManager.pauseGame;
+                game.pauseManager.pauseGame = () => {
+                    throw new Error('Simulated pause failure');
+                };
+                
+                // Should handle error gracefully
+                const mockEvent = {
+                    type: 'MULTI_CHOICE_ACTION_BET',
+                    description: 'Test event',
+                    choices: [{ text: 'Test', odds: 2.0 }],
+                    betType: 'TEST'
+                };
+                
+                // This should not throw an error
+                try {
+                    game.showMultiChoiceActionBet(mockEvent);
+                } catch (error) {
+                    throw new Error('showMultiChoiceActionBet threw error when it should handle gracefully');
+                }
+                
+                // Restore original function
+                game.pauseManager.pauseGame = originalPauseGame;
+            });
+
+            log('🛡️ Error Handling Tests Complete', 'success');
+        };
+
+        // Run All Tests
+        window.runAllTests = async function() {
+            clearOutput();
+            log('🧪 Starting Complete Pause System Integration Test Suite...', 'info');
+            
+            await runModuleImportTests();
+            await runInitializationTests();
+            await runIntegrationTests();
+            await runErrorHandlingTests();
+            
+            log(`🎉 All Tests Complete! Results: ${passCount} passed, ${failCount} failed out of ${testCount} total`, 
+                 failCount === 0 ? 'success' : 'warning');
+            
+            if (failCount === 0) {
+                log('✅ Task 3 Implementation: SUCCESSFUL', 'success');
+                log('📋 All requirements verified:', 'success');
+                log('  ✓ ES6 imports for pauseManager and pauseUI working', 'success');
+                log('  ✓ Initialization sequence with error handling complete', 'success');
+                log('  ✓ Pause system connected to existing game state management', 'success');
+                log('  ✓ Graceful fallback behavior implemented', 'success');
+                log('  ✓ Comprehensive tests for module loading and initialization', 'success');
+            } else {
+                log('❌ Some tests failed - review implementation', 'error');
+            }
+        };
+
+        // Initialize
+        log('🧪 Pause System Integration Test Suite Ready', 'info');
+        log('Click "Run All Tests" to verify Task 3 implementation', 'info');
+    </script>
+</body>
+</html>

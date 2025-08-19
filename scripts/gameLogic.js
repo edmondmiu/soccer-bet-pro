@@ -151,11 +151,12 @@ export function startMatch(matchData) {
  * Each tick advances the match time by 1 minute and processes any scheduled events.
  * 
  * Tick Processing Steps:
- * 1. Increment match time by 1 minute
- * 2. Process any timeline events scheduled for current time
- * 3. Update betting odds every 5 minutes
- * 4. Check for match completion (90 minutes)
- * 5. Update UI displays (time, score)
+ * 1. Check if game is paused - early return if paused to preserve state
+ * 2. Increment match time by 1 minute
+ * 3. Process any timeline events scheduled for current time
+ * 4. Update betting odds every 5 minutes
+ * 5. Check for match completion (90 minutes)
+ * 6. Update UI displays (time, score)
  * 
  * Error Handling:
  * - Individual event processing errors don't stop the match
@@ -173,6 +174,20 @@ export function tick() {
         
         if (!state || !state.match) {
             console.error('Invalid state in tick function');
+            return;
+        }
+
+        // Check if game is paused - preserve match time and state during pause
+        if (state.pause && state.pause.active) {
+            // Game is paused, skip all game logic processing to preserve state
+            // Only update UI elements that should still work during pause
+            try {
+                if (window.renderMatchTimeAndScore) {
+                    window.renderMatchTimeAndScore();
+                }
+            } catch (renderError) {
+                console.error('Error rendering during pause:', renderError);
+            }
             return;
         }
         

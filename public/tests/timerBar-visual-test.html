@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimerBar Visual Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <style>
+        .test-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #1f2937;
+            border-radius: 12px;
+            color: white;
+        }
+        
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #374151;
+            border-radius: 8px;
+        }
+        
+        .control-panel {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .control-panel button {
+            padding: 0.5rem 1rem;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .control-panel button:hover {
+            background: #6366f1;
+        }
+        
+        .control-panel button:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+        }
+        
+        .status-display {
+            font-family: monospace;
+            background: #111827;
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">TimerBar Component Visual Test</h1>
+        
+        <!-- Test 1: Basic Timer Functionality -->
+        <div class="test-container">
+            <div class="test-section">
+                <h2 class="text-xl font-semibold mb-4">Test 1: Basic Timer (10 seconds)</h2>
+                <div id="timer-test-1"></div>
+                <div class="control-panel">
+                    <button onclick="startTimer1()">Start 10s Timer</button>
+                    <button onclick="stopTimer1()">Stop</button>
+                    <button onclick="resetTimer1()">Reset</button>
+                </div>
+                <div class="status-display" id="status-1">Ready to start</div>
+            </div>
+        </div>
+        
+        <!-- Test 2: Color State Transitions -->
+        <div class="test-container">
+            <div class="test-section">
+                <h2 class="text-xl font-semibold mb-4">Test 2: Color State Transitions</h2>
+                <div id="timer-test-2"></div>
+                <div class="control-panel">
+                    <button onclick="testNormalState()">Normal (Green)</button>
+                    <button onclick="testWarningState()">Warning (Yellow)</button>
+                    <button onclick="testUrgentState()">Urgent (Red)</button>
+                    <button onclick="testColorTransition()">Auto Transition</button>
+                </div>
+                <div class="status-display" id="status-2">Click buttons to test color states</div>
+            </div>
+        </div>
+        
+        <!-- Test 3: Multiple Timers -->
+        <div class="test-container">
+            <div class="test-section">
+                <h2 class="text-xl font-semibold mb-4">Test 3: Multiple Timers</h2>
+                <div style="margin-bottom: 1rem;">
+                    <h3 class="text-lg mb-2">Timer A (5 seconds)</h3>
+                    <div id="timer-test-3a"></div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <h3 class="text-lg mb-2">Timer B (8 seconds)</h3>
+                    <div id="timer-test-3b"></div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <h3 class="text-lg mb-2">Timer C (12 seconds)</h3>
+                    <div id="timer-test-3c"></div>
+                </div>
+                <div class="control-panel">
+                    <button onclick="startAllTimers()">Start All</button>
+                    <button onclick="stopAllTimers()">Stop All</button>
+                </div>
+                <div class="status-display" id="status-3">Multiple timers ready</div>
+            </div>
+        </div>
+        
+        <!-- Test 4: Responsive Design -->
+        <div class="test-container">
+            <div class="test-section">
+                <h2 class="text-xl font-semibold mb-4">Test 4: Responsive Design</h2>
+                <p class="text-sm text-gray-300 mb-4">Resize your browser window to test responsive behavior</p>
+                <div id="timer-test-4"></div>
+                <div class="control-panel">
+                    <button onclick="startResponsiveTest()">Start Responsive Test</button>
+                </div>
+                <div class="status-display" id="status-4">Resize window to test responsiveness</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../scripts/timerBar.js"></script>
+    <script>
+        // Test variables
+        let timer1, timer2, timer3a, timer3b, timer3c, timer4;
+        
+        // Initialize timers
+        document.addEventListener('DOMContentLoaded', function() {
+            timer1 = new TimerBar('timer-test-1');
+            timer2 = new TimerBar('timer-test-2');
+            timer3a = new TimerBar('timer-test-3a');
+            timer3b = new TimerBar('timer-test-3b');
+            timer3c = new TimerBar('timer-test-3c');
+            timer4 = new TimerBar('timer-test-4');
+            
+            // Set up callbacks
+            setupCallbacks();
+        });
+        
+        function setupCallbacks() {
+            // Timer 1 callbacks
+            timer1.onUpdate((remaining, total) => {
+                const percentage = ((remaining / total) * 100).toFixed(1);
+                const seconds = (remaining / 1000).toFixed(1);
+                document.getElementById('status-1').textContent = 
+                    `Running: ${seconds}s remaining (${percentage}%)`;
+            });
+            
+            timer1.onExpired(() => {
+                document.getElementById('status-1').textContent = 'Timer 1 expired!';
+            });
+            
+            // Timer 2 callbacks
+            timer2.onUpdate((remaining, total) => {
+                const percentage = ((remaining / total) * 100).toFixed(1);
+                document.getElementById('status-2').textContent = 
+                    `Color test: ${percentage}% remaining`;
+            });
+            
+            // Multiple timer callbacks
+            timer3a.onExpired(() => updateMultiTimerStatus('Timer A expired!'));
+            timer3b.onExpired(() => updateMultiTimerStatus('Timer B expired!'));
+            timer3c.onExpired(() => updateMultiTimerStatus('Timer C expired!'));
+            
+            // Responsive timer callback
+            timer4.onUpdate((remaining, total) => {
+                const seconds = (remaining / 1000).toFixed(1);
+                document.getElementById('status-4').textContent = 
+                    `Responsive test: ${seconds}s remaining`;
+            });
+            
+            timer4.onExpired(() => {
+                document.getElementById('status-4').textContent = 'Responsive test completed!';
+            });
+        }
+        
+        // Test 1: Basic Timer Functions
+        function startTimer1() {
+            timer1.start(10000); // 10 seconds
+        }
+        
+        function stopTimer1() {
+            timer1.stop();
+            document.getElementById('status-1').textContent = 'Timer stopped';
+        }
+        
+        function resetTimer1() {
+            timer1.stop();
+            timer1.show();
+            document.getElementById('status-1').textContent = 'Timer reset - ready to start';
+        }
+        
+        // Test 2: Color State Functions
+        function testNormalState() {
+            timer2.start(10000);
+            timer2.update(8000, 10000); // 80% remaining - normal state
+        }
+        
+        function testWarningState() {
+            timer2.start(10000);
+            timer2.update(4000, 10000); // 40% remaining - warning state
+        }
+        
+        function testUrgentState() {
+            timer2.start(10000);
+            timer2.update(2000, 10000); // 20% remaining - urgent state
+        }
+        
+        function testColorTransition() {
+            timer2.start(6000); // 6 seconds for quick transition
+            document.getElementById('status-2').textContent = 'Watch color transitions: Green → Yellow → Red';
+        }
+        
+        // Test 3: Multiple Timers
+        function startAllTimers() {
+            timer3a.start(5000);  // 5 seconds
+            timer3b.start(8000);  // 8 seconds
+            timer3c.start(12000); // 12 seconds
+            updateMultiTimerStatus('All timers started');
+        }
+        
+        function stopAllTimers() {
+            timer3a.stop();
+            timer3b.stop();
+            timer3c.stop();
+            updateMultiTimerStatus('All timers stopped');
+        }
+        
+        function updateMultiTimerStatus(message) {
+            document.getElementById('status-3').textContent = message;
+        }
+        
+        // Test 4: Responsive Design
+        function startResponsiveTest() {
+            timer4.start(15000); // 15 seconds
+            document.getElementById('status-4').textContent = 
+                'Responsive test running - try resizing the window';
+        }
+        
+        // Utility function to demonstrate programmatic control
+        function demonstrateAPI() {
+            console.log('TimerBar API Demonstration:');
+            console.log('timer1.getRemaining():', timer1.getRemaining());
+            console.log('timer1.isRunning:', timer1.isRunning);
+        }
+        
+        // Add window resize listener for responsive testing
+        window.addEventListener('resize', function() {
+            if (timer4.isRunning) {
+                document.getElementById('status-4').textContent += 
+                    ` | Window: ${window.innerWidth}x${window.innerHeight}`;
+            }
+        });
+    </script>
+</body>
+</html>

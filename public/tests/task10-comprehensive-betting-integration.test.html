@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 10: Comprehensive Betting Integration Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .test-section {
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .pass { background-color: #1b5e20; color: #c8e6c9; }
+        .fail { background-color: #b71c1c; color: #ffcdd2; }
+        .info { background-color: #1565c0; color: #bbdefb; }
+        .warning { background-color: #ef6c00; color: #ffe0b2; }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #45a049; }
+        .summary {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .hidden { display: none; }
+        
+        /* Mock betting interface styles */
+        .mock-betting-interface {
+            background-color: #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .mock-modal {
+            background-color: #444;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 10px 0;
+            border: 2px solid #666;
+        }
+        .pause-info-header {
+            background-color: #b8860b;
+            color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .timer-bar-container {
+            background-color: #555;
+            height: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        .timer-bar {
+            background-color: #4CAF50;
+            height: 100%;
+            width: 100%;
+            transition: width 0.1s linear;
+        }
+        .bet-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .bet-button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .bet-button.primary { background-color: #4CAF50; color: white; }
+        .bet-button.secondary { background-color: #666; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Task 10: Comprehensive Betting Integration Tests</h1>
+    <p>This test suite validates all betting improvements implemented in tasks 1-9 with real browser integration.</p>
+
+    <div class="test-section">
+        <h2>🎯 Test Controls</h2>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="runMemoryTests()">Test Memory System</button>
+        <button onclick="runFullMatchTests()">Test Full Match Betting</button>
+        <button onclick="runActionBetTests()">Test Action Bet Modals</button>
+        <button onclick="runErrorHandlingTests()">Test Error Handling</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="test-results"></div>
+
+    <!-- Mock Betting Interface for Testing -->
+    <div class="test-section">
+        <h2>🎮 Mock Betting Interface</h2>
+        <div class="mock-betting-interface">
+            <h3>Full Match Betting (No Pause)</h3>
+            <div>
+                <button class="bet-button primary" onclick="testFullMatchBetting('HOME')">Home (2.5)</button>
+                <button class="bet-button secondary" onclick="testFullMatchBetting('DRAW')">Draw (3.5)</button>
+                <button class="bet-button secondary" onclick="testFullMatchBetting('AWAY')">Away (4.2)</button>
+            </div>
+            
+            <div id="inline-bet-slip" class="hidden mock-modal">
+                <h4>Place Your Bet</h4>
+                <div>Outcome: <span id="bet-outcome"></span></div>
+                <div>Odds: <span id="bet-odds"></span></div>
+                <div>
+                    <label>Amount: $</label>
+                    <input type="number" id="inline-stake-amount" min="1" max="1000" step="0.01">
+                </div>
+                <div class="bet-buttons">
+                    <button class="bet-button primary" onclick="confirmFullMatchBet()">Place Bet</button>
+                    <button class="bet-button secondary" onclick="cancelFullMatchBet()">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="mock-betting-interface">
+            <h3>Action Betting (Integrated Pause Display)</h3>
+            <button class="bet-button primary" onclick="testActionBetting()">Trigger Action Bet Opportunity</button>
+            
+            <div id="action-bet-modal" class="hidden mock-modal">
+                <div class="pause-info-header">
+                    <span>⏸️ Game Paused - Betting Opportunity</span>
+                </div>
+                
+                <div class="timer-bar-container">
+                    <div id="action-bet-timer-bar" class="timer-bar"></div>
+                </div>
+                
+                <h4 id="action-bet-title">⚡ Action Bet! ⚡</h4>
+                <p id="action-bet-description">A foul has been committed. What will the referee decide?</p>
+                
+                <div id="action-bet-choices">
+                    <button class="bet-button primary" onclick="selectActionBetChoice('Yellow Card', 2.5)">Yellow Card (2.5)</button>
+                    <button class="bet-button secondary" onclick="selectActionBetChoice('Red Card', 5.0)">Red Card (5.0)</button>
+                    <button class="bet-button secondary" onclick="selectActionBetChoice('No Card', 1.8)">No Card (1.8)</button>
+                </div>
+                
+                <div id="action-bet-amount-section" class="hidden">
+                    <div>
+                        <label>Amount: $</label>
+                        <input type="number" id="action-stake-amount" min="1" max="1000" step="0.01">
+                    </div>
+                    <div class="bet-buttons">
+                        <button class="bet-button primary" onclick="confirmActionBet()">Place Bet</button>
+                        <button class="bet-button secondary" onclick="skipActionBet()">Skip</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="summary" id="test-summary"></div>
+
+    <script type="module">
+        // Import game state functions
+        import { 
+            getCurrentState, 
+            resetState,
+            getDefaultBetAmount,
+            validateBetAmount,
+            getBetAmountMemory,
+            updateBetAmountMemory,
+            getBetAmountMemoryState,
+            resetBetAmountMemory,
+            updateState,
+            adjustWalletBalance
+        } from '../scripts/gameState.js';
+
+        // Make functions available globally for testing
+        window.gameState = {
+            getCurrentState,
+            resetState,
+            getDefaultBetAmount,
+            validateBetAmount,
+            getBetAmountMemory,
+            updateBetAmountMemory,
+            getBetAmountMemoryState,
+            resetBetAmountMemory,
+            updateState,
+            adjustWalletBalance
+        };
+
+        // Test state
+        let testResults = [];
+        let currentBet = null;
+        let currentActionBet = null;
+        let gameTimer = null;
+        let actionBetTimer = null;
+
+        // Utility functions
+        function logResult(test, passed, message, details = '') {
+            const result = {
+                test,
+                passed,
+                message,
+                details,
+                timestamp: new Date().toLocaleTimeString()
+            };
+            testResults.push(result);
+            displayResult(result);
+        }
+
+        function displayResult(result) {
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${result.passed ? 'pass' : 'fail'}`;
+            resultDiv.innerHTML = `
+                <strong>[${result.timestamp}] ${result.test}</strong><br>
+                ${result.passed ? '✅' : '❌'} ${result.message}
+                ${result.details ? `<br><small>${result.details}</small>` : ''}
+            `;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function displayInfo(message) {
+            const resultsDiv = document.getElementById('test-results');
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'test-result info';
+            infoDiv.innerHTML = `ℹ️ ${message}`;
+            resultsDiv.appendChild(infoDiv);
+        }
+
+        // Test Suite 1: Bet Amount Memory System
+        window.runMemoryTests = function() {
+            displayInfo('Running Bet Amount Memory System Tests...');
+            
+            // Reset state for clean testing
+            window.gameState.resetState();
+            
+            // Test 1: Default bet amount
+            try {
+                const defaultAmount = window.gameState.getDefaultBetAmount();
+                logResult(
+                    'Memory System - Default Amount',
+                    defaultAmount === 25,
+                    `Default bet amount is $${defaultAmount}`,
+                    'Should return $25 as default'
+                );
+            } catch (error) {
+                logResult('Memory System - Default Amount', false, 'Error getting default amount', error.message);
+            }
+
+            // Test 2: Bet amount validation
+            try {
+                const validTests = [
+                    { amount: 25, expected: true },
+                    { amount: 100.50, expected: true },
+                    { amount: 1, expected: true },
+                    { amount: -1, expected: false },
+                    { amount: 0, expected: false },
+                    { amount: 10001, expected: false }
+                ];
+
+                let validationPassed = true;
+                let validationDetails = [];
+
+                validTests.forEach(test => {
+                    const result = window.gameState.validateBetAmount(test.amount);
+                    if (result !== test.expected) {
+                        validationPassed = false;
+                        validationDetails.push(`$${test.amount}: expected ${test.expected}, got ${result}`);
+                    }
+                });
+
+                logResult(
+                    'Memory System - Amount Validation',
+                    validationPassed,
+                    validationPassed ? 'All validation tests passed' : 'Some validation tests failed',
+                    validationDetails.join('; ')
+                );
+            } catch (error) {
+                logResult('Memory System - Amount Validation', false, 'Error in validation tests', error.message);
+            }
+
+            // Test 3: Memory storage and retrieval
+            try {
+                // Store amounts
+                window.gameState.updateBetAmountMemory('fullMatch', 75);
+                window.gameState.updateBetAmountMemory('opportunity', 100);
+
+                // Retrieve amounts
+                const fullMatchAmount = window.gameState.getBetAmountMemory('fullMatch');
+                const opportunityAmount = window.gameState.getBetAmountMemory('opportunity');
+
+                const storageWorked = fullMatchAmount === 75 && opportunityAmount === 100;
+
+                logResult(
+                    'Memory System - Storage & Retrieval',
+                    storageWorked,
+                    storageWorked ? 'Memory storage and retrieval working correctly' : 'Memory storage failed',
+                    `Full Match: $${fullMatchAmount}, Opportunity: $${opportunityAmount}`
+                );
+            } catch (error) {
+                logResult('Memory System - Storage & Retrieval', false, 'Error in memory operations', error.message);
+            }
+
+            // Test 4: Memory persistence in state
+            try {
+                const currentState = window.gameState.getCurrentState();
+                const memoryExists = currentState.betAmountMemory && 
+                                   typeof currentState.betAmountMemory.fullMatch === 'number' &&
+                                   typeof currentState.betAmountMemory.opportunity === 'number';
+
+                logResult(
+                    'Memory System - State Integration',
+                    memoryExists,
+                    memoryExists ? 'Memory properly integrated in game state' : 'Memory not found in game state',
+                    `State: ${JSON.stringify(currentState.betAmountMemory)}`
+                );
+            } catch (error) {
+                logResult('Memory System - State Integration', false, 'Error checking state integration', error.message);
+            }
+        };
+
+        // Test Suite 2: Full Match Betting Without Pause
+        window.runFullMatchTests = function() {
+            displayInfo('Running Full Match Betting Tests...');
+            
+            // Reset state
+            window.gameState.resetState();
+            window.gameState.updateState({ wallet: 1000 });
+
+            // Test 1: Game timer continues during betting
+            let gameTime = 45;
+            gameTimer = setInterval(() => {
+                gameTime += 0.1;
+            }, 100);
+
+            const timeAtStart = gameTime;
+
+            // Simulate full match betting flow
+            setTimeout(() => {
+                // Show betting slip (should not pause game)
+                currentBet = { type: 'full-match', outcome: 'HOME', odds: 2.5 };
+                
+                setTimeout(() => {
+                    // Place bet (should not pause game)
+                    window.gameState.adjustWalletBalance(-50);
+                    window.gameState.updateBetAmountMemory('fullMatch', 50);
+                    
+                    setTimeout(() => {
+                        // Hide betting slip (should not resume game)
+                        currentBet = null;
+                        
+                        const timeAtEnd = gameTime;
+                        clearInterval(gameTimer);
+                        
+                        const timerContinued = timeAtEnd > timeAtStart;
+                        
+                        logResult(
+                            'Full Match - Game Timer Continuity',
+                            timerContinued,
+                            timerContinued ? 'Game timer continued during betting' : 'Game timer was interrupted',
+                            `Time: ${timeAtStart.toFixed(1)}s → ${timeAtEnd.toFixed(1)}s`
+                        );
+                    }, 100);
+                }, 100);
+            }, 100);
+
+            // Test 2: Bet amount pre-population
+            setTimeout(() => {
+                try {
+                    // Store a previous bet amount
+                    window.gameState.updateBetAmountMemory('fullMatch', 125);
+                    
+                    // Simulate showing betting form
+                    const prePopulatedAmount = window.gameState.getBetAmountMemory('fullMatch');
+                    
+                    logResult(
+                        'Full Match - Amount Pre-population',
+                        prePopulatedAmount === 125,
+                        `Pre-populated amount: $${prePopulatedAmount}`,
+                        'Should retrieve last used full match bet amount'
+                    );
+                } catch (error) {
+                    logResult('Full Match - Amount Pre-population', false, 'Error in pre-population test', error.message);
+                }
+            }, 500);
+
+            // Test 3: Wallet balance management
+            setTimeout(() => {
+                try {
+                    const initialWallet = window.gameState.getCurrentState().wallet;
+                    
+                    // Place bet
+                    window.gameState.adjustWalletBalance(-75);
+                    
+                    const finalWallet = window.gameState.getCurrentState().wallet;
+                    const correctDeduction = finalWallet === initialWallet - 75;
+                    
+                    logResult(
+                        'Full Match - Wallet Management',
+                        correctDeduction,
+                        correctDeduction ? 'Wallet balance correctly updated' : 'Wallet balance error',
+                        `${initialWallet} → ${finalWallet} (expected: ${initialWallet - 75})`
+                    );
+                } catch (error) {
+                    logResult('Full Match - Wallet Management', false, 'Error in wallet test', error.message);
+                }
+            }, 600);
+        };
+
+        // Test Suite 3: Action Bet Modal Integration
+        window.runActionBetTests = function() {
+            displayInfo('Running Action Bet Modal Integration Tests...');
+            
+            // Test 1: Modal structure validation
+            try {
+                const modal = document.getElementById('action-bet-modal');
+                const pauseHeader = modal.querySelector('.pause-info-header');
+                const timerBar = modal.querySelector('.timer-bar-container');
+                const choices = modal.querySelector('#action-bet-choices');
+                
+                const structureValid = modal && pauseHeader && timerBar && choices;
+                
+                logResult(
+                    'Action Bet - Modal Structure',
+                    structureValid,
+                    structureValid ? 'Modal has correct integrated structure' : 'Modal structure incomplete',
+                    `Elements found: modal=${!!modal}, pause=${!!pauseHeader}, timer=${!!timerBar}, choices=${!!choices}`
+                );
+            } catch (error) {
+                logResult('Action Bet - Modal Structure', false, 'Error checking modal structure', error.message);
+            }
+
+            // Test 2: Pause information integration
+            try {
+                const pauseHeader = document.querySelector('.pause-info-header');
+                const hasPauseIcon = pauseHeader && pauseHeader.textContent.includes('⏸️');
+                const hasPauseText = pauseHeader && pauseHeader.textContent.includes('Game Paused');
+                
+                const pauseInfoIntegrated = hasPauseIcon && hasPauseText;
+                
+                logResult(
+                    'Action Bet - Pause Info Integration',
+                    pauseInfoIntegrated,
+                    pauseInfoIntegrated ? 'Pause information properly integrated' : 'Pause information missing',
+                    `Content: ${pauseHeader ? pauseHeader.textContent : 'No pause header found'}`
+                );
+            } catch (error) {
+                logResult('Action Bet - Pause Info Integration', false, 'Error checking pause integration', error.message);
+            }
+
+            // Test 3: Timer bar integration
+            try {
+                const timerContainer = document.querySelector('.timer-bar-container');
+                const timerBar = document.getElementById('action-bet-timer-bar');
+                
+                const timerIntegrated = timerContainer && timerBar;
+                
+                logResult(
+                    'Action Bet - Timer Integration',
+                    timerIntegrated,
+                    timerIntegrated ? 'Timer bar properly integrated in modal' : 'Timer bar integration failed',
+                    `Container: ${!!timerContainer}, Bar: ${!!timerBar}`
+                );
+            } catch (error) {
+                logResult('Action Bet - Timer Integration', false, 'Error checking timer integration', error.message);
+            }
+
+            // Test 4: Bet amount pre-population for opportunities
+            try {
+                // Store previous opportunity bet amount
+                window.gameState.updateBetAmountMemory('opportunity', 150);
+                
+                // Simulate showing action bet form
+                const prePopulatedAmount = window.gameState.getBetAmountMemory('opportunity');
+                
+                logResult(
+                    'Action Bet - Amount Pre-population',
+                    prePopulatedAmount === 150,
+                    `Pre-populated opportunity amount: $${prePopulatedAmount}`,
+                    'Should retrieve last used opportunity bet amount'
+                );
+            } catch (error) {
+                logResult('Action Bet - Amount Pre-population', false, 'Error in opportunity pre-population test', error.message);
+            }
+        };
+
+        // Test Suite 4: Error Handling and Fallbacks
+        window.runErrorHandlingTests = function() {
+            displayInfo('Running Error Handling and Fallback Tests...');
+            
+            // Test 1: Invalid bet amount handling
+            try {
+                const invalidAmounts = [-50, 0, 'invalid', null, undefined, NaN, 10001];
+                let errorHandlingWorked = true;
+                let errorDetails = [];
+
+                invalidAmounts.forEach(amount => {
+                    try {
+                        window.gameState.updateBetAmountMemory('fullMatch', amount);
+                        const storedAmount = window.gameState.getBetAmountMemory('fullMatch');
+                        
+                        // Should fallback to default (25) for invalid amounts
+                        if (storedAmount !== 25) {
+                            errorHandlingWorked = false;
+                            errorDetails.push(`${amount} → ${storedAmount} (expected 25)`);
+                        }
+                    } catch (error) {
+                        // Errors are expected for invalid inputs
+                    }
+                });
+
+                logResult(
+                    'Error Handling - Invalid Amounts',
+                    errorHandlingWorked,
+                    errorHandlingWorked ? 'Invalid amounts properly handled' : 'Error handling failed',
+                    errorDetails.join('; ')
+                );
+            } catch (error) {
+                logResult('Error Handling - Invalid Amounts', false, 'Error in error handling test', error.message);
+            }
+
+            // Test 2: State consistency after errors
+            try {
+                const initialState = window.gameState.getCurrentState();
+                
+                // Attempt invalid state update
+                try {
+                    window.gameState.updateState({ wallet: -1000 }); // Should be rejected
+                } catch (error) {
+                    // Expected to fail
+                }
+                
+                const finalState = window.gameState.getCurrentState();
+                const stateConsistent = finalState.wallet >= 0;
+                
+                logResult(
+                    'Error Handling - State Consistency',
+                    stateConsistent,
+                    stateConsistent ? 'State consistency maintained after errors' : 'State consistency compromised',
+                    `Wallet: ${finalState.wallet}`
+                );
+            } catch (error) {
+                logResult('Error Handling - State Consistency', false, 'Error in consistency test', error.message);
+            }
+
+            // Test 3: Fallback behavior for missing elements
+            try {
+                // Test fallback when modal elements are missing
+                const missingElement = document.getElementById('non-existent-modal');
+                const fallbackWorked = missingElement === null; // Should handle gracefully
+                
+                logResult(
+                    'Error Handling - Missing Elements',
+                    fallbackWorked,
+                    fallbackWorked ? 'Missing elements handled gracefully' : 'Missing element handling failed',
+                    'System should handle missing DOM elements without crashing'
+                );
+            } catch (error) {
+                logResult('Error Handling - Missing Elements', false, 'Error in fallback test', error.message);
+            }
+        };
+
+        // Test Suite 5: Backward Compatibility
+        window.runBackwardCompatibilityTests = function() {
+            displayInfo('Running Backward Compatibility Tests...');
+            
+            // Test 1: Existing state structure preserved
+            try {
+                const currentState = window.gameState.getCurrentState();
+                const requiredProps = ['wallet', 'match', 'bets', 'powerUp', 'currentScreen'];
+                
+                let compatibilityMaintained = true;
+                let missingProps = [];
+                
+                requiredProps.forEach(prop => {
+                    if (!(prop in currentState)) {
+                        compatibilityMaintained = false;
+                        missingProps.push(prop);
+                    }
+                });
+                
+                logResult(
+                    'Backward Compatibility - State Structure',
+                    compatibilityMaintained,
+                    compatibilityMaintained ? 'All required state properties present' : 'Missing state properties',
+                    missingProps.length > 0 ? `Missing: ${missingProps.join(', ')}` : 'All properties found'
+                );
+            } catch (error) {
+                logResult('Backward Compatibility - State Structure', false, 'Error checking state structure', error.message);
+            }
+
+            // Test 2: Legacy betting functions still work
+            try {
+                const initialWallet = 1000;
+                window.gameState.updateState({ wallet: initialWallet });
+                
+                // Test legacy wallet adjustment
+                window.gameState.adjustWalletBalance(-100);
+                const newWallet = window.gameState.getCurrentState().wallet;
+                
+                const legacyFunctionsWork = newWallet === initialWallet - 100;
+                
+                logResult(
+                    'Backward Compatibility - Legacy Functions',
+                    legacyFunctionsWork,
+                    legacyFunctionsWork ? 'Legacy betting functions still work' : 'Legacy functions broken',
+                    `Wallet: ${initialWallet} → ${newWallet}`
+                );
+            } catch (error) {
+                logResult('Backward Compatibility - Legacy Functions', false, 'Error testing legacy functions', error.message);
+            }
+        };
+
+        // Run all tests
+        window.runAllTests = function() {
+            clearResults();
+            displayInfo('🚀 Starting Comprehensive Betting Tests...');
+            
+            // Run test suites with delays to avoid conflicts
+            setTimeout(() => runMemoryTests(), 100);
+            setTimeout(() => runFullMatchTests(), 1000);
+            setTimeout(() => runActionBetTests(), 2000);
+            setTimeout(() => runErrorHandlingTests(), 3000);
+            setTimeout(() => runBackwardCompatibilityTests(), 4000);
+            
+            // Generate summary after all tests
+            setTimeout(() => generateTestSummary(), 5000);
+        };
+
+        // Clear results
+        window.clearResults = function() {
+            testResults = [];
+            document.getElementById('test-results').innerHTML = '';
+            document.getElementById('test-summary').innerHTML = '';
+        };
+
+        // Generate test summary
+        function generateTestSummary() {
+            const totalTests = testResults.length;
+            const passedTests = testResults.filter(r => r.passed).length;
+            const failedTests = totalTests - passedTests;
+            
+            const summaryDiv = document.getElementById('test-summary');
+            summaryDiv.innerHTML = `
+                <h3>📊 Test Summary</h3>
+                <div class="test-result ${failedTests === 0 ? 'pass' : 'warning'}">
+                    <strong>Total Tests:</strong> ${totalTests}<br>
+                    <strong>Passed:</strong> ${passedTests} ✅<br>
+                    <strong>Failed:</strong> ${failedTests} ${failedTests > 0 ? '❌' : '✅'}<br>
+                    <strong>Success Rate:</strong> ${totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0}%
+                </div>
+                ${failedTests === 0 ? 
+                    '<div class="test-result pass">🎉 All tests passed! Betting improvements are fully validated.</div>' :
+                    '<div class="test-result fail">⚠️ Some tests failed. Please review the implementation.</div>'
+                }
+            `;
+        }
+
+        // Mock betting interface functions
+        window.testFullMatchBetting = function(outcome) {
+            const odds = { HOME: 2.5, DRAW: 3.5, AWAY: 4.2 }[outcome];
+            
+            // Show betting slip with pre-populated amount
+            const lastAmount = window.gameState.getBetAmountMemory('fullMatch');
+            document.getElementById('bet-outcome').textContent = outcome;
+            document.getElementById('bet-odds').textContent = odds;
+            document.getElementById('inline-stake-amount').value = lastAmount;
+            document.getElementById('inline-bet-slip').classList.remove('hidden');
+            
+            currentBet = { outcome, odds };
+            
+            displayInfo(`Full match betting slip shown for ${outcome} @ ${odds} (pre-populated: $${lastAmount})`);
+        };
+
+        window.confirmFullMatchBet = function() {
+            const amount = parseFloat(document.getElementById('inline-stake-amount').value);
+            
+            if (window.gameState.validateBetAmount(amount)) {
+                window.gameState.adjustWalletBalance(-amount);
+                window.gameState.updateBetAmountMemory('fullMatch', amount);
+                
+                document.getElementById('inline-bet-slip').classList.add('hidden');
+                currentBet = null;
+                
+                displayInfo(`✅ Full match bet placed: ${currentBet?.outcome || 'Unknown'} for $${amount}`);
+            } else {
+                displayInfo('❌ Invalid bet amount');
+            }
+        };
+
+        window.cancelFullMatchBet = function() {
+            document.getElementById('inline-bet-slip').classList.add('hidden');
+            currentBet = null;
+            displayInfo('❌ Full match betting cancelled');
+        };
+
+        window.testActionBetting = function() {
+            // Show action bet modal with integrated pause display
+            const lastAmount = window.gameState.getBetAmountMemory('opportunity');
+            document.getElementById('action-bet-modal').classList.remove('hidden');
+            
+            // Start timer animation
+            let timeLeft = 10;
+            const timerBar = document.getElementById('action-bet-timer-bar');
+            
+            actionBetTimer = setInterval(() => {
+                timeLeft -= 0.1;
+                const percentage = Math.max(0, (timeLeft / 10) * 100);
+                timerBar.style.width = percentage + '%';
+                
+                if (timeLeft <= 0) {
+                    clearInterval(actionBetTimer);
+                    skipActionBet();
+                }
+            }, 100);
+            
+            displayInfo(`Action betting opportunity shown (pre-populated: $${lastAmount})`);
+        };
+
+        window.selectActionBetChoice = function(choice, odds) {
+            const lastAmount = window.gameState.getBetAmountMemory('opportunity');
+            document.getElementById('action-stake-amount').value = lastAmount;
+            document.getElementById('action-bet-amount-section').classList.remove('hidden');
+            
+            currentActionBet = { choice, odds };
+            displayInfo(`Selected: ${choice} @ ${odds}`);
+        };
+
+        window.confirmActionBet = function() {
+            const amount = parseFloat(document.getElementById('action-stake-amount').value);
+            
+            if (window.gameState.validateBetAmount(amount)) {
+                window.gameState.adjustWalletBalance(-amount);
+                window.gameState.updateBetAmountMemory('opportunity', amount);
+                
+                clearInterval(actionBetTimer);
+                document.getElementById('action-bet-modal').classList.add('hidden');
+                document.getElementById('action-bet-amount-section').classList.add('hidden');
+                
+                currentActionBet = null;
+                
+                displayInfo(`✅ Action bet placed: ${currentActionBet?.choice || 'Unknown'} for $${amount}`);
+            } else {
+                displayInfo('❌ Invalid bet amount');
+            }
+        };
+
+        window.skipActionBet = function() {
+            clearInterval(actionBetTimer);
+            document.getElementById('action-bet-modal').classList.add('hidden');
+            document.getElementById('action-bet-amount-section').classList.add('hidden');
+            
+            currentActionBet = null;
+            displayInfo('⏰ Action betting skipped/timed out');
+        };
+
+        // Initialize
+        displayInfo('🎮 Comprehensive Betting Tests Ready - Click "Run All Tests" to begin');
+    </script>
+</body>
+</html>

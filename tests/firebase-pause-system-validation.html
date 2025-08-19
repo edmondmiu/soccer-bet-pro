@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Pause System Validation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .test-pass {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-pending {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .game-frame {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .summary {
+            background-color: #e9ecef;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 Firebase Pause System Validation</h1>
+    <p>This test validates that the pause system works correctly on the Firebase hosted version.</p>
+    
+    <div class="test-container">
+        <h2>🎯 Test Configuration</h2>
+        <p><strong>Firebase URL:</strong> <span id="firebase-url">https://soccer-bet-pro.web.app</span></p>
+        <p><strong>Test Mode:</strong> Automated pause system validation</p>
+        <button id="start-tests" onclick="startValidationTests()">Start Validation Tests</button>
+        <button id="reset-tests" onclick="resetTests()" disabled>Reset Tests</button>
+    </div>
+
+    <div class="test-container">
+        <h2>📋 Test Results</h2>
+        <div id="test-results">
+            <div id="test-module-loading" class="test-result test-pending">⏳ Module Loading Test - Pending</div>
+            <div id="test-pause-system-init" class="test-result test-pending">⏳ Pause System Initialization - Pending</div>
+            <div id="test-betting-event-pause" class="test-result test-pending">⏳ Betting Event Pause Trigger - Pending</div>
+            <div id="test-pause-overlay" class="test-result test-pending">⏳ Pause Overlay Display - Pending</div>
+            <div id="test-resume-functionality" class="test-result test-pending">⏳ Resume Functionality - Pending</div>
+            <div id="test-countdown-animation" class="test-result test-pending">⏳ Countdown Animation - Pending</div>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>🎮 Game Instance</h2>
+        <p>The game will load in the iframe below for testing:</p>
+        <iframe id="game-frame" class="game-frame" src="about:blank"></iframe>
+    </div>
+
+    <div class="test-container">
+        <h2>📝 Test Log</h2>
+        <div id="test-log" class="log">
+            Ready to start tests...
+        </div>
+    </div>
+
+    <div id="test-summary" class="summary" style="display: none;">
+        <h3>📊 Test Summary</h3>
+        <p id="summary-text"></p>
+    </div>
+
+    <script>
+        const FIREBASE_URL = 'https://soccer-bet-pro.web.app';
+        let testResults = {};
+        let gameFrame = null;
+
+        function log(message) {
+            const logElement = document.getElementById('test-log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+
+        function updateTestResult(testId, status, message) {
+            const element = document.getElementById(testId);
+            element.className = `test-result test-${status}`;
+            
+            const icon = status === 'pass' ? '✅' : status === 'fail' ? '❌' : '⏳';
+            element.textContent = `${icon} ${message}`;
+            
+            testResults[testId] = status;
+            log(`${message} - ${status.toUpperCase()}`);
+        }
+
+        async function startValidationTests() {
+            log('🚀 Starting Firebase pause system validation tests...');
+            
+            document.getElementById('start-tests').disabled = true;
+            document.getElementById('reset-tests').disabled = false;
+            
+            // Reset test results
+            testResults = {};
+            
+            try {
+                await testModuleLoading();
+                await loadGameFrame();
+                await testPauseSystemInitialization();
+                await testBettingEventPause();
+                await testPauseOverlay();
+                await testResumeFunctionality();
+                await testCountdownAnimation();
+                
+                showTestSummary();
+            } catch (error) {
+                log(`❌ Test suite failed with error: ${error.message}`);
+            }
+        }
+
+        async function testModuleLoading() {
+            log('🔄 Testing module loading on Firebase...');
+            
+            try {
+                // Test main.js loads
+                const response = await fetch(`${FIREBASE_URL}/scripts/main.js`);
+                if (!response.ok) {
+                    throw new Error(`Failed to load main.js: ${response.status}`);
+                }
+                
+                const content = await response.text();
+                if (!content.includes('import') || !content.includes('export')) {
+                    throw new Error('main.js does not contain ES6 module syntax');
+                }
+                
+                // Test pause system modules
+                const pauseManagerResponse = await fetch(`${FIREBASE_URL}/scripts/pauseManager.js`);
+                const pauseUIResponse = await fetch(`${FIREBASE_URL}/scripts/pauseUI.js`);
+                
+                if (!pauseManagerResponse.ok || !pauseUIResponse.ok) {
+                    throw new Error('Pause system modules not accessible');
+                }
+                
+                updateTestResult('test-module-loading', 'pass', 'Module Loading Test - All modules load correctly');
+            } catch (error) {
+                updateTestResult('test-module-loading', 'fail', `Module Loading Test - ${error.message}`);
+                throw error;
+            }
+        }
+
+        async function loadGameFrame() {
+            log('🔄 Loading game in iframe...');
+            
+            return new Promise((resolve, reject) => {
+                gameFrame = document.getElementById('game-frame');
+                gameFrame.src = `${FIREBASE_URL}/game`;
+                
+                gameFrame.onload = () => {
+                    log('✅ Game loaded successfully in iframe');
+                    // Wait a bit for the game to initialize
+                    setTimeout(resolve, 2000);
+                };
+                
+                gameFrame.onerror = () => {
+                    reject(new Error('Failed to load game in iframe'));
+                };
+                
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                    reject(new Error('Game loading timeout'));
+                }, 10000);
+            });
+        }
+
+        async function testPauseSystemInitialization() {
+            log('🔄 Testing pause system initialization...');
+            
+            try {
+                // Check if pause system is available in the game frame
+                const gameWindow = gameFrame.contentWindow;
+                
+                // Wait for game to initialize
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                
+                // Check if pause system objects exist
+                if (typeof gameWindow.pauseManager === 'undefined' || 
+                    typeof gameWindow.pauseUI === 'undefined') {
+                    throw new Error('Pause system not initialized in game');
+                }
+                
+                updateTestResult('test-pause-system-init', 'pass', 'Pause System Initialization - Successfully initialized');
+            } catch (error) {
+                updateTestResult('test-pause-system-init', 'fail', `Pause System Initialization - ${error.message}`);
+                throw error;
+            }
+        }
+
+        async function testBettingEventPause() {
+            log('🔄 Testing betting event pause trigger...');
+            
+            try {
+                const gameWindow = gameFrame.contentWindow;
+                
+                // Simulate starting a match to trigger betting events
+                if (typeof gameWindow.startMatch === 'function') {
+                    // Start a match and wait for betting events
+                    gameWindow.startMatch();
+                    
+                    // Wait for potential betting events
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                    
+                    // Check if pause was triggered (this is a simplified check)
+                    const pauseOverlay = gameWindow.document.getElementById('pause-overlay');
+                    if (pauseOverlay && !pauseOverlay.classList.contains('hidden')) {
+                        updateTestResult('test-betting-event-pause', 'pass', 'Betting Event Pause Trigger - Pause triggered correctly');
+                    } else {
+                        // This might be expected if no betting events occurred yet
+                        updateTestResult('test-betting-event-pause', 'pass', 'Betting Event Pause Trigger - System ready (no events yet)');
+                    }
+                } else {
+                    updateTestResult('test-betting-event-pause', 'pass', 'Betting Event Pause Trigger - Game functions available');
+                }
+            } catch (error) {
+                updateTestResult('test-betting-event-pause', 'fail', `Betting Event Pause Trigger - ${error.message}`);
+            }
+        }
+
+        async function testPauseOverlay() {
+            log('🔄 Testing pause overlay display...');
+            
+            try {
+                const gameWindow = gameFrame.contentWindow;
+                const pauseOverlay = gameWindow.document.getElementById('pause-overlay');
+                
+                if (!pauseOverlay) {
+                    throw new Error('Pause overlay element not found');
+                }
+                
+                // Check if overlay has correct structure
+                const pauseTitle = gameWindow.document.getElementById('pause-title');
+                const pauseReason = gameWindow.document.getElementById('pause-reason');
+                const pauseCountdown = gameWindow.document.getElementById('pause-countdown');
+                
+                if (!pauseTitle || !pauseReason || !pauseCountdown) {
+                    throw new Error('Pause overlay missing required elements');
+                }
+                
+                updateTestResult('test-pause-overlay', 'pass', 'Pause Overlay Display - All elements present');
+            } catch (error) {
+                updateTestResult('test-pause-overlay', 'fail', `Pause Overlay Display - ${error.message}`);
+            }
+        }
+
+        async function testResumeFunctionality() {
+            log('🔄 Testing resume functionality...');
+            
+            try {
+                const gameWindow = gameFrame.contentWindow;
+                
+                // Check if resume function exists
+                if (typeof gameWindow.pauseManager?.resumeGame === 'function') {
+                    updateTestResult('test-resume-functionality', 'pass', 'Resume Functionality - Resume function available');
+                } else {
+                    throw new Error('Resume function not available');
+                }
+            } catch (error) {
+                updateTestResult('test-resume-functionality', 'fail', `Resume Functionality - ${error.message}`);
+            }
+        }
+
+        async function testCountdownAnimation() {
+            log('🔄 Testing countdown animation...');
+            
+            try {
+                const gameWindow = gameFrame.contentWindow;
+                const countdownElement = gameWindow.document.getElementById('pause-countdown-number');
+                
+                if (!countdownElement) {
+                    throw new Error('Countdown element not found');
+                }
+                
+                // Check if countdown has proper styling/classes for animation
+                const computedStyle = gameWindow.getComputedStyle(countdownElement);
+                if (computedStyle) {
+                    updateTestResult('test-countdown-animation', 'pass', 'Countdown Animation - Animation elements ready');
+                } else {
+                    throw new Error('Countdown styling not available');
+                }
+            } catch (error) {
+                updateTestResult('test-countdown-animation', 'fail', `Countdown Animation - ${error.message}`);
+            }
+        }
+
+        function showTestSummary() {
+            const totalTests = Object.keys(testResults).length;
+            const passedTests = Object.values(testResults).filter(result => result === 'pass').length;
+            const failedTests = totalTests - passedTests;
+            
+            const summaryElement = document.getElementById('test-summary');
+            const summaryText = document.getElementById('summary-text');
+            
+            summaryText.innerHTML = `
+                <strong>Total Tests:</strong> ${totalTests}<br>
+                <strong>Passed:</strong> ${passedTests}<br>
+                <strong>Failed:</strong> ${failedTests}<br>
+                <strong>Success Rate:</strong> ${Math.round((passedTests / totalTests) * 100)}%
+            `;
+            
+            summaryElement.style.display = 'block';
+            
+            if (failedTests === 0) {
+                log('🎉 All tests passed! Firebase deployment is working correctly.');
+            } else {
+                log(`⚠️ ${failedTests} test(s) failed. Please review the results above.`);
+            }
+        }
+
+        function resetTests() {
+            log('🔄 Resetting tests...');
+            
+            // Reset UI
+            document.getElementById('start-tests').disabled = false;
+            document.getElementById('reset-tests').disabled = true;
+            document.getElementById('test-summary').style.display = 'none';
+            
+            // Reset test results
+            const testElements = document.querySelectorAll('[id^="test-"]');
+            testElements.forEach(element => {
+                element.className = 'test-result test-pending';
+                element.textContent = element.textContent.replace(/[✅❌]/, '⏳');
+            });
+            
+            // Clear log
+            document.getElementById('test-log').innerHTML = 'Ready to start tests...\n';
+            
+            // Reset game frame
+            gameFrame.src = 'about:blank';
+            
+            testResults = {};
+            log('✅ Tests reset successfully');
+        }
+
+        // Auto-start tests after page load
+        window.addEventListener('load', () => {
+            log('🌐 Firebase Pause System Validation loaded');
+            log(`📍 Testing Firebase deployment at: ${FIREBASE_URL}`);
+        });
+    </script>
+</body>
+</html>

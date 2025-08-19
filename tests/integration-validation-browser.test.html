@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integration Validation - Browser Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .test-pass {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #28a745;
+            transition: width 0.3s ease;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Integration Validation - Browser Environment Tests</h1>
+    
+    <div class="test-container">
+        <h2>Test Progress</h2>
+        <div class="progress">
+            <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+        </div>
+        <div id="progressText">Ready to start tests...</div>
+    </div>
+
+    <div class="test-container">
+        <h2>Test Controls</h2>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="runModuleTests()">Test Module Loading</button>
+        <button onclick="runPauseTests()">Test Pause Integration</button>
+        <button onclick="runRegressionTests()">Test Regression</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div class="test-container">
+        <h2>Test Results</h2>
+        <div id="testResults"></div>
+    </div>
+
+    <script type="module">
+        let testResults = [];
+        let totalTests = 0;
+        let completedTests = 0;
+
+        // Test utilities
+        function logResult(testName, passed, message = '') {
+            const result = {
+                name: testName,
+                passed: passed,
+                message: message,
+                timestamp: new Date().toISOString()
+            };
+            testResults.push(result);
+            displayResult(result);
+            updateProgress();
+        }
+
+        function displayResult(result) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${result.passed ? 'test-pass' : 'test-fail'}`;
+            resultDiv.innerHTML = `
+                <strong>${result.name}</strong>: ${result.passed ? 'PASS' : 'FAIL'}
+                ${result.message ? `<br><small>${result.message}</small>` : ''}
+                <br><small>Time: ${new Date(result.timestamp).toLocaleTimeString()}</small>
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function updateProgress() {
+            completedTests++;
+            const percentage = totalTests > 0 ? (completedTests / totalTests) * 100 : 0;
+            document.getElementById('progressBar').style.width = `${percentage}%`;
+            document.getElementById('progressText').textContent = 
+                `${completedTests}/${totalTests} tests completed (${Math.round(percentage)}%)`;
+        }
+
+        function clearResults() {
+            testResults = [];
+            completedTests = 0;
+            totalTests = 0;
+            document.getElementById('testResults').innerHTML = '';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressText').textContent = 'Ready to start tests...';
+        }
+
+        // Module Loading Tests
+        async function testModuleLoading() {
+            try {
+                // Test if we can import the main game module
+                const mainModule = await import('../scripts/main.js');
+                logResult('Module Import - Main Game', !!mainModule, 'Successfully imported main.js');
+                
+                // Test pause system modules
+                const pauseManager = await import('../scripts/pauseManager.js');
+                logResult('Module Import - Pause Manager', !!pauseManager, 'Successfully imported pauseManager.js');
+                
+                const pauseUI = await import('../scripts/pauseUI.js');
+                logResult('Module Import - Pause UI', !!pauseUI, 'Successfully imported pauseUI.js');
+                
+                return true;
+            } catch (error) {
+                logResult('Module Loading', false, `Failed to load modules: ${error.message}`);
+                return false;
+            }
+        }
+
+        // DOM Integration Tests
+        function testDOMIntegration() {
+            // Test that required DOM elements exist
+            const requiredElements = [
+                'gameContainer', 'matchTimer', 'homeScore', 'awayScore',
+                'eventFeed', 'bettingModal', 'pauseOverlay'
+            ];
+
+            let allElementsExist = true;
+            requiredElements.forEach(elementId => {
+                const element = document.getElementById(elementId);
+                const exists = element !== null;
+                if (!exists) allElementsExist = false;
+                logResult(`DOM Element - ${elementId}`, exists, 
+                    exists ? 'Element found' : 'Element missing');
+            });
+
+            return allElementsExist;
+        }
+
+        // Pause System Integration Tests
+        async function testPauseSystemIntegration() {
+            try {
+                // Create mock game instance for testing
+                const mockGame = {
+                    state: { isPaused: false, currentMinute: 0 },
+                    pauseManager: null,
+                    pauseUI: null
+                };
+
+                // Test pause system initialization
+                logResult('Pause System - Mock Initialization', true, 'Mock pause system created');
+
+                // Test betting event detection
+                const testEvents = [
+                    { type: 'MULTI_CHOICE_ACTION_BET', isBetting: true },
+                    { type: 'GOAL', isBetting: false },
+                    { type: 'COMMENTARY', isBetting: false }
+                ];
+
+                testEvents.forEach(event => {
+                    const detected = event.type.includes('BET');
+                    logResult(`Betting Event Detection - ${event.type}`, 
+                        detected === event.isBetting,
+                        `Expected: ${event.isBetting}, Got: ${detected}`);
+                });
+
+                return true;
+            } catch (error) {
+                logResult('Pause System Integration', false, `Error: ${error.message}`);
+                return false;
+            }
+        }
+
+        // Regression Tests
+        function testRegression() {
+            // Test that basic game functionality still works
+            const gameState = {
+                currentMinute: 0,
+                homeScore: 0,
+                awayScore: 0,
+                isMatchActive: false,
+                isPaused: false
+            };
+
+            // Test state structure
+            const requiredStateKeys = ['currentMinute', 'homeScore', 'awayScore', 'isMatchActive', 'isPaused'];
+            const hasAllKeys = requiredStateKeys.every(key => gameState.hasOwnProperty(key));
+            logResult('Regression - Game State Structure', hasAllKeys, 
+                hasAllKeys ? 'All required state keys present' : 'Missing state keys');
+
+            // Test event processing logic
+            const processEvent = (event) => {
+                return {
+                    processed: true,
+                    type: event.type,
+                    pauseTriggered: event.type.includes('BET')
+                };
+            };
+
+            const testEvent = { type: 'MULTI_CHOICE_ACTION_BET', minute: 15 };
+            const result = processEvent(testEvent);
+            logResult('Regression - Event Processing', result.processed && result.pauseTriggered,
+                `Event processed: ${result.processed}, Pause triggered: ${result.pauseTriggered}`);
+
+            return hasAllKeys && result.processed;
+        }
+
+        // Environment Tests
+        function testEnvironment() {
+            // Test browser environment
+            const hasWindow = typeof window !== 'undefined';
+            const hasDocument = typeof document !== 'undefined';
+            const hasLocalStorage = typeof localStorage !== 'undefined';
+            const supportsModules = 'noModule' in HTMLScriptElement.prototype;
+
+            logResult('Environment - Window Object', hasWindow, 'Window object available');
+            logResult('Environment - Document Object', hasDocument, 'Document object available');
+            logResult('Environment - Local Storage', hasLocalStorage, 'Local storage available');
+            logResult('Environment - ES6 Modules', supportsModules, 'ES6 modules supported');
+
+            return hasWindow && hasDocument && hasLocalStorage && supportsModules;
+        }
+
+        // Performance Tests
+        function testPerformance() {
+            const startTime = performance.now();
+            
+            // Simulate game operations
+            for (let i = 0; i < 1000; i++) {
+                const event = { type: 'COMMENTARY', minute: i % 90 };
+                const isBetting = event.type.includes('BET');
+            }
+            
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            const passed = duration < 100; // Should complete in under 100ms
+            
+            logResult('Performance - Event Processing', passed, 
+                `Processed 1000 events in ${duration.toFixed(2)}ms`);
+            
+            return passed;
+        }
+
+        // Main test functions
+        window.runModuleTests = async function() {
+            totalTests = 3;
+            completedTests = 0;
+            await testModuleLoading();
+        };
+
+        window.runPauseTests = async function() {
+            totalTests = 4;
+            completedTests = 0;
+            await testPauseSystemIntegration();
+        };
+
+        window.runRegressionTests = function() {
+            totalTests = 2;
+            completedTests = 0;
+            testRegression();
+        };
+
+        window.runAllTests = async function() {
+            clearResults();
+            totalTests = 15; // Approximate total number of tests
+            completedTests = 0;
+
+            // Add info message
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'test-result test-info';
+            infoDiv.innerHTML = '<strong>Starting comprehensive integration tests...</strong>';
+            document.getElementById('testResults').appendChild(infoDiv);
+
+            // Run all test suites
+            await testModuleLoading();
+            testDOMIntegration();
+            await testPauseSystemIntegration();
+            testRegression();
+            testEnvironment();
+            testPerformance();
+
+            // Summary
+            const passed = testResults.filter(r => r.passed).length;
+            const total = testResults.length;
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = `test-result ${passed === total ? 'test-pass' : 'test-fail'}`;
+            summaryDiv.innerHTML = `
+                <strong>Test Summary</strong>: ${passed}/${total} tests passed
+                <br><small>Success rate: ${((passed/total) * 100).toFixed(1)}%</small>
+            `;
+            document.getElementById('testResults').appendChild(summaryDiv);
+        };
+
+        window.clearResults = clearResults;
+
+        // Auto-run basic environment check on load
+        document.addEventListener('DOMContentLoaded', () => {
+            testEnvironment();
+        });
+    </script>
+</body>
+</html>

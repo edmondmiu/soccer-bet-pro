@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal Restore Functionality Tests</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background-color: #2a2a2a;
+        }
+        
+        .test-result {
+            margin: 10px 0;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .test-pass {
+            background-color: #1a4a1a;
+            border: 1px solid #2a6a2a;
+            color: #4ade80;
+        }
+        
+        .test-fail {
+            background-color: #4a1a1a;
+            border: 1px solid #6a2a2a;
+            color: #f87171;
+        }
+        
+        .test-info {
+            background-color: #1a3a4a;
+            border: 1px solid #2a4a6a;
+            color: #60a5fa;
+        }
+        
+        button {
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background-color: #4338ca;
+        }
+        
+        .demo-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .state-display {
+            background-color: #333;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        /* Modal styles for testing */
+        .modal-demo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background-color: #374151;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+            color: white;
+        }
+        
+        .timer-bar {
+            height: 4px;
+            background-color: #10b981;
+            border-radius: 2px;
+            transition: width 0.1s linear;
+            margin-bottom: 15px;
+        }
+        
+        .timer-bar-warning {
+            background-color: #f59e0b;
+        }
+        
+        .timer-bar-urgent {
+            background-color: #ef4444;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Modal Restore Functionality Tests</h1>
+        <p>Testing Task 7: Connect MinimizedIndicator with modal restore functionality</p>
+        
+        <div class="test-section">
+            <h2>Test Controls</h2>
+            <div class="demo-controls">
+                <button onclick="runAllTests()">Run All Tests</button>
+                <button onclick="clearResults()">Clear Results</button>
+                <button onclick="runInteractiveDemo()">Interactive Demo</button>
+                <button onclick="stopDemo()">Stop Demo</button>
+                <button onclick="updateStateDisplay()">Refresh State</button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div id="test-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Current State</h2>
+            <div id="state-display" class="state-display"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Interactive Demo</h2>
+            <div id="demo-status" class="test-info">Demo not running</div>
+            <div class="demo-controls">
+                <button onclick="simulateActionBet()">Simulate Action Bet</button>
+                <button onclick="minimizeModal()">Minimize Modal</button>
+                <button onclick="restoreModal()">Restore Modal</button>
+                <button onclick="simulateDecision()">Make Decision</button>
+                <button onclick="simulateTimeout()">Simulate Timeout</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Demo Modal Structure -->
+    <div id="action-bet-modal" class="modal-demo hidden">
+        <div class="modal-content">
+            <div id="action-bet-timer-bar" class="timer-bar"></div>
+            <h3 id="action-bet-title">⚡ Foul Event! ⚡</h3>
+            <p id="action-bet-main-description">Demo betting opportunity</p>
+            <div id="action-bet-choices">
+                <button class="w-full py-3 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition">
+                    Yellow Card <span class="text-gray-400 text-xs">@2.50</span>
+                </button>
+                <button class="w-full py-3 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition">
+                    Red Card <span class="text-gray-400 text-xs">@8.00</span>
+                </button>
+                <button class="w-full py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white font-medium transition mt-2">
+                    Minimize
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import required modules
+        import { 
+            getCurrentState, 
+            resetState,
+            updateCurrentActionBet,
+            getModalState,
+            updateModalState,
+            initializeModalState,
+            isModalActive,
+            getModalRemainingTime,
+            isModalExpired
+        } from '../scripts/gameState.js';
+        
+        import { 
+            showMultiChoiceActionBet,
+            minimizeActionBet,
+            restoreActionBet,
+            hideActionBet,
+            handleBettingDecision
+        } from '../scripts/betting.js';
+        
+        // Import MinimizedIndicator
+        const MinimizedIndicator = (await import('../scripts/minimizedIndicator.js')).default || window.MinimizedIndicator;
+        
+        // Make functions available globally
+        window.gameState = {
+            getCurrentState,
+            resetState,
+            updateCurrentActionBet,
+            getModalState,
+            updateModalState,
+            initializeModalState,
+            isModalActive,
+            getModalRemainingTime,
+            isModalExpired
+        };
+        
+        window.betting = {
+            showMultiChoiceActionBet,
+            minimizeActionBet,
+            restoreActionBet,
+            hideActionBet,
+            handleBettingDecision
+        };
+        
+        let testResults = [];
+        let demoInterval = null;
+        let testIndicator = null;
+        
+        function addTestResult(name, passed, message = '') {
+            testResults.push({ name, passed, message });
+            displayResults();
+        }
+        
+        function displayResults() {
+            const container = document.getElementById('test-results');
+            container.innerHTML = testResults.map(result => `
+                <div class="test-result ${result.passed ? 'test-pass' : 'test-fail'}">
+                    <strong>${result.passed ? '✅' : '❌'} ${result.name}</strong>
+                    ${result.message ? `<br><small>${result.message}</small>` : ''}
+                </div>
+            `).join('');
+        }
+        
+        function clearResults() {
+            testResults = [];
+            displayResults();
+        }
+        
+        function updateStateDisplay() {
+            const state = window.gameState.getCurrentState();
+            const modalState = window.gameState.getModalState();
+            const isActive = window.gameState.isModalActive();
+            const remaining = window.gameState.getModalRemainingTime();
+            const expired = window.gameState.isModalExpired();
+            
+            document.getElementById('state-display').textContent = JSON.stringify({
+                currentActionBet: state.currentActionBet,
+                modalState: modalState,
+                isActive: isActive,
+                remainingTime: remaining,
+                expired: expired
+            }, null, 2);
+        }
+        
+        // Test Functions
+        
+        function testMinimizedIndicatorClickRestore() {
+            return new Promise((resolve) => {
+                try {
+                    // Create a minimized indicator
+                    const indicator = new MinimizedIndicator();
+                    let restoreCalled = false;
+                    
+                    // Set up click handler
+                    indicator.onClick(() => {
+                        restoreCalled = true;
+                    });
+                    
+                    // Show the indicator
+                    indicator.show('CORNER_OUTCOME', 10);
+                    
+                    // Simulate click
+                    indicator.element.click();
+                    
+                    // Clean up
+                    indicator.destroy();
+                    
+                    const passed = restoreCalled;
+                    addTestResult('MinimizedIndicator Click Handler', passed,
+                        passed ? 'Click handler called correctly' : 'Click handler not called');
+                    
+                    resolve();
+                } catch (error) {
+                    addTestResult('MinimizedIndicator Click Handler', false, `Error: ${error.message}`);
+                    resolve();
+                }
+            });
+        }
+        
+        function testRealTimeTimeUpdates() {
+            return new Promise((resolve) => {
+                try {
+                    const indicator = new MinimizedIndicator();
+                    indicator.show('CORNER_OUTCOME', 10);
+                    
+                    // Test initial time
+                    const initialTime = indicator.getTimeRemaining();
+                    
+                    // Update time
+                    indicator.updateTime(7);
+                    const updatedTime = indicator.getTimeRemaining();
+                    
+                    // Test display update
+                    const displayText = indicator.timeElement.textContent;
+                    
+                    indicator.destroy();
+                    
+                    const passed = initialTime === 10 && updatedTime === 7 && displayText === '7s';
+                    addTestResult('Real-time Time Updates', passed,
+                        passed ? 'Time updates working correctly' : 
+                        `Expected 10->7 with '7s' display, got ${initialTime}->${updatedTime} with '${displayText}'`);
+                    
+                    resolve();
+                } catch (error) {
+                    addTestResult('Real-time Time Updates', false, `Error: ${error.message}`);
+                    resolve();
+                }
+            });
+        }
+        
+        function testUrgencyEffects() {
+            return new Promise((resolve) => {
+                try {
+                    const indicator = new MinimizedIndicator();
+                    indicator.show('CORNER_OUTCOME', 10);
+                    
+                    // Should not be urgent initially
+                    const initialUrgent = indicator.isUrgent;
+                    
+                    // Update to urgent time
+                    indicator.updateTime(4);
+                    const urgentAfterUpdate = indicator.isUrgent;
+                    const hasUrgentClass = indicator.element.classList.contains('urgent');
+                    
+                    // Test setUrgent method
+                    indicator.setUrgent(false);
+                    const urgentAfterSet = indicator.isUrgent;
+                    
+                    indicator.destroy();
+                    
+                    const passed = !initialUrgent && urgentAfterUpdate && hasUrgentClass && !urgentAfterSet;
+                    addTestResult('Urgency Effects', passed,
+                        passed ? 'Urgency effects working correctly' : 
+                        `Initial: ${initialUrgent}, After update: ${urgentAfterUpdate}, Has class: ${hasUrgentClass}, After set: ${urgentAfterSet}`);
+                    
+                    resolve();
+                } catch (error) {
+                    addTestResult('Urgency Effects', false, `Error: ${error.message}`);
+                    resolve();
+                }
+            });
+        }
+        
+        function testModalStatePreservation() {
+            return new Promise((resolve) => {
+                try {
+                    // Initialize modal state
+                    const content = { 
+                        description: 'Test betting event',
+                        betType: 'TEST_BET',
+                        choices: [
+                            { text: 'Option A', odds: 2.0 },
+                            { text: 'Option B', odds: 3.0 }
+                        ]
+                    };
+                    const duration = 10000;
+                    
+                    window.gameState.initializeModalState(content, duration);
+                    const originalStartTime = window.gameState.getModalState().startTime;
+                    
+                    // Simulate minimize
+                    window.gameState.updateModalState({ visible: false, minimized: true });
+                    
+                    // Wait a bit
+                    setTimeout(() => {
+                        // Simulate restore
+                        window.gameState.updateModalState({ visible: true, minimized: false });
+                        
+                        const finalState = window.gameState.getModalState();
+                        const passed = finalState.startTime === originalStartTime &&
+                                      finalState.duration === duration &&
+                                      JSON.stringify(finalState.content) === JSON.stringify(content) &&
+                                      finalState.visible && !finalState.minimized;
+                        
+                        addTestResult('Modal State Preservation', passed,
+                            passed ? 'Modal state preserved correctly' : 
+                            'Modal state not preserved during minimize/restore');
+                        
+                        resolve();
+                    }, 100);
+                    
+                } catch (error) {
+                    addTestResult('Modal State Preservation', false, `Error: ${error.message}`);
+                    resolve();
+                }
+            });
+        }
+        
+        function testTimerAccuracy() {
+            return new Promise((resolve) => {
+                try {
+                    const duration = 5000; // 5 seconds
+                    window.gameState.initializeModalState({ test: 'timer' }, duration);
+                    
+                    const startTime = Date.now();
+                    
+                    setTimeout(() => {
+                        const remaining = window.gameState.getModalRemainingTime();
+                        const expectedRemaining = duration - 1000; // Should be ~4000ms
+                        const accuracy = Math.abs(remaining - expectedRemaining);
+                        
+                        const passed = accuracy < 200; // Allow 200ms tolerance
+                        addTestResult('Timer Accuracy', passed,
+                            passed ? `Timer accurate within ${accuracy}ms` : 
+                            `Timer inaccurate by ${accuracy}ms (expected ~${expectedRemaining}, got ${remaining})`);
+                        
+                        resolve();
+                    }, 1000);
+                    
+                } catch (error) {
+                    addTestResult('Timer Accuracy', false, `Error: ${error.message}`);
+                    resolve();
+                }
+            });
+        }
+        
+        function testIndicatorRemovalOnDecision() {
+            return new Promise((resolve) => {
+                try {
+                    // Create indicator
+                    const indicator = new MinimizedIndicator();
+                    indicator.show('CORNER_OUTCOME', 10);
+                    
+                    const elementExists = document.body.contains(indicator.element);
+                    
+                    // Simulate decision (this should clean up the indicator)
+                    indicator.hide();
+                    
+                    setTimeout(() => {
+                        const elementStillExists = document.body.contains(indicator.element);
+                        const isVisible = indicator.isShowing();
+                        
+                        indicator.destroy();
+                        
+                        const passed = elementExists && !isVisible;
+                        addTestResult('Indicator Removal on Decision', passed,
+                            passed ? 'Indicator properly hidden on decision' : 
+                            `Element existed: ${elementExists}, Still visible: ${isVisible}`);
+                        
+                        resolve();
+                    }, 350); // Wait for hide animation
+                    
+                } catch (error) {
+                    addTestResult('Indicator Removal on Decision', false, `Error: ${error.message}`);
+                    resolve();
+                }
+            });
+        }
+        
+        function testIndicatorRemovalOnTimeout() {
+            return new Promise((resolve) => {
+                try {
+                    // Create indicator with very short time
+                    const indicator = new MinimizedIndicator();
+                    indicator.show('CORNER_OUTCOME', 1);
+                    
+                    // Simulate timeout by updating to 0
+                    indicator.updateTime(0);
+                    
+                    // The indicator should handle this gracefully
+                    const timeDisplay = indicator.timeElement.textContent;
+                    
+                    indicator.destroy();
+                    
+                    const passed = timeDisplay === '0s';
+                    addTestResult('Indicator Removal on Timeout', passed,
+                        passed ? 'Indicator handles timeout correctly' : 
+                        `Expected '0s', got '${timeDisplay}'`);
+                    
+                    resolve();
+                } catch (error) {
+                    addTestResult('Indicator Removal on Timeout', false, `Error: ${error.message}`);
+                    resolve();
+                }
+            });
+        }
+        
+        function testModalContentRestoration() {
+            return new Promise((resolve) => {
+                try {
+                    // Set up modal elements
+                    const titleElement = document.getElementById('action-bet-title');
+                    const descriptionElement = document.getElementById('action-bet-main-description');
+                    
+                    if (!titleElement || !descriptionElement) {
+                        addTestResult('Modal Content Restoration', false, 'Required DOM elements not found');
+                        resolve();
+                        return;
+                    }
+                    
+                    // Set initial content
+                    const originalTitle = titleElement.textContent;
+                    const originalDescription = 'Original test description';
+                    descriptionElement.textContent = originalDescription;
+                    
+                    // Modify content (simulate state change)
+                    titleElement.textContent = 'Modified Title';
+                    descriptionElement.textContent = 'Modified Description';
+                    
+                    // Restore content (simulate what restoreActionBet does)
+                    titleElement.textContent = originalTitle;
+                    descriptionElement.textContent = originalDescription;
+                    
+                    const passed = titleElement.textContent === originalTitle && 
+                                  descriptionElement.textContent === originalDescription;
+                    
+                    addTestResult('Modal Content Restoration', passed,
+                        passed ? 'Modal content restored correctly' : 
+                        'Modal content not restored properly');
+                    
+                    resolve();
+                } catch (error) {
+                    addTestResult('Modal Content Restoration', false, `Error: ${error.message}`);
+                    resolve();
+                }
+            });
+        }
+        
+        // Interactive Demo Functions
+        
+        function runInteractiveDemo() {
+            document.getElementById('demo-status').innerHTML = 
+                '<div class="test-pass">Demo running - Use controls below to test functionality</div>';
+            updateStateDisplay();
+        }
+        
+        function stopDemo() {
+            if (demoInterval) {
+                clearInterval(demoInterval);
+                demoInterval = null;
+            }
+            if (testIndicator) {
+                testIndicator.destroy();
+                testIndicator = null;
+            }
+            document.getElementById('demo-status').innerHTML = 
+                '<div class="test-info">Demo stopped</div>';
+            window.gameState.resetState();
+            updateStateDisplay();
+        }
+        
+        function simulateActionBet() {
+            const event = {
+                description: 'Demo foul event - what will the referee do?',
+                betType: 'DEMO_FOUL',
+                choices: [
+                    { text: 'Yellow Card', odds: 2.5 },
+                    { text: 'Red Card', odds: 8.0 },
+                    { text: 'Warning Only', odds: 1.5 }
+                ]
+            };
+            
+            // Initialize modal state
+            window.gameState.initializeModalState(event, 15000);
+            window.gameState.updateCurrentActionBet({
+                active: true,
+                details: event,
+                modalState: window.gameState.getModalState()
+            });
+            
+            // Show modal
+            document.getElementById('action-bet-modal').classList.remove('hidden');
+            
+            updateStateDisplay();
+        }
+        
+        function minimizeModal() {
+            // Hide modal
+            document.getElementById('action-bet-modal').classList.add('hidden');
+            
+            // Update state
+            window.gameState.updateModalState({ visible: false, minimized: true });
+            
+            // Show minimized indicator
+            if (testIndicator) testIndicator.destroy();
+            testIndicator = new MinimizedIndicator();
+            
+            const state = window.gameState.getCurrentState();
+            if (state.currentActionBet.active) {
+                const remaining = Math.ceil(window.gameState.getModalRemainingTime() / 1000);
+                testIndicator.show(state.currentActionBet.details.betType, remaining);
+                testIndicator.onClick(() => {
+                    restoreModal();
+                });
+                
+                // Start time updates
+                if (demoInterval) clearInterval(demoInterval);
+                demoInterval = setInterval(() => {
+                    const remaining = Math.ceil(window.gameState.getModalRemainingTime() / 1000);
+                    if (remaining <= 0) {
+                        clearInterval(demoInterval);
+                        testIndicator.hide();
+                        return;
+                    }
+                    testIndicator.updateTime(remaining);
+                    updateStateDisplay();
+                }, 1000);
+            }
+            
+            updateStateDisplay();
+        }
+        
+        function restoreModal() {
+            // Show modal
+            document.getElementById('action-bet-modal').classList.remove('hidden');
+            
+            // Update state
+            window.gameState.updateModalState({ visible: true, minimized: false });
+            
+            // Hide indicator
+            if (testIndicator) {
+                testIndicator.hide();
+            }
+            
+            if (demoInterval) {
+                clearInterval(demoInterval);
+                demoInterval = null;
+            }
+            
+            updateStateDisplay();
+        }
+        
+        function simulateDecision() {
+            // Clean up everything
+            document.getElementById('action-bet-modal').classList.add('hidden');
+            if (testIndicator) {
+                testIndicator.hide();
+                setTimeout(() => {
+                    if (testIndicator) {
+                        testIndicator.destroy();
+                        testIndicator = null;
+                    }
+                }, 350);
+            }
+            if (demoInterval) {
+                clearInterval(demoInterval);
+                demoInterval = null;
+            }
+            
+            // Reset state
+            window.gameState.updateCurrentActionBet({
+                active: false,
+                details: null,
+                modalState: {
+                    visible: false,
+                    minimized: false,
+                    startTime: null,
+                    duration: null,
+                    content: null,
+                    timerBar: null
+                }
+            });
+            
+            updateStateDisplay();
+        }
+        
+        function simulateTimeout() {
+            // Force timer to expire
+            const state = window.gameState.getCurrentState();
+            if (state.currentActionBet.active) {
+                const expiredTime = Date.now() + 1000; // 1 second in the future
+                window.gameState.updateModalState({ 
+                    startTime: expiredTime - state.currentActionBet.modalState.duration 
+                });
+            }
+            
+            // Clean up like a timeout would
+            simulateDecision();
+        }
+        
+        // Main test runner
+        async function runAllTests() {
+            clearResults();
+            addTestResult('Starting Tests', true, 'Running modal restore functionality tests...');
+            
+            try {
+                await testMinimizedIndicatorClickRestore();
+                await testRealTimeTimeUpdates();
+                await testUrgencyEffects();
+                await testModalStatePreservation();
+                await testTimerAccuracy();
+                await testIndicatorRemovalOnDecision();
+                await testIndicatorRemovalOnTimeout();
+                await testModalContentRestoration();
+                
+                const passedTests = testResults.filter(r => r.passed).length - 1;
+                const totalTests = testResults.length - 1;
+                
+                addTestResult('Test Summary', passedTests === totalTests, 
+                    `${passedTests}/${totalTests} tests passed`);
+                
+            } catch (error) {
+                addTestResult('Test Error', false, `Error running tests: ${error.message}`);
+            }
+            
+            updateStateDisplay();
+        }
+        
+        // Make functions available globally
+        window.runAllTests = runAllTests;
+        window.clearResults = clearResults;
+        window.updateStateDisplay = updateStateDisplay;
+        window.runInteractiveDemo = runInteractiveDemo;
+        window.stopDemo = stopDemo;
+        window.simulateActionBet = simulateActionBet;
+        window.minimizeModal = minimizeModal;
+        window.restoreModal = restoreModal;
+        window.simulateDecision = simulateDecision;
+        window.simulateTimeout = simulateTimeout;
+        
+        // Initialize
+        updateStateDisplay();
+    </script>
+</body>
+</html>

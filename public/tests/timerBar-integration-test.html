@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimerBar Integration Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .test-modal {
+            background: rgba(0, 0, 0, 0.7);
+        }
+        
+        .modal-content {
+            background: #1f2937;
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-width: 400px;
+            width: 100%;
+            position: relative;
+        }
+        
+        .control-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #374151;
+            padding: 1rem;
+            border-radius: 8px;
+            z-index: 1000;
+        }
+        
+        .control-panel button {
+            display: block;
+            width: 100%;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .control-panel button:hover {
+            background: #6366f1;
+        }
+        
+        .status-display {
+            background: #111827;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            color: #10b981;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <h3 class="text-sm font-semibold mb-2">Timer Controls</h3>
+        <button onclick="showModalWithTimer()">Show Modal + Timer</button>
+        <button onclick="testColorTransitions()">Test Color Changes</button>
+        <button onclick="testExpiration()">Test Expiration</button>
+        <button onclick="hideModal()">Hide Modal</button>
+        <div class="status-display" id="control-status">Ready for testing</div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">TimerBar Integration Test</h1>
+        <p class="text-center text-gray-300 mb-8">
+            This test verifies that the TimerBar component integrates correctly with modal structures
+            similar to the betting modal in the main application.
+        </p>
+        
+        <!-- Simulated Game Area -->
+        <div class="bg-green-800 rounded-lg p-8 text-center mb-8">
+            <h2 class="text-2xl font-bold mb-4">⚽ Simulated Game Area</h2>
+            <p class="text-green-200">Click "Show Modal + Timer" to test the betting modal with timer bar</p>
+        </div>
+    </div>
+    
+    <!-- Modal: Simulated Action Bet Modal (similar to actual betting modal) -->
+    <div id="action-bet-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-sm relative overflow-hidden">
+            <!-- Timer Bar Container (this is where TimerBar will be injected) -->
+            <div id="timer-container"></div>
+            
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-white">Action Bet</h3>
+                <button onclick="hideModal()" class="text-gray-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Modal Content -->
+            <div class="mb-6">
+                <p class="text-gray-300 mb-4">Corner kick awarded! What happens next?</p>
+                
+                <div class="space-y-2">
+                    <button class="w-full p-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-medium transition-colors">
+                        Goal from corner (3.2x)
+                    </button>
+                    <button class="w-full p-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-medium transition-colors">
+                        No goal (1.8x)
+                    </button>
+                    <button class="w-full p-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-medium transition-colors">
+                        Another corner (2.5x)
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Timer Info Display -->
+            <div class="text-center">
+                <div id="timer-info" class="text-sm text-gray-400">
+                    Timer will appear when started
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../scripts/timerBar.js"></script>
+    <script>
+        let timerBar;
+        let currentTest = null;
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create TimerBar instance for the modal
+            timerBar = new TimerBar('timer-container');
+            
+            // Set up timer callbacks
+            timerBar.onUpdate((remaining, total) => {
+                const seconds = (remaining / 1000).toFixed(1);
+                const percentage = ((remaining / total) * 100).toFixed(1);
+                document.getElementById('timer-info').textContent = 
+                    `${seconds}s remaining (${percentage}%)`;
+                
+                updateControlStatus(`Timer running: ${seconds}s left`);
+            });
+            
+            timerBar.onExpired(() => {
+                document.getElementById('timer-info').textContent = 'Time expired!';
+                updateControlStatus('Timer expired - modal should close');
+                
+                // Simulate auto-close after expiration
+                setTimeout(() => {
+                    hideModal();
+                    updateControlStatus('Modal auto-closed after expiration');
+                }, 1500);
+            });
+            
+            updateControlStatus('TimerBar initialized and ready');
+        });
+        
+        function showModalWithTimer() {
+            const modal = document.getElementById('action-bet-modal');
+            modal.classList.remove('hidden');
+            
+            // Start a 10-second timer
+            timerBar.start(10000);
+            currentTest = 'normal';
+            
+            updateControlStatus('Modal shown with 10s timer');
+        }
+        
+        function testColorTransitions() {
+            if (!timerBar.isRunning) {
+                showModalWithTimer();
+            }
+            
+            // Start with a 12-second timer for better color transition visibility
+            timerBar.start(12000);
+            currentTest = 'color-transitions';
+            
+            updateControlStatus('Testing color transitions over 12 seconds');
+        }
+        
+        function testExpiration() {
+            if (!timerBar.isRunning) {
+                showModalWithTimer();
+            }
+            
+            // Start with a short 3-second timer to quickly test expiration
+            timerBar.start(3000);
+            currentTest = 'expiration';
+            
+            updateControlStatus('Testing expiration with 3s timer');
+        }
+        
+        function hideModal() {
+            const modal = document.getElementById('action-bet-modal');
+            modal.classList.add('hidden');
+            
+            timerBar.stop();
+            document.getElementById('timer-info').textContent = 'Timer stopped';
+            
+            updateControlStatus('Modal hidden, timer stopped');
+        }
+        
+        function updateControlStatus(message) {
+            document.getElementById('control-status').textContent = message;
+        }
+        
+        // Simulate betting choice selection
+        document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'BUTTON' && e.target.textContent.includes('x)')) {
+                const choice = e.target.textContent;
+                timerBar.stop();
+                document.getElementById('timer-info').textContent = `Selected: ${choice}`;
+                updateControlStatus(`Choice made: ${choice}`);
+                
+                // Auto-close modal after choice
+                setTimeout(() => {
+                    hideModal();
+                    updateControlStatus('Modal closed after choice selection');
+                }, 1000);
+            }
+        });
+        
+        // Keyboard shortcuts for testing
+        document.addEventListener('keydown', function(e) {
+            switch(e.key) {
+                case '1':
+                    showModalWithTimer();
+                    break;
+                case '2':
+                    testColorTransitions();
+                    break;
+                case '3':
+                    testExpiration();
+                    break;
+                case 'Escape':
+                    hideModal();
+                    break;
+            }
+        });
+        
+        // Display keyboard shortcuts
+        console.log('Keyboard shortcuts:');
+        console.log('1 - Show modal with timer');
+        console.log('2 - Test color transitions');
+        console.log('3 - Test expiration');
+        console.log('Escape - Hide modal');
+    </script>
+</body>
+</html>

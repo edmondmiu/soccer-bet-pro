@@ -17,3 +17,627 @@
     box-shadow: 0 0 0 3px #a78bfa;
     background-color: #4338ca;
 }
+
+/* Pause Overlay Components */
+#pause-overlay {
+    backdrop-filter: blur(4px);
+}
+
+.pause-game-dimmed {
+    filter: brightness(0.3) blur(2px);
+    transition: filter 0.3s ease-in-out;
+}
+
+.pause-game-normal {
+    filter: brightness(1) blur(0);
+    transition: filter 0.3s ease-in-out;
+}
+
+/* Responsive pause overlay */
+@media (max-width: 480px) {
+    #pause-overlay .bg-gray-800 {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+    
+    #pause-title {
+        font-size: 1.5rem;
+    }
+    
+    #pause-reason {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 320px) {
+    #pause-overlay .bg-gray-800 {
+        margin: 0.5rem;
+        padding: 1rem;
+    }
+    
+    #pause-title {
+        font-size: 1.25rem;
+    }
+}
+
+/* Timer Bar Component */
+.timer-bar-container {
+    width: 100%;
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.timer-bar {
+    height: 100%;
+    width: 100%;
+    border-radius: 2px;
+    transition: width 0.1s linear;
+    position: relative;
+}
+
+.timer-bar-normal {
+    background-color: #10b981;
+    background-image: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+
+.timer-bar-warning {
+    background-color: #f59e0b;
+    background-image: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+}
+
+.timer-bar-urgent {
+    background-color: #ef4444;
+    background-image: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+    animation: timerBarPulse 0.5s infinite alternate;
+}
+
+@keyframes timerBarPulse {
+    0% { 
+        opacity: 1;
+        box-shadow: 0 0 4px rgba(239, 68, 68, 0.6);
+    }
+    100% { 
+        opacity: 0.8;
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+    }
+}
+
+/* Responsive timer bar */
+@media (max-width: 480px) {
+    .timer-bar-container {
+        height: 3px;
+        margin-bottom: 10px;
+    }
+}
+
+@media (max-width: 320px) {
+    .timer-bar-container {
+        height: 2px;
+        margin-bottom: 8px;
+    }
+}
+
+/* Enhanced Modal Structure and Visual Hierarchy */
+
+/* Action Bet Modal Enhanced Structure */
+.action-bet-modal-enhanced {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.action-bet-modal-content {
+    background: linear-gradient(145deg, #1f2937, #111827);
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 24rem;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Visual Hierarchy: Pause Info → Betting Options → Amount Selection */
+
+/* 1. Pause Information Header (Top Priority) */
+.pause-info-header {
+    background: linear-gradient(135deg, #92400e, #78350f);
+    border: 1px solid #d97706;
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.pause-info-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    animation: pauseInfoShimmer 2s infinite;
+}
+
+.pause-info-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.pause-info-icon {
+    color: #fcd34d;
+    font-size: 1.25rem;
+    animation: pauseIconPulse 1.5s ease-in-out infinite;
+}
+
+.pause-info-text {
+    color: #fcd34d;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* 2. Timer Bar Integration (High Priority) */
+.modal-timer-container {
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.modal-timer-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.modal-timer-progress {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.1s linear;
+    position: relative;
+    background: linear-gradient(90deg, #10b981, #059669);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.modal-timer-progress.warning {
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.modal-timer-progress.urgent {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+    animation: modalTimerUrgentPulse 0.5s infinite alternate;
+}
+
+.modal-timer-progress::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: timerBarShimmer 1.5s infinite;
+}
+
+/* 3. Betting Content Section (Medium Priority) */
+.betting-content-section {
+    margin-bottom: 1.5rem;
+}
+
+.betting-title {
+    color: #fcd34d;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 0.75rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, #fcd34d, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.betting-description {
+    color: #d1d5db;
+    text-align: center;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    padding: 0 0.5rem;
+}
+
+/* 4. Betting Choices Section (Medium Priority) */
+.betting-choices-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.betting-choice-button {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: linear-gradient(135deg, #374151, #1f2937);
+    border: 1px solid #4b5563;
+    border-radius: 0.75rem;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.betting-choice-button:hover {
+    background: linear-gradient(135deg, #4f46e5, #3730a3);
+    border-color: #6366f1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.betting-choice-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.2);
+}
+
+.betting-choice-text {
+    font-weight: 600;
+}
+
+.betting-choice-odds {
+    color: #9ca3af;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+}
+
+/* 5. Action Buttons Section (Lower Priority) */
+.modal-actions-container {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.modal-action-button {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.modal-action-button.minimize {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    color: #ffffff;
+}
+
+.modal-action-button.minimize:hover {
+    background: linear-gradient(135deg, #9ca3af, #6b7280);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+.modal-action-button.skip {
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    color: #ffffff;
+}
+
+.modal-action-button.skip:hover {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.modal-action-button:active {
+    transform: translateY(0);
+}
+
+/* Enhanced Minimized Indicator Styles */
+.minimized-indicator {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    border-radius: 12px;
+    padding: 8px 12px;
+    cursor: pointer;
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+    user-select: none;
+    min-width: 120px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.minimized-indicator:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.minimized-indicator:active {
+    transform: scale(0.98) translateY(0);
+    transition: all 0.1s ease;
+}
+
+.minimized-indicator.urgent {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    animation: urgentPulse 1s infinite, urgentGlow 2s infinite;
+    border-color: rgba(248, 113, 113, 0.3);
+}
+
+.minimized-indicator.urgent:hover {
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+}
+
+.indicator-event-type {
+    font-size: 12px;
+    opacity: 0.9;
+    margin-bottom: 2px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.indicator-time {
+    font-size: 16px;
+    font-weight: bold;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Enhanced Modal Animations */
+.action-bet-modal-container {
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform-origin: center center;
+}
+
+.action-bet-modal-container.minimizing {
+    animation: modalMinimize 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.action-bet-modal-container.restoring {
+    animation: modalRestore 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Enhanced Timer Bar Urgent State */
+.timer-bar-urgent-enhanced {
+    background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+    animation: timerBarUrgentPulse 0.8s infinite;
+    position: relative;
+}
+
+.timer-bar-urgent-enhanced::after {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(90deg, #f87171, #ef4444);
+    border-radius: 3px;
+    z-index: -1;
+    opacity: 0.5;
+    animation: timerBarUrgentPulse 0.8s infinite reverse;
+}
+
+/* Responsive Design for Enhanced Modals */
+
+/* Tablet and smaller screens */
+@media (max-width: 768px) {
+    .action-bet-modal-content {
+        max-width: 20rem;
+        padding: 1.25rem;
+    }
+    
+    .betting-title {
+        font-size: 1.375rem;
+    }
+    
+    .betting-choice-button {
+        padding: 0.75rem;
+        font-size: 0.8125rem;
+    }
+    
+    .modal-timer-bar {
+        height: 5px;
+    }
+}
+
+/* Mobile screens */
+@media (max-width: 480px) {
+    .action-bet-modal-enhanced {
+        padding: 0.75rem;
+    }
+    
+    .action-bet-modal-content {
+        max-width: 18rem;
+        padding: 1rem;
+    }
+    
+    .pause-info-header {
+        padding: 0.625rem 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .pause-info-text {
+        font-size: 0.8125rem;
+    }
+    
+    .betting-title {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .betting-description {
+        font-size: 0.8125rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .betting-choices-container {
+        gap: 0.5rem;
+    }
+    
+    .betting-choice-button {
+        padding: 0.625rem 0.75rem;
+        font-size: 0.75rem;
+    }
+    
+    .betting-choice-odds {
+        font-size: 0.6875rem;
+        padding: 0.1875rem 0.375rem;
+    }
+    
+    .modal-actions-container {
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+    }
+    
+    .modal-action-button {
+        padding: 0.625rem 0.75rem;
+        font-size: 0.8125rem;
+    }
+    
+    .modal-timer-bar {
+        height: 4px;
+    }
+    
+    .minimized-indicator {
+        top: 10px;
+        right: 10px;
+        padding: 6px 10px;
+        font-size: 13px;
+        min-width: 100px;
+    }
+    
+    .indicator-event-type {
+        font-size: 11px;
+    }
+    
+    .indicator-time {
+        font-size: 14px;
+    }
+}
+
+/* Small mobile screens */
+@media (max-width: 320px) {
+    .action-bet-modal-enhanced {
+        padding: 0.5rem;
+    }
+    
+    .action-bet-modal-content {
+        max-width: 16rem;
+        padding: 0.875rem;
+    }
+    
+    .pause-info-header {
+        padding: 0.5rem;
+        margin-bottom: 0.625rem;
+    }
+    
+    .pause-info-text {
+        font-size: 0.75rem;
+    }
+    
+    .betting-title {
+        font-size: 1.125rem;
+    }
+    
+    .betting-description {
+        font-size: 0.75rem;
+    }
+    
+    .betting-choice-button {
+        padding: 0.5rem;
+        font-size: 0.6875rem;
+    }
+    
+    .betting-choice-odds {
+        font-size: 0.625rem;
+        padding: 0.125rem 0.25rem;
+    }
+    
+    .modal-action-button {
+        padding: 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .modal-timer-bar {
+        height: 3px;
+    }
+    
+    .minimized-indicator {
+        top: 5px;
+        right: 5px;
+        padding: 4px 8px;
+        font-size: 12px;
+        min-width: 80px;
+    }
+    
+    .indicator-event-type {
+        font-size: 10px;
+    }
+    
+    .indicator-time {
+        font-size: 13px;
+    }
+}
+
+/* Focus states for accessibility */
+.minimized-indicator:focus {
+    outline: 2px solid #fbbf24;
+    outline-offset: 2px;
+}
+
+.minimized-indicator:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .minimized-indicator {
+        border: 2px solid currentColor;
+        background: #000;
+        color: #fff;
+    }
+    
+    .minimized-indicator.urgent {
+        background: #800;
+        border-color: #f00;
+    }
+}

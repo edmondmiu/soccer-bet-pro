@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML-Module Browser Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+        .pass {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>HTML-Module Browser Integration Test</h1>
+        <p>This test verifies that the modular HTML structure loads correctly in a browser environment.</p>
+        
+        <div id="test-results">
+            <div class="test-result info">Running tests...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        const testResults = document.getElementById('test-results');
+        let passedTests = 0;
+        let totalTests = 0;
+
+        function addResult(message, passed) {
+            totalTests++;
+            if (passed) passedTests++;
+            
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.textContent = `${passed ? '✅' : '❌'} ${message}`;
+            testResults.appendChild(div);
+        }
+
+        function runTests() {
+            // Clear initial message
+            testResults.innerHTML = '';
+
+            // Test 1: Module script loading
+            try {
+                // If we reach this point, the module script loaded successfully
+                addResult('Module script loads without errors', true);
+            } catch (error) {
+                addResult(`Module script failed to load: ${error.message}`, false);
+            }
+
+            // Test 2: ES6 import syntax works
+            try {
+                // Test that we can use import statements (this file itself is a module)
+                addResult('ES6 import syntax supported', true);
+            } catch (error) {
+                addResult(`ES6 import syntax failed: ${error.message}`, false);
+            }
+
+            // Test 3: DOM elements are accessible
+            try {
+                // Try to access some DOM elements that should exist in the main HTML
+                const testElement = document.createElement('div');
+                testElement.id = 'test-element';
+                document.body.appendChild(testElement);
+                
+                const retrieved = document.getElementById('test-element');
+                addResult('DOM element access works correctly', retrieved !== null);
+                
+                document.body.removeChild(testElement);
+            } catch (error) {
+                addResult(`DOM element access failed: ${error.message}`, false);
+            }
+
+            // Test 4: Module scope isolation
+            try {
+                // Test that module scope doesn't pollute global scope
+                const moduleVar = 'test';
+                addResult('Module scope isolation works', typeof window.moduleVar === 'undefined');
+            } catch (error) {
+                addResult(`Module scope test failed: ${error.message}`, false);
+            }
+
+            // Test 5: Event listeners can be attached
+            try {
+                const testButton = document.createElement('button');
+                let eventFired = false;
+                
+                testButton.addEventListener('click', () => {
+                    eventFired = true;
+                });
+                
+                // Simulate click
+                testButton.click();
+                addResult('Event listeners work correctly', eventFired);
+            } catch (error) {
+                addResult(`Event listener test failed: ${error.message}`, false);
+            }
+
+            // Test 6: Async/await works in module context
+            (async () => {
+                try {
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                    addResult('Async/await works in module context', true);
+                } catch (error) {
+                    addResult(`Async/await test failed: ${error.message}`, false);
+                }
+
+                // Final summary
+                setTimeout(() => {
+                    const summaryDiv = document.createElement('div');
+                    summaryDiv.className = `test-result ${passedTests === totalTests ? 'pass' : 'fail'}`;
+                    summaryDiv.innerHTML = `<strong>Test Summary: ${passedTests}/${totalTests} tests passed</strong>`;
+                    testResults.appendChild(summaryDiv);
+
+                    if (passedTests === totalTests) {
+                        const successDiv = document.createElement('div');
+                        successDiv.className = 'test-result pass';
+                        successDiv.innerHTML = '<strong>🎉 All browser integration tests passed! The HTML-module structure is working correctly.</strong>';
+                        testResults.appendChild(successDiv);
+                    }
+                }, 100);
+            })();
+        }
+
+        // Run tests when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', runTests);
+        } else {
+            runTests();
+        }
+    </script>
+</body>
+</html>

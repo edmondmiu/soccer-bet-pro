@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PauseUI Tests</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1f2937;
+            color: #ffffff;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            background-color: #374151;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4f46e5;
+        }
+        
+        .test-button {
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .test-button:hover {
+            background-color: #6366f1;
+        }
+        
+        .test-button.success {
+            background-color: #10b981;
+        }
+        
+        .test-button.error {
+            background-color: #ef4444;
+        }
+        
+        .test-results {
+            background-color: #1f2937;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .success {
+            color: #10b981;
+        }
+        
+        .error {
+            color: #ef4444;
+        }
+        
+        .info {
+            color: #3b82f6;
+        }
+        
+        .demo-area {
+            background-color: #111827;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 200px;
+            position: relative;
+            border: 2px dashed #4b5563;
+        }
+        
+        .demo-content {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+        }
+        
+        h1, h2 {
+            color: #ffffff;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>PauseUI Component Tests</h1>
+        
+        <!-- Demo Section -->
+        <div class="test-section">
+            <h2>Interactive Demo</h2>
+            <div class="controls">
+                <button class="test-button" onclick="showPauseDemo()">Show Pause Overlay</button>
+                <button class="test-button" onclick="hidePauseDemo()">Hide Pause Overlay</button>
+                <button class="test-button" onclick="updateMessageDemo()">Update Message</button>
+                <button class="test-button" onclick="updateReasonDemo()">Update Reason</button>
+            </div>
+            
+            <div id="demo-area" class="demo-area">
+                <div id="match-screen" class="demo-content">
+                    <h3>Simulated Game Area</h3>
+                    <p>This represents the game screen that gets dimmed during pause.</p>
+                    <div style="background: #4f46e5; padding: 10px; border-radius: 4px; margin: 10px 0;">
+                        Game Content Here
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Automated Tests Section -->
+        <div class="test-section">
+            <h2>Automated Tests</h2>
+            <div class="controls">
+                <button class="test-button" onclick="runAllTests()">Run All Tests</button>
+                <button class="test-button" onclick="runInitializationTests()">Initialization Tests</button>
+                <button class="test-button" onclick="runDisplayTests()">Display Tests</button>
+                <button class="test-button" onclick="runStateTests()">State Management Tests</button>
+                <button class="test-button" onclick="runCleanupTests()">Cleanup Tests</button>
+                <button class="test-button" onclick="clearResults()">Clear Results</button>
+            </div>
+            <div id="test-results" class="test-results">
+                <div class="info">Click "Run All Tests" to start automated testing...</div>
+            </div>
+        </div>
+        
+        <!-- Manual Test Instructions -->
+        <div class="test-section">
+            <h2>Manual Test Instructions</h2>
+            <ol>
+                <li><strong>Show Pause Overlay:</strong> Click to display the pause overlay with default settings</li>
+                <li><strong>Hide Pause Overlay:</strong> Click to hide the currently visible overlay</li>
+                <li><strong>Update Message:</strong> Changes the waiting message while overlay is visible</li>
+                <li><strong>Update Reason:</strong> Changes the pause reason while overlay is visible</li>
+                <li><strong>Visual Verification:</strong> Check that the game area dims when paused and restores when unpaused</li>
+                <li><strong>Animation Testing:</strong> Verify smooth fade in/out transitions</li>
+                <li><strong>Responsive Design:</strong> Test on different screen sizes</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Load PauseUI -->
+    <script src="../scripts/pauseUI.js"></script>
+    
+    <script>
+        // Global test variables
+        let demoPauseUI;
+        let testResults = [];
+        
+        // Initialize demo PauseUI
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set up demo area as app container
+            const demoArea = document.getElementById('demo-area');
+            demoArea.id = 'app-container';
+            
+            demoPauseUI = new PauseUI();
+            log('Demo PauseUI initialized', 'info');
+        });
+        
+        // Demo functions
+        function showPauseDemo() {
+            demoPauseUI.showPauseOverlay('Demo Pause', 'Testing pause overlay functionality...');
+            log('Pause overlay shown', 'success');
+        }
+        
+        function hidePauseDemo() {
+            demoPauseUI.hidePauseOverlay();
+            log('Pause overlay hidden', 'success');
+        }
+        
+        function updateMessageDemo() {
+            const messages = [
+                'Waiting for players...',
+                'Processing bet...',
+                'Synchronizing game state...',
+                'Almost ready...'
+            ];
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            demoPauseUI.updateMessage(randomMessage);
+            log(`Message updated to: "${randomMessage}"`, 'info');
+        }
+        
+        function updateReasonDemo() {
+            const reasons = [
+                'Betting in Progress',
+                'Player Decision Required',
+                'System Processing',
+                'Multiplayer Sync'
+            ];
+            const randomReason = reasons[Math.floor(Math.random() * reasons.length)];
+            demoPauseUI.updateReason(randomReason);
+            log(`Reason updated to: "${randomReason}"`, 'info');
+        }
+        
+        // Test runner functions
+        function log(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            resultsDiv.appendChild(logEntry);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+            testResults = [];
+        }
+        
+        function assert(condition, message) {
+            if (condition) {
+                log(`✓ ${message}`, 'success');
+                testResults.push({ passed: true, message });
+                return true;
+            } else {
+                log(`✗ ${message}`, 'error');
+                testResults.push({ passed: false, message });
+                return false;
+            }
+        }
+        
+        function runAllTests() {
+            clearResults();
+            log('Starting comprehensive test suite...', 'info');
+            
+            runInitializationTests();
+            runDisplayTests();
+            runStateTests();
+            runCleanupTests();
+            
+            // Summary
+            const passed = testResults.filter(r => r.passed).length;
+            const total = testResults.length;
+            log(`\nTest Summary: ${passed}/${total} tests passed`, passed === total ? 'success' : 'error');
+        }
+        
+        function runInitializationTests() {
+            log('\n--- Initialization Tests ---', 'info');
+            
+            // Create test container
+            const testContainer = document.createElement('div');
+            testContainer.id = 'test-app-container';
+            document.body.appendChild(testContainer);
+            
+            try {
+                const testPauseUI = new PauseUI();
+                
+                assert(testPauseUI.overlay !== null, 'Overlay element created');
+                assert(testPauseUI.overlay.id === 'pause-overlay', 'Overlay has correct ID');
+                assert(testPauseUI.overlay.classList.contains('pause-overlay'), 'Overlay has correct class');
+                assert(testPauseUI.overlay.classList.contains('hidden'), 'Overlay starts hidden');
+                assert(testPauseUI.isVisible === false, 'Initial visibility state is false');
+                assert(document.getElementById('pause-ui-styles') !== null, 'CSS styles added to document');
+                
+                // Test overlay structure
+                assert(testPauseUI.overlay.querySelector('.pause-backdrop') !== null, 'Backdrop element exists');
+                assert(testPauseUI.overlay.querySelector('.pause-content') !== null, 'Content element exists');
+                assert(testPauseUI.overlay.querySelector('.pause-title') !== null, 'Title element exists');
+                assert(testPauseUI.overlay.querySelector('.pause-reason') !== null, 'Reason element exists');
+                assert(testPauseUI.overlay.querySelector('.pause-waiting-text') !== null, 'Waiting text element exists');
+                
+                testPauseUI.destroy();
+            } catch (error) {
+                log(`Initialization test error: ${error.message}`, 'error');
+            }
+            
+            // Cleanup
+            testContainer.remove();
+        }
+        
+        function runDisplayTests() {
+            log('\n--- Display Tests ---', 'info');
+            
+            // Create test environment
+            const testContainer = document.createElement('div');
+            testContainer.id = 'test-app-container';
+            testContainer.innerHTML = '<div id="match-screen">Test content</div>';
+            document.body.appendChild(testContainer);
+            
+            try {
+                const testPauseUI = new PauseUI();
+                
+                // Test show overlay
+                testPauseUI.showPauseOverlay('Test Reason', 'Test Message');
+                assert(!testPauseUI.overlay.classList.contains('hidden'), 'Overlay visible after show');
+                assert(testPauseUI.isVisible === true, 'Visibility state updated on show');
+                
+                // Test content updates
+                const reasonElement = testPauseUI.overlay.querySelector('.pause-reason');
+                const messageElement = testPauseUI.overlay.querySelector('.pause-waiting-text');
+                assert(reasonElement.textContent === 'Test Reason', 'Reason text updated correctly');
+                assert(messageElement.textContent === 'Test Message', 'Message text updated correctly');
+                
+                // Test game area dimming
+                const matchScreen = document.getElementById('match-screen');
+                assert(matchScreen.style.filter === 'brightness(0.3)', 'Game area dimmed on show');
+                assert(matchScreen.style.pointerEvents === 'none', 'Game area interactions disabled');
+                
+                // Test hide overlay
+                testPauseUI.hidePauseOverlay();
+                assert(testPauseUI.isVisible === false, 'Visibility state updated on hide');
+                assert(matchScreen.style.filter === '', 'Game area brightness restored');
+                assert(matchScreen.style.pointerEvents === '', 'Game area interactions restored');
+                
+                // Test update methods
+                testPauseUI.showPauseOverlay();
+                testPauseUI.updateMessage('Updated Message');
+                testPauseUI.updateReason('Updated Reason');
+                
+                const updatedReason = testPauseUI.overlay.querySelector('.pause-reason').textContent;
+                const updatedMessage = testPauseUI.overlay.querySelector('.pause-waiting-text').textContent;
+                assert(updatedReason === 'Updated Reason', 'Reason updated correctly');
+                assert(updatedMessage === 'Updated Message', 'Message updated correctly');
+                
+                testPauseUI.destroy();
+            } catch (error) {
+                log(`Display test error: ${error.message}`, 'error');
+            }
+            
+            // Cleanup
+            testContainer.remove();
+        }
+        
+        function runStateTests() {
+            log('\n--- State Management Tests ---', 'info');
+            
+            const testContainer = document.createElement('div');
+            testContainer.id = 'test-app-container';
+            document.body.appendChild(testContainer);
+            
+            try {
+                const testPauseUI = new PauseUI();
+                
+                // Test initial state
+                assert(testPauseUI.isOverlayVisible() === false, 'Initial overlay visibility is false');
+                
+                // Test state changes
+                testPauseUI.showPauseOverlay();
+                assert(testPauseUI.isOverlayVisible() === true, 'Overlay visible after show');
+                
+                testPauseUI.hidePauseOverlay();
+                assert(testPauseUI.isOverlayVisible() === false, 'Overlay hidden after hide');
+                
+                // Test rapid state changes
+                testPauseUI.showPauseOverlay();
+                testPauseUI.hidePauseOverlay();
+                testPauseUI.showPauseOverlay();
+                assert(testPauseUI.isOverlayVisible() === true, 'Rapid state changes handled correctly');
+                
+                testPauseUI.destroy();
+            } catch (error) {
+                log(`State test error: ${error.message}`, 'error');
+            }
+            
+            testContainer.remove();
+        }
+        
+        function runCleanupTests() {
+            log('\n--- Cleanup Tests ---', 'info');
+            
+            const testContainer = document.createElement('div');
+            testContainer.id = 'test-app-container';
+            document.body.appendChild(testContainer);
+            
+            try {
+                const testPauseUI = new PauseUI();
+                const overlayElement = testPauseUI.overlay;
+                
+                // Verify elements exist before cleanup
+                assert(document.contains(overlayElement), 'Overlay exists in DOM before cleanup');
+                assert(document.getElementById('pause-ui-styles') !== null, 'Styles exist before cleanup');
+                
+                // Perform cleanup
+                testPauseUI.destroy();
+                
+                // Verify cleanup
+                assert(!document.contains(overlayElement), 'Overlay removed from DOM after cleanup');
+                assert(testPauseUI.overlay === null, 'Overlay reference cleared');
+                assert(testPauseUI.isVisible === false, 'Visibility state reset');
+                
+                // Test multiple cleanup calls
+                testPauseUI.destroy(); // Should not throw error
+                assert(true, 'Multiple cleanup calls handled gracefully');
+                
+            } catch (error) {
+                log(`Cleanup test error: ${error.message}`, 'error');
+            }
+            
+            testContainer.remove();
+        }
+        
+        // Error handling
+        window.addEventListener('error', (event) => {
+            log(`JavaScript Error: ${event.error.message}`, 'error');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betting Modal Minimize Integration Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Timer bar styles */
+        .timer-bar {
+            height: 4px;
+            border-radius: 2px;
+            transition: width 0.1s linear;
+        }
+        .timer-bar-normal { background-color: #10b981; }
+        .timer-bar-warning { background-color: #f59e0b; }
+        .timer-bar-urgent { background-color: #ef4444; }
+        
+        /* Animation for countdown */
+        @keyframes countdown {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+        .countdown-bar-animate {
+            animation: countdown 10s linear forwards;
+        }
+        
+        /* Test result styles */
+        .test-pass { color: #10b981; }
+        .test-fail { color: #ef4444; }
+        .test-pending { color: #f59e0b; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">Betting Modal Minimize Integration Test</h1>
+        
+        <!-- Test Controls -->
+        <div class="bg-gray-800 p-6 rounded-lg mb-8">
+            <h2 class="text-xl font-semibold mb-4">Test Controls</h2>
+            <div class="space-x-4">
+                <button id="start-test" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">Start Test</button>
+                <button id="reset-test" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded">Reset</button>
+            </div>
+        </div>
+        
+        <!-- Test Results -->
+        <div class="bg-gray-800 p-6 rounded-lg mb-8">
+            <h2 class="text-xl font-semibold mb-4">Test Results</h2>
+            <div id="test-results" class="space-y-2">
+                <div id="test-1" class="test-pending">⏳ Test 1: Modal shows with minimize functionality</div>
+                <div id="test-2" class="test-pending">⏳ Test 2: Click outside minimizes modal</div>
+                <div id="test-3" class="test-pending">⏳ Test 3: Minimize button works</div>
+                <div id="test-4" class="test-pending">⏳ Test 4: Minimized indicator appears</div>
+                <div id="test-5" class="test-pending">⏳ Test 5: Indicator shows correct time</div>
+                <div id="test-6" class="test-pending">⏳ Test 6: Click indicator restores modal</div>
+                <div id="test-7" class="test-pending">⏳ Test 7: Timer state preserved on restore</div>
+                <div id="test-8" class="test-pending">⏳ Test 8: Urgent state when < 5 seconds</div>
+            </div>
+        </div>
+        
+        <!-- Test Log -->
+        <div class="bg-gray-800 p-6 rounded-lg">
+            <h2 class="text-xl font-semibold mb-4">Test Log</h2>
+            <div id="test-log" class="bg-gray-900 p-4 rounded text-sm font-mono h-64 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- Modal: Multi-Choice Action Bet -->
+    <div id="action-bet-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
+        <div class="bg-gray-800 rounded-xl shadow-2xl p-6 w-full max-w-sm relative overflow-hidden">
+            <!-- Timer Bar Container -->
+            <div class="timer-bar-container absolute top-0 left-0 right-0 z-10">
+                <div id="action-bet-timer-bar" class="timer-bar timer-bar-normal"></div>
+            </div>
+            <h2 id="action-bet-title" class="text-2xl font-bold text-yellow-300 text-center mb-2">⚡ Action Bet! ⚡</h2>
+            <p id="action-bet-main-description" class="text-center text-gray-300 mb-4">Description of the bet</p>
+            <div id="action-bet-choices" class="space-y-2 mb-4">
+                <!-- Dynamic choices will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Import required scripts -->
+    <script src="../scripts/minimizedIndicator.js"></script>
+    
+    <script>
+        // Mock game state and dependencies
+        const mockGameState = {
+            currentActionBet: {
+                active: false,
+                details: null,
+                timeoutId: null,
+                modalState: null,
+                minimizedIndicator: null,
+                minimizedUpdateInterval: null
+            }
+        };
+        
+        function getCurrentState() {
+            return JSON.parse(JSON.stringify(mockGameState));
+        }
+        
+        function updateCurrentActionBet(updates) {
+            Object.assign(mockGameState.currentActionBet, updates);
+            log(`State updated: ${JSON.stringify(updates)}`);
+        }
+        
+        // Mock pause manager
+        const pauseManager = {
+            pauseGame: (reason, timeout) => {
+                log(`Game paused: ${reason} for ${timeout}ms`);
+                return true;
+            },
+            isPaused: () => true
+        };
+        
+        // Test utilities
+        function log(message) {
+            const logElement = document.getElementById('test-log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function setTestResult(testId, passed, message) {
+            const element = document.getElementById(testId);
+            element.className = passed ? 'test-pass' : 'test-fail';
+            element.innerHTML = `${passed ? '✅' : '❌'} ${element.innerHTML.substring(2)} ${message ? '- ' + message : ''}`;
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Betting modal functions (simplified versions)
+        function showMultiChoiceActionBet(event) {
+            log('Showing multi-choice action bet modal');
+            
+            // Update state
+            updateCurrentActionBet({
+                active: true,
+                details: event,
+                modalState: {
+                    visible: true,
+                    minimized: false,
+                    startTime: Date.now(),
+                    duration: 10000
+                }
+            });
+            
+            // Update modal content
+            document.getElementById('action-bet-title').textContent = '⚡ Foul Event! ⚡';
+            document.getElementById('action-bet-main-description').textContent = event.description;
+            
+            const choicesContainer = document.getElementById('action-bet-choices');
+            choicesContainer.innerHTML = '';
+            
+            // Add choice buttons
+            event.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.className = 'w-full py-3 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition';
+                button.innerHTML = `${choice.text} <span class="text-gray-400 text-xs">@${choice.odds.toFixed(2)}</span>`;
+                button.onclick = () => {
+                    log(`Choice selected: ${choice.text}`);
+                    minimizeActionBet();
+                };
+                choicesContainer.appendChild(button);
+            });
+            
+            // Add minimize button
+            const minimizeButton = document.createElement('button');
+            minimizeButton.className = 'w-full py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white font-medium transition mt-2';
+            minimizeButton.textContent = 'Minimize';
+            minimizeButton.onclick = () => minimizeActionBet();
+            choicesContainer.appendChild(minimizeButton);
+            
+            // Show modal
+            const modal = document.getElementById('action-bet-modal');
+            modal.classList.remove('hidden');
+            
+            // Setup click-outside handler
+            setupModalMinimizeHandlers(modal);
+            
+            // Start timer
+            const timerBar = document.getElementById('action-bet-timer-bar');
+            timerBar.style.width = '100%';
+            timerBar.classList.add('countdown-bar-animate');
+            
+            log('Modal shown successfully');
+        }
+        
+        function minimizeActionBet() {
+            log('Minimizing action bet modal');
+            
+            const state = getCurrentState();
+            if (!state.currentActionBet.active) return;
+            
+            // Update state
+            updateCurrentActionBet({
+                modalState: {
+                    ...state.currentActionBet.modalState,
+                    visible: false,
+                    minimized: true
+                }
+            });
+            
+            // Hide modal
+            const modal = document.getElementById('action-bet-modal');
+            modal.classList.add('hidden');
+            removeModalMinimizeHandlers(modal);
+            
+            // Show minimized indicator
+            showMinimizedIndicator();
+            
+            log('Modal minimized successfully');
+        }
+        
+        function restoreActionBet() {
+            log('Restoring action bet modal');
+            
+            const state = getCurrentState();
+            if (!state.currentActionBet.active || !state.currentActionBet.modalState?.minimized) {
+                return;
+            }
+            
+            // Update state
+            updateCurrentActionBet({
+                modalState: {
+                    ...state.currentActionBet.modalState,
+                    visible: true,
+                    minimized: false
+                }
+            });
+            
+            // Show modal
+            const modal = document.getElementById('action-bet-modal');
+            modal.classList.remove('hidden');
+            setupModalMinimizeHandlers(modal);
+            
+            // Hide minimized indicator
+            hideMinimizedIndicator();
+            
+            // Update timer bar
+            updateTimerBarProgress();
+            
+            log('Modal restored successfully');
+        }
+        
+        function showMinimizedIndicator() {
+            const state = getCurrentState();
+            if (!state.currentActionBet.active) return;
+            
+            const indicator = new MinimizedIndicator();
+            const eventType = state.currentActionBet.details.betType || 'ACTION_BET';
+            const elapsed = Date.now() - state.currentActionBet.modalState.startTime;
+            const remaining = Math.max(0, Math.ceil((state.currentActionBet.modalState.duration - elapsed) / 1000));
+            
+            indicator.show(eventType, remaining);
+            indicator.onClick(() => {
+                restoreActionBet();
+            });
+            
+            updateCurrentActionBet({
+                minimizedIndicator: indicator
+            });
+            
+            // Update indicator time every second
+            const updateInterval = setInterval(() => {
+                const currentState = getCurrentState();
+                if (!currentState.currentActionBet.active || !currentState.currentActionBet.modalState?.minimized) {
+                    clearInterval(updateInterval);
+                    return;
+                }
+                
+                const elapsed = Date.now() - currentState.currentActionBet.modalState.startTime;
+                const remaining = Math.max(0, Math.ceil((currentState.currentActionBet.modalState.duration - elapsed) / 1000));
+                
+                indicator.updateTime(remaining);
+                
+                if (remaining <= 5) {
+                    indicator.setUrgent(true);
+                }
+                
+                if (remaining <= 0) {
+                    clearInterval(updateInterval);
+                    hideActionBet(true);
+                }
+            }, 1000);
+            
+            updateCurrentActionBet({
+                minimizedUpdateInterval: updateInterval
+            });
+            
+            log(`Minimized indicator shown with ${remaining}s remaining`);
+        }
+        
+        function hideMinimizedIndicator() {
+            const state = getCurrentState();
+            
+            if (state.currentActionBet.minimizedIndicator) {
+                state.currentActionBet.minimizedIndicator.hide();
+            }
+            
+            if (state.currentActionBet.minimizedUpdateInterval) {
+                clearInterval(state.currentActionBet.minimizedUpdateInterval);
+            }
+            
+            updateCurrentActionBet({
+                minimizedIndicator: null,
+                minimizedUpdateInterval: null
+            });
+            
+            log('Minimized indicator hidden');
+        }
+        
+        function updateTimerBarProgress() {
+            const state = getCurrentState();
+            if (!state.currentActionBet.active || !state.currentActionBet.modalState) return;
+            
+            const elapsed = Date.now() - state.currentActionBet.modalState.startTime;
+            const remaining = Math.max(0, state.currentActionBet.modalState.duration - elapsed);
+            const progress = remaining / state.currentActionBet.modalState.duration;
+            
+            const timerBar = document.getElementById('action-bet-timer-bar');
+            timerBar.style.width = `${progress * 100}%`;
+            
+            // Update color based on remaining time
+            timerBar.classList.remove('timer-bar-normal', 'timer-bar-warning', 'timer-bar-urgent');
+            if (progress > 0.5) {
+                timerBar.classList.add('timer-bar-normal');
+            } else if (progress > 0.25) {
+                timerBar.classList.add('timer-bar-warning');
+            } else {
+                timerBar.classList.add('timer-bar-urgent');
+            }
+            
+            log(`Timer bar updated: ${(progress * 100).toFixed(1)}% remaining`);
+        }
+        
+        function setupModalMinimizeHandlers(modal) {
+            const handleOutsideClick = (event) => {
+                const modalContent = modal.querySelector('.bg-gray-800');
+                if (modalContent && !modalContent.contains(event.target)) {
+                    log('Click outside detected, minimizing modal');
+                    minimizeActionBet();
+                }
+            };
+            
+            modal.addEventListener('click', handleOutsideClick);
+            modal._minimizeHandler = handleOutsideClick;
+        }
+        
+        function removeModalMinimizeHandlers(modal) {
+            if (modal._minimizeHandler) {
+                modal.removeEventListener('click', modal._minimizeHandler);
+                delete modal._minimizeHandler;
+            }
+        }
+        
+        function hideActionBet(timedOut = false) {
+            log(`Hiding action bet modal (timed out: ${timedOut})`);
+            
+            const state = getCurrentState();
+            if (!state.currentActionBet.active) return;
+            
+            hideMinimizedIndicator();
+            
+            const modal = document.getElementById('action-bet-modal');
+            if (modal) {
+                removeModalMinimizeHandlers(modal);
+                modal.classList.add('hidden');
+            }
+            
+            updateCurrentActionBet({
+                active: false,
+                details: null,
+                timeoutId: null,
+                modalState: null,
+                minimizedIndicator: null,
+                minimizedUpdateInterval: null
+            });
+        }
+        
+        // Test runner
+        async function runTests() {
+            log('Starting betting modal minimize integration tests...');
+            
+            try {
+                // Test 1: Modal shows with minimize functionality
+                log('Test 1: Showing modal...');
+                const testEvent = {
+                    description: 'Crunching tackle near the box! What will the ref do?',
+                    betType: 'FOUL_OUTCOME',
+                    choices: [
+                        { text: 'Yellow Card', odds: 2.5 },
+                        { text: 'Red Card', odds: 8.0 },
+                        { text: 'Warning', odds: 1.5 }
+                    ]
+                };
+                
+                showMultiChoiceActionBet(testEvent);
+                await sleep(500);
+                
+                const modal = document.getElementById('action-bet-modal');
+                const isVisible = !modal.classList.contains('hidden');
+                const hasMinimizeButton = Array.from(document.querySelectorAll('#action-bet-choices button'))
+                    .some(btn => btn.textContent === 'Minimize');
+                
+                setTestResult('test-1', isVisible && hasMinimizeButton, 
+                    `Modal visible: ${isVisible}, Has minimize button: ${hasMinimizeButton}`);
+                
+                // Test 2: Click outside minimizes modal
+                log('Test 2: Testing click outside...');
+                const clickEvent = new MouseEvent('click', { bubbles: true });
+                Object.defineProperty(clickEvent, 'target', { value: modal });
+                modal.dispatchEvent(clickEvent);
+                await sleep(500);
+                
+                const state1 = getCurrentState();
+                const isMinimized = state1.currentActionBet.modalState?.minimized;
+                setTestResult('test-2', isMinimized, `Minimized: ${isMinimized}`);
+                
+                // Restore for next test
+                restoreActionBet();
+                await sleep(500);
+                
+                // Test 3: Minimize button works
+                log('Test 3: Testing minimize button...');
+                const minimizeBtn = Array.from(document.querySelectorAll('#action-bet-choices button'))
+                    .find(btn => btn.textContent === 'Minimize');
+                minimizeBtn.click();
+                await sleep(500);
+                
+                const state2 = getCurrentState();
+                const isMinimizedByButton = state2.currentActionBet.modalState?.minimized;
+                setTestResult('test-3', isMinimizedByButton, `Minimized by button: ${isMinimizedByButton}`);
+                
+                // Test 4: Minimized indicator appears
+                log('Test 4: Checking minimized indicator...');
+                const hasIndicator = state2.currentActionBet.minimizedIndicator !== null;
+                const indicatorVisible = hasIndicator && state2.currentActionBet.minimizedIndicator.isVisible;
+                setTestResult('test-4', hasIndicator && indicatorVisible, 
+                    `Has indicator: ${hasIndicator}, Visible: ${indicatorVisible}`);
+                
+                // Test 5: Indicator shows correct time
+                log('Test 5: Checking indicator time...');
+                const indicatorTime = state2.currentActionBet.minimizedIndicator?.timeRemaining;
+                const timeIsReasonable = indicatorTime >= 5 && indicatorTime <= 10;
+                setTestResult('test-5', timeIsReasonable, `Time: ${indicatorTime}s`);
+                
+                // Test 6: Click indicator restores modal
+                log('Test 6: Testing indicator click...');
+                if (state2.currentActionBet.minimizedIndicator?.clickHandler) {
+                    state2.currentActionBet.minimizedIndicator.clickHandler();
+                    await sleep(500);
+                    
+                    const state3 = getCurrentState();
+                    const isRestored = state3.currentActionBet.modalState?.visible && !state3.currentActionBet.modalState?.minimized;
+                    setTestResult('test-6', isRestored, `Restored: ${isRestored}`);
+                    
+                    // Test 7: Timer state preserved on restore
+                    log('Test 7: Checking timer state preservation...');
+                    const timerPreserved = state3.currentActionBet.modalState?.startTime === state1.currentActionBet.modalState?.startTime;
+                    setTestResult('test-7', timerPreserved, `Timer preserved: ${timerPreserved}`);
+                } else {
+                    setTestResult('test-6', false, 'No click handler found');
+                    setTestResult('test-7', false, 'Cannot test without restore');
+                }
+                
+                // Test 8: Urgent state when < 5 seconds
+                log('Test 8: Testing urgent state...');
+                // Simulate time passing to make it urgent
+                const originalStartTime = mockGameState.currentActionBet.modalState.startTime;
+                mockGameState.currentActionBet.modalState.startTime = Date.now() - 6000; // 6 seconds ago
+                
+                minimizeActionBet();
+                await sleep(1500); // Wait for update interval
+                
+                const state4 = getCurrentState();
+                const isUrgent = state4.currentActionBet.minimizedIndicator?.urgent;
+                setTestResult('test-8', isUrgent, `Urgent: ${isUrgent}`);
+                
+                log('All tests completed!');
+                
+            } catch (error) {
+                log(`Test error: ${error.message}`);
+                console.error(error);
+            }
+        }
+        
+        function resetTests() {
+            log('Resetting tests...');
+            
+            // Hide modal and indicator
+            hideActionBet();
+            
+            // Reset test results
+            for (let i = 1; i <= 8; i++) {
+                const element = document.getElementById(`test-${i}`);
+                element.className = 'test-pending';
+                element.innerHTML = element.innerHTML.replace(/^[✅❌]/, '⏳');
+            }
+            
+            // Clear log
+            document.getElementById('test-log').innerHTML = '';
+            
+            log('Tests reset successfully');
+        }
+        
+        // Event listeners
+        document.getElementById('start-test').addEventListener('click', runTests);
+        document.getElementById('reset-test').addEventListener('click', resetTests);
+        
+        // Initialize
+        log('Betting Modal Minimize Integration Test loaded');
+        log('Click "Start Test" to begin automated testing');
+    </script>
+</body>
+</html>

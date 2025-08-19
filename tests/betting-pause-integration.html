@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betting-Pause Integration Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        
+        .test-section {
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4f46e5;
+        }
+        
+        .test-button {
+            background-color: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .test-button:hover {
+            background-color: #4338ca;
+        }
+        
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        .success {
+            background-color: #065f46;
+            border: 1px solid #10b981;
+        }
+        
+        .error {
+            background-color: #7f1d1d;
+            border: 1px solid #ef4444;
+        }
+        
+        .info {
+            background-color: #1e3a8a;
+            border: 1px solid #3b82f6;
+        }
+        
+        .status-display {
+            background-color: #374151;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        
+        .mock-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #1f2937;
+            border: 2px solid #4f46e5;
+            border-radius: 8px;
+            padding: 20px;
+            z-index: 1000;
+            min-width: 300px;
+            text-align: center;
+        }
+        
+        .mock-modal.hidden {
+            display: none;
+        }
+        
+        .choice-button {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 10px;
+            background-color: #374151;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .choice-button:hover {
+            background-color: #4f46e5;
+        }
+        
+        .skip-button {
+            background-color: #6b7280;
+            margin-top: 10px;
+        }
+        
+        .skip-button:hover {
+            background-color: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Betting-Pause Integration Tests</h1>
+    <p>This page tests the integration between the betting system and pause functionality.</p>
+
+    <!-- Status Display -->
+    <div class="status-display">
+        <h3>System Status</h3>
+        <div id="pause-status">Game Status: <span id="pause-indicator">Running</span></div>
+        <div id="betting-status">Betting Status: <span id="betting-indicator">Inactive</span></div>
+        <div id="test-log"></div>
+    </div>
+
+    <!-- Mock Action Bet Modal -->
+    <div id="action-bet-modal" class="mock-modal hidden">
+        <h3 id="action-bet-title">Action Bet</h3>
+        <p id="action-bet-main-description">Event description</p>
+        <div id="action-bet-choices"></div>
+        <div id="action-bet-timer-bar" style="width: 100%; height: 4px; background-color: #4f46e5; margin-top: 10px;"></div>
+    </div>
+
+    <!-- Mock Bet Slip Modal -->
+    <div id="action-bet-slip-modal" class="mock-modal hidden">
+        <h3 id="action-slip-title">Place Bet</h3>
+        <p id="action-slip-description">Bet description</p>
+        <input id="action-slip-amount" type="number" placeholder="Enter amount" style="width: 100%; padding: 8px; margin: 10px 0;">
+        <button onclick="confirmBet()" class="test-button">Confirm Bet</button>
+        <button onclick="cancelBet()" class="test-button" style="background-color: #6b7280;">Cancel</button>
+    </div>
+
+    <!-- Test Sections -->
+    <div class="test-section">
+        <h2>🎯 Requirement 1.1: Game Pauses When Betting Events Occur</h2>
+        <p>Tests that the game properly pauses before showing betting interface.</p>
+        <button class="test-button" onclick="testGamePauseOnBetting()">Test Game Pause on Betting</button>
+        <button class="test-button" onclick="testPauseWithoutBetting()">Test Pause Without Betting</button>
+        <div id="pause-test-result" class="test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎮 Requirement 1.5: Betting Decisions Trigger Resume</h2>
+        <p>Tests that game resumes after betting decisions are made.</p>
+        <button class="test-button" onclick="testResumeAfterBet()">Test Resume After Bet</button>
+        <button class="test-button" onclick="testResumeAfterSkip()">Test Resume After Skip</button>
+        <button class="test-button" onclick="testResumeAfterTimeout()">Test Resume After Timeout</button>
+        <div id="resume-test-result" class="test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔄 Integration Flow Test</h2>
+        <p>Tests the complete betting-pause-resume flow.</p>
+        <button class="test-button" onclick="testCompleteFlow()">Test Complete Flow</button>
+        <button class="test-button" onclick="simulateBettingEvent()">Simulate Betting Event</button>
+        <div id="flow-test-result" class="test-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>⚠️ Error Handling Tests</h2>
+        <p>Tests error scenarios and recovery behavior.</p>
+        <button class="test-button" onclick="testPauseFailure()">Test Pause Failure</button>
+        <button class="test-button" onclick="testResumeFailure()">Test Resume Failure</button>
+        <div id="error-test-result" class="test-result"></div>
+    </div>
+
+    <script type="module">
+        // Mock implementations for testing
+        let gameState = {
+            paused: false,
+            pauseReason: null,
+            bettingActive: false,
+            wallet: 100,
+            currentActionBet: { active: false, details: null, timeoutId: null }
+        };
+
+        let testResults = [];
+
+        // Mock PauseManager
+        class MockPauseManager {
+            pauseGame(reason, timeout = 15000) {
+                console.log(`PauseManager: Pausing game - ${reason} (timeout: ${timeout}ms)`);
+                gameState.paused = true;
+                gameState.pauseReason = reason;
+                updateStatus();
+                return true;
+            }
+
+            async resumeGame(withCountdown = true, countdownSeconds = 3) {
+                console.log(`PauseManager: Resuming game (countdown: ${withCountdown})`);
+                if (withCountdown) {
+                    await this.showCountdown(countdownSeconds);
+                }
+                gameState.paused = false;
+                gameState.pauseReason = null;
+                updateStatus();
+                return true;
+            }
+
+            isPaused() {
+                return gameState.paused;
+            }
+
+            async showCountdown(seconds) {
+                for (let i = seconds; i > 0; i--) {
+                    logTest(`Countdown: ${i}...`);
+                    await new Promise(resolve => setTimeout(resolve, 500)); // Faster for testing
+                }
+                logTest('GO! Game Resumed');
+            }
+        }
+
+        // Mock betting functions
+        const mockPauseManager = new MockPauseManager();
+
+        function showMultiChoiceActionBet(event) {
+            // Pause the game before showing betting interface
+            const pauseSuccess = mockPauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            if (!pauseSuccess) {
+                console.error('Failed to pause game for betting opportunity');
+            }
+
+            gameState.bettingActive = true;
+            gameState.currentActionBet = { active: true, details: event, timeoutId: null };
+
+            // Update modal content
+            document.getElementById('action-bet-title').textContent = '⚡ Foul Event! ⚡';
+            document.getElementById('action-bet-main-description').textContent = event.description;
+            
+            const choicesContainer = document.getElementById('action-bet-choices');
+            choicesContainer.innerHTML = '';
+
+            event.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.className = 'choice-button';
+                button.innerHTML = `${choice.text} <span style="color: #9ca3af;">@${choice.odds.toFixed(2)}</span>`;
+                button.onclick = () => {
+                    hideActionBet();
+                    showActionBetSlip('action', choice.text, choice.odds, event.betType);
+                };
+                choicesContainer.appendChild(button);
+            });
+
+            // Add skip button
+            const skipButton = document.createElement('button');
+            skipButton.className = 'choice-button skip-button';
+            skipButton.textContent = 'Skip Betting';
+            skipButton.onclick = () => {
+                hideActionBet();
+                resumeGameAfterBetting();
+            };
+            choicesContainer.appendChild(skipButton);
+
+            // Show modal
+            document.getElementById('action-bet-modal').classList.remove('hidden');
+
+            // Set timeout to auto-hide and resume game
+            const timeoutId = setTimeout(() => {
+                hideActionBet(true);
+                resumeGameAfterBetting();
+            }, 5000); // Shorter timeout for testing
+
+            gameState.currentActionBet.timeoutId = timeoutId;
+            updateStatus();
+        }
+
+        function hideActionBet(timedOut = false) {
+            if (!gameState.currentActionBet.active) return;
+            
+            if (timedOut) {
+                logTest(`Action Bet timed out.`);
+            }
+            
+            // Clear timeout
+            if (gameState.currentActionBet.timeoutId) {
+                clearTimeout(gameState.currentActionBet.timeoutId);
+            }
+            
+            // Reset action bet state
+            gameState.currentActionBet = { active: false, details: null, timeoutId: null };
+            gameState.bettingActive = false;
+            
+            // Hide modal
+            document.getElementById('action-bet-modal').classList.add('hidden');
+            updateStatus();
+        }
+
+        function showActionBetSlip(type, outcome, odds, betType = null) {
+            document.getElementById('action-slip-title').textContent = 'Place Action Bet';
+            document.getElementById('action-slip-description').textContent = `You are betting on: ${outcome}`;
+            document.getElementById('action-slip-amount').value = '';
+            
+            // Show modal
+            document.getElementById('action-bet-slip-modal').classList.remove('hidden');
+        }
+
+        function handleBettingDecision(betPlaced = false) {
+            // Hide the bet slip modal
+            document.getElementById('action-bet-slip-modal').classList.add('hidden');
+            
+            // Resume game after betting decision
+            resumeGameAfterBetting();
+            
+            logTest(`Betting decision completed: ${betPlaced ? 'bet placed' : 'bet cancelled'}`);
+        }
+
+        async function resumeGameAfterBetting() {
+            if (mockPauseManager.isPaused()) {
+                await mockPauseManager.resumeGame(true, 3);
+            }
+        }
+
+        // Global functions for button clicks
+        window.confirmBet = function() {
+            const amount = document.getElementById('action-slip-amount').value;
+            if (amount && parseFloat(amount) > 0) {
+                logTest(`Bet placed: $${amount}`);
+                handleBettingDecision(true);
+            } else {
+                logTest('Invalid bet amount', 'error');
+            }
+        };
+
+        window.cancelBet = function() {
+            logTest('Bet cancelled');
+            handleBettingDecision(false);
+        };
+
+        // Test functions
+        window.testGamePauseOnBetting = function() {
+            logTest('Testing game pause on betting event...', 'info');
+            
+            const testEvent = {
+                description: 'Crunching tackle near the box! What will the ref do?',
+                betType: 'FOUL_OUTCOME',
+                choices: [
+                    { text: 'Yellow Card', odds: 2.5 },
+                    { text: 'Red Card', odds: 8.0 },
+                    { text: 'Warning', odds: 1.5 }
+                ]
+            };
+
+            const wasRunning = !gameState.paused;
+            showMultiChoiceActionBet(testEvent);
+            
+            if (wasRunning && gameState.paused && gameState.pauseReason === 'BETTING_OPPORTUNITY') {
+                logTest('✅ SUCCESS: Game paused when betting event occurred', 'success');
+            } else {
+                logTest('❌ FAILED: Game did not pause properly', 'error');
+            }
+        };
+
+        window.testPauseWithoutBetting = function() {
+            logTest('Testing pause without betting...', 'info');
+            
+            const success = mockPauseManager.pauseGame('TEST_PAUSE', 5000);
+            
+            if (success && gameState.paused) {
+                logTest('✅ SUCCESS: Game can be paused without betting', 'success');
+                setTimeout(() => {
+                    mockPauseManager.resumeGame(false);
+                    logTest('Game resumed after test pause', 'info');
+                }, 2000);
+            } else {
+                logTest('❌ FAILED: Could not pause game', 'error');
+            }
+        };
+
+        window.testResumeAfterBet = async function() {
+            logTest('Testing resume after bet placement...', 'info');
+            
+            // First pause the game
+            mockPauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            
+            // Simulate bet placement
+            setTimeout(async () => {
+                const wasPaused = gameState.paused;
+                await handleBettingDecision(true);
+                
+                setTimeout(() => {
+                    if (wasPaused && !gameState.paused) {
+                        logTest('✅ SUCCESS: Game resumed after bet placement', 'success');
+                    } else {
+                        logTest('❌ FAILED: Game did not resume properly', 'error');
+                    }
+                }, 2000);
+            }, 1000);
+        };
+
+        window.testResumeAfterSkip = async function() {
+            logTest('Testing resume after skip...', 'info');
+            
+            // First pause the game
+            mockPauseManager.pauseGame('BETTING_OPPORTUNITY', 15000);
+            
+            // Simulate skip
+            setTimeout(async () => {
+                const wasPaused = gameState.paused;
+                await resumeGameAfterBetting();
+                
+                setTimeout(() => {
+                    if (wasPaused && !gameState.paused) {
+                        logTest('✅ SUCCESS: Game resumed after skip', 'success');
+                    } else {
+                        logTest('❌ FAILED: Game did not resume after skip', 'error');
+                    }
+                }, 2000);
+            }, 1000);
+        };
+
+        window.testResumeAfterTimeout = function() {
+            logTest('Testing resume after timeout...', 'info');
+            
+            const testEvent = {
+                description: 'Timeout test event',
+                betType: 'FOUL_OUTCOME',
+                choices: [{ text: 'Yellow Card', odds: 2.5 }]
+            };
+
+            showMultiChoiceActionBet(testEvent);
+            
+            // Wait for timeout (5 seconds in our mock)
+            setTimeout(() => {
+                if (!gameState.paused && !gameState.bettingActive) {
+                    logTest('✅ SUCCESS: Game resumed after timeout', 'success');
+                } else {
+                    logTest('❌ FAILED: Game did not resume after timeout', 'error');
+                }
+            }, 6000);
+        };
+
+        window.testCompleteFlow = async function() {
+            logTest('Testing complete betting-pause-resume flow...', 'info');
+            
+            const testEvent = {
+                description: 'Complete flow test event',
+                betType: 'FOUL_OUTCOME',
+                choices: [
+                    { text: 'Yellow Card', odds: 2.5 },
+                    { text: 'Red Card', odds: 8.0 }
+                ]
+            };
+
+            // Step 1: Show betting event (should pause)
+            logTest('Step 1: Showing betting event...', 'info');
+            showMultiChoiceActionBet(testEvent);
+            
+            if (!gameState.paused) {
+                logTest('❌ FAILED: Game did not pause', 'error');
+                return;
+            }
+            
+            // Step 2: Wait and then place bet (should resume)
+            setTimeout(async () => {
+                logTest('Step 2: Placing bet...', 'info');
+                hideActionBet();
+                await handleBettingDecision(true);
+                
+                setTimeout(() => {
+                    if (!gameState.paused) {
+                        logTest('✅ SUCCESS: Complete flow worked correctly', 'success');
+                    } else {
+                        logTest('❌ FAILED: Game did not resume after bet', 'error');
+                    }
+                }, 2000);
+            }, 2000);
+        };
+
+        window.simulateBettingEvent = function() {
+            logTest('Simulating realistic betting event...', 'info');
+            
+            const events = [
+                {
+                    description: 'Corner kick! Will it lead to a goal?',
+                    betType: 'CORNER_OUTCOME',
+                    choices: [
+                        { text: 'Goal', odds: 4.5 },
+                        { text: 'Header Wide', odds: 2.1 },
+                        { text: 'Cleared', odds: 1.8 }
+                    ]
+                },
+                {
+                    description: 'Free kick in dangerous position!',
+                    betType: 'FREEKICK_OUTCOME',
+                    choices: [
+                        { text: 'Direct Goal', odds: 6.0 },
+                        { text: 'Wall Block', odds: 2.2 },
+                        { text: 'Over the Bar', odds: 2.8 }
+                    ]
+                }
+            ];
+            
+            const randomEvent = events[Math.floor(Math.random() * events.length)];
+            showMultiChoiceActionBet(randomEvent);
+        };
+
+        window.testPauseFailure = function() {
+            logTest('Testing pause failure handling...', 'info');
+            
+            // Mock pause failure
+            const originalPause = mockPauseManager.pauseGame;
+            mockPauseManager.pauseGame = () => {
+                logTest('Simulated pause failure', 'error');
+                return false;
+            };
+            
+            const testEvent = {
+                description: 'Pause failure test',
+                betType: 'TEST',
+                choices: [{ text: 'Test', odds: 2.0 }]
+            };
+            
+            try {
+                showMultiChoiceActionBet(testEvent);
+                logTest('✅ SUCCESS: Betting interface shown despite pause failure', 'success');
+            } catch (error) {
+                logTest('❌ FAILED: Error thrown on pause failure', 'error');
+            }
+            
+            // Restore original function
+            mockPauseManager.pauseGame = originalPause;
+        };
+
+        window.testResumeFailure = async function() {
+            logTest('Testing resume failure handling...', 'info');
+            
+            // Mock resume failure
+            const originalResume = mockPauseManager.resumeGame;
+            mockPauseManager.resumeGame = () => {
+                logTest('Simulated resume failure', 'error');
+                return Promise.reject(new Error('Resume failed'));
+            };
+            
+            try {
+                await handleBettingDecision(true);
+                logTest('✅ SUCCESS: Resume failure handled gracefully', 'success');
+            } catch (error) {
+                logTest('❌ FAILED: Resume failure not handled properly', 'error');
+            }
+            
+            // Restore original function
+            mockPauseManager.resumeGame = originalResume;
+        };
+
+        // Utility functions
+        function updateStatus() {
+            document.getElementById('pause-indicator').textContent = gameState.paused ? 
+                `Paused (${gameState.pauseReason})` : 'Running';
+            document.getElementById('pause-indicator').style.color = gameState.paused ? '#ef4444' : '#10b981';
+            
+            document.getElementById('betting-indicator').textContent = gameState.bettingActive ? 'Active' : 'Inactive';
+            document.getElementById('betting-indicator').style.color = gameState.bettingActive ? '#f59e0b' : '#6b7280';
+        }
+
+        function logTest(message, type = 'info') {
+            const log = document.getElementById('test-log');
+            const entry = document.createElement('div');
+            entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            entry.className = `test-result ${type}`;
+            entry.style.margin = '2px 0';
+            entry.style.padding = '4px 8px';
+            entry.style.fontSize = '12px';
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+            
+            // Keep only last 20 entries
+            while (log.children.length > 20) {
+                log.removeChild(log.firstChild);
+            }
+        }
+
+        // Initialize
+        updateStatus();
+        logTest('Betting-Pause Integration Test Suite Loaded', 'success');
+    </script>
+</body>
+</html>

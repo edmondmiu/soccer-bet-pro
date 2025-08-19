@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game State Pause Tests</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        
+        .run-button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        
+        .run-button:hover {
+            background: #005a9e;
+        }
+        
+        .run-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.running {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Game State Pause Tests</h1>
+        
+        <p>This test suite validates the pause state functionality added to the game state management system.</p>
+        
+        <div class="controls">
+            <button id="runTests" class="run-button">Run Tests</button>
+            <button id="clearOutput" class="run-button">Clear Output</button>
+        </div>
+        
+        <div id="status" class="status" style="display: none;"></div>
+        
+        <div id="testOutput" class="test-output">
+Click "Run Tests" to execute the pause state validation tests...
+        </div>
+    </div>
+
+    <script type="module">
+        import { 
+            getInitialState, 
+            getCurrentState, 
+            updateState, 
+            resetState,
+            getPauseState
+        } from '../scripts/gameState.js';
+
+        // Override console.log to capture output
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        let testOutput = '';
+
+        function captureConsole() {
+            testOutput = '';
+            console.log = (...args) => {
+                testOutput += args.join(' ') + '\n';
+                originalConsoleLog(...args);
+            };
+            console.error = (...args) => {
+                testOutput += 'ERROR: ' + args.join(' ') + '\n';
+                originalConsoleError(...args);
+            };
+        }
+
+        function restoreConsole() {
+            console.log = originalConsoleLog;
+            console.error = originalConsoleError;
+        }
+
+        function updateStatus(message, type) {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+            statusEl.style.display = 'block';
+        }
+
+        function updateOutput(content) {
+            document.getElementById('testOutput').textContent = content;
+        }
+
+        // Simple test framework
+        class TestRunner {
+            constructor() {
+                this.tests = [];
+                this.passed = 0;
+                this.failed = 0;
+            }
+
+            test(name, testFn) {
+                this.tests.push({ name, testFn });
+            }
+
+            async run() {
+                this.passed = 0;
+                this.failed = 0;
+                
+                console.log('🧪 Running Game State Pause Tests...\n');
+                
+                for (const { name, testFn } of this.tests) {
+                    try {
+                        await testFn();
+                        console.log(`✅ ${name}`);
+                        this.passed++;
+                    } catch (error) {
+                        console.error(`❌ ${name}: ${error.message}`);
+                        this.failed++;
+                    }
+                }
+                
+                console.log(`\n📊 Test Results: ${this.passed} passed, ${this.failed} failed`);
+                return this.failed === 0;
+            }
+
+            assertEqual(actual, expected, message = '') {
+                if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                    throw new Error(`${message}\nExpected: ${JSON.stringify(expected)}\nActual: ${JSON.stringify(actual)}`);
+                }
+            }
+
+            assertTrue(condition, message = '') {
+                if (!condition) {
+                    throw new Error(`${message}\nExpected: true\nActual: ${condition}`);
+                }
+            }
+
+            assertFalse(condition, message = '') {
+                if (condition) {
+                    throw new Error(`${message}\nExpected: false\nActual: ${condition}`);
+                }
+            }
+
+            assertNull(value, message = '') {
+                if (value !== null) {
+                    throw new Error(`${message}\nExpected: null\nActual: ${value}`);
+                }
+            }
+        }
+
+        // Create and configure tests
+        const testRunner = new TestRunner();
+
+        // Test 1: Initial state contains pause properties
+        testRunner.test('Initial state contains pause properties with correct defaults', () => {
+            const initialState = getInitialState();
+            
+            testRunner.assertTrue(initialState.hasOwnProperty('pause'), 'Initial state should have pause property');
+            testRunner.assertEqual(initialState.pause.active, false, 'pause.active should default to false');
+            testRunner.assertNull(initialState.pause.reason, 'pause.reason should default to null');
+            testRunner.assertNull(initialState.pause.startTime, 'pause.startTime should default to null');
+            testRunner.assertNull(initialState.pause.timeoutId, 'pause.timeoutId should default to null');
+        });
+
+        // Test 2: Pause state structure validation
+        testRunner.test('Pause state structure is validated correctly', () => {
+            resetState();
+            
+            const validPauseUpdate = {
+                pause: {
+                    active: true,
+                    reason: 'BETTING_OPPORTUNITY',
+                    startTime: Date.now(),
+                    timeoutId: 12345
+                }
+            };
+            
+            const updatedState = updateState(validPauseUpdate);
+            testRunner.assertEqual(updatedState.pause.active, true, 'Valid pause update should be applied');
+            testRunner.assertEqual(updatedState.pause.reason, 'BETTING_OPPORTUNITY', 'Valid reason should be set');
+        });
+
+        // Test 3: getPauseState function returns correct data
+        testRunner.test('getPauseState returns correct pause state', () => {
+            resetState();
+            
+            updateState({
+                pause: {
+                    active: true,
+                    reason: 'TEST_PAUSE',
+                    startTime: 9876543210,
+                    timeoutId: 555
+                }
+            });
+            
+            const pauseState = getPauseState();
+            
+            testRunner.assertEqual(pauseState.active, true, 'getPauseState should return correct active state');
+            testRunner.assertEqual(pauseState.reason, 'TEST_PAUSE', 'getPauseState should return correct reason');
+            testRunner.assertEqual(pauseState.startTime, 9876543210, 'getPauseState should return correct startTime');
+            testRunner.assertEqual(pauseState.timeoutId, 555, 'getPauseState should return correct timeoutId');
+        });
+
+        // Test 4: Reset state clears pause data
+        testRunner.test('Reset state clears pause data to defaults', () => {
+            updateState({
+                pause: {
+                    active: true,
+                    reason: 'RESET_TEST',
+                    startTime: Date.now(),
+                    timeoutId: 999
+                }
+            });
+            
+            resetState();
+            
+            const pauseState = getPauseState();
+            testRunner.assertEqual(pauseState.active, false, 'Reset should clear active state');
+            testRunner.assertNull(pauseState.reason, 'Reset should clear reason');
+            testRunner.assertNull(pauseState.startTime, 'Reset should clear startTime');
+            testRunner.assertNull(pauseState.timeoutId, 'Reset should clear timeoutId');
+        });
+
+        // Test 5: Pause state integration with other state properties
+        testRunner.test('Pause state updates do not affect other state properties', () => {
+            resetState();
+            
+            updateState({
+                wallet: 500,
+                currentScreen: 'match'
+            });
+            
+            const beforePauseUpdate = getCurrentState();
+            
+            updateState({
+                pause: {
+                    active: true,
+                    reason: 'INTEGRATION_TEST',
+                    startTime: Date.now(),
+                    timeoutId: 123
+                }
+            });
+            
+            const afterPauseUpdate = getCurrentState();
+            
+            testRunner.assertEqual(afterPauseUpdate.wallet, beforePauseUpdate.wallet, 'Wallet should remain unchanged');
+            testRunner.assertEqual(afterPauseUpdate.currentScreen, beforePauseUpdate.currentScreen, 'Screen should remain unchanged');
+            testRunner.assertEqual(afterPauseUpdate.pause.active, true, 'Pause state should be updated');
+            testRunner.assertEqual(afterPauseUpdate.pause.reason, 'INTEGRATION_TEST', 'Pause reason should be set');
+        });
+
+        // Event handlers
+        document.getElementById('runTests').addEventListener('click', async () => {
+            const runButton = document.getElementById('runTests');
+            runButton.disabled = true;
+            
+            updateStatus('Running tests...', 'running');
+            
+            captureConsole();
+            
+            try {
+                const success = await testRunner.run();
+                updateOutput(testOutput);
+                
+                if (success) {
+                    updateStatus(`All tests passed! (${testRunner.passed}/${testRunner.passed + testRunner.failed})`, 'success');
+                } else {
+                    updateStatus(`${testRunner.failed} test(s) failed. (${testRunner.passed}/${testRunner.passed + testRunner.failed})`, 'error');
+                }
+            } catch (error) {
+                updateStatus('Test execution failed: ' + error.message, 'error');
+                updateOutput(testOutput + '\nFATAL ERROR: ' + error.message);
+            } finally {
+                restoreConsole();
+                runButton.disabled = false;
+            }
+        });
+
+        document.getElementById('clearOutput').addEventListener('click', () => {
+            updateOutput('Click "Run Tests" to execute the pause state validation tests...');
+            document.getElementById('status').style.display = 'none';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Handling Browser Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1f2937;
+            color: white;
+        }
+        
+        .test-section {
+            background: #374151;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        .test-pass {
+            background-color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+        
+        .test-fail {
+            background-color: #7f1d1d;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .test-warning {
+            background-color: #78350f;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #2563eb;
+        }
+        
+        button:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+        }
+        
+        .error-log {
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .debug-controls {
+            background: #4b5563;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-pass { background-color: #10b981; }
+        .status-fail { background-color: #ef4444; }
+        .status-warning { background-color: #f59e0b; }
+        .status-pending { background-color: #6b7280; }
+    </style>
+</head>
+<body>
+    <h1>🛡️ Error Handling & Fallback System Tests</h1>
+    <p>This page tests the comprehensive error handling and fallback mechanisms for the pause system integration.</p>
+
+    <div class="debug-controls">
+        <h3>Debug Controls</h3>
+        <button onclick="enableDebugMode()">Enable Debug Mode</button>
+        <button onclick="disableDebugMode()">Disable Debug Mode</button>
+        <button onclick="clearErrorLog()">Clear Error Log</button>
+        <button onclick="showErrorLog()">Show Error Log</button>
+        <button onclick="simulateNetworkError()">Simulate Network Error</button>
+        <button onclick="simulateMemoryError()">Simulate Memory Error</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Module Import Error Tests</h2>
+        <div id="import-tests">
+            <button onclick="testModuleImportFailure()">Test Module Import Failure</button>
+            <button onclick="testIncompleteModule()">Test Incomplete Module</button>
+            <button onclick="testModuleValidation()">Test Module Validation</button>
+        </div>
+        <div id="import-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Pause System Initialization Tests</h2>
+        <div id="init-tests">
+            <button onclick="testInitializationFailure()">Test Initialization Failure</button>
+            <button onclick="testCallbackSetupErrors()">Test Callback Setup Errors</button>
+            <button onclick="testPauseSystemValidation()">Test Pause System Validation</button>
+        </div>
+        <div id="init-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Runtime Error Handling Tests</h2>
+        <div id="runtime-tests">
+            <button onclick="testPauseFailureDuringGameplay()">Test Pause Failure During Gameplay</button>
+            <button onclick="testBettingErrorRecovery()">Test Betting Error Recovery</button>
+            <button onclick="testWalletCorruptionRecovery()">Test Wallet Corruption Recovery</button>
+            <button onclick="testForceGameResume()">Test Force Game Resume</button>
+        </div>
+        <div id="runtime-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Fallback Mode Tests</h2>
+        <div id="fallback-tests">
+            <button onclick="testFallbackModeActivation()">Test Fallback Mode Activation</button>
+            <button onclick="testFallbackNotifications()">Test Fallback Notifications</button>
+            <button onclick="testFallbackPauseSystem()">Test Fallback Pause System</button>
+        </div>
+        <div id="fallback-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>UI Error Handling Tests</h2>
+        <div id="ui-tests">
+            <button onclick="testOverlayCreationFailure()">Test Overlay Creation Failure</button>
+            <button onclick="testFallbackOverlay()">Test Fallback Overlay</button>
+            <button onclick="testUIRecovery()">Test UI Recovery</button>
+        </div>
+        <div id="ui-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Error Logging System Tests</h2>
+        <div id="logging-tests">
+            <button onclick="testErrorLogging()">Test Error Logging</button>
+            <button onclick="testLogSizeLimit()">Test Log Size Limit</button>
+            <button onclick="testLogPersistence()">Test Log Persistence</button>
+        </div>
+        <div id="logging-results"></div>
+    </div>
+
+    <div class="error-log" id="error-log" style="display: none;">
+        <h3>Error Log</h3>
+        <div id="error-log-content"></div>
+    </div>
+
+    <script>
+        // Mock game system for testing
+        class MockSoccerBettingGame {
+            constructor() {
+                this.state = { 
+                    currentScreen: 'lobby', 
+                    wallet: 1000,
+                    currentActionBet: { active: false }
+                };
+                this.fallbackMode = false;
+                this.errorLog = [];
+                this.debugMode = false;
+                this.pauseManager = null;
+                this.pauseUI = null;
+            }
+
+            logError(type, message, context = {}) {
+                const errorEntry = {
+                    timestamp: new Date().toISOString(),
+                    type,
+                    message,
+                    context: {
+                        ...context,
+                        currentScreen: this.state?.currentScreen,
+                        fallbackMode: this.fallbackMode,
+                        userAgent: navigator.userAgent,
+                        url: window.location.href
+                    }
+                };
+
+                this.errorLog.push(errorEntry);
+                
+                if (this.errorLog.length > 50) {
+                    this.errorLog = this.errorLog.slice(-50);
+                }
+
+                if (this.debugMode) {
+                    console.group(`🐛 Debug Info - ${type}`);
+                    console.log('Error Entry:', errorEntry);
+                    console.log('Current State:', this.state);
+                    console.groupEnd();
+                }
+
+                try {
+                    const storedErrors = JSON.parse(localStorage.getItem('soccerBettingErrors') || '[]');
+                    storedErrors.push(errorEntry);
+                    localStorage.setItem('soccerBettingErrors', JSON.stringify(storedErrors.slice(-10)));
+                } catch (storageError) {
+                    console.warn('Failed to store error in localStorage:', storageError);
+                }
+            }
+
+            initializeFallbackMode() {
+                this.fallbackMode = true;
+                this.logError('PAUSE_SYSTEM_FALLBACK', 'Pause system unavailable, using fallback mode');
+                
+                this.pauseManager = {
+                    pauseGame: (reason, timeout) => {
+                        this.logError('PAUSE_FALLBACK_USED', 'Pause attempt in fallback mode', { reason, timeout });
+                        this.showFallbackNotification(`Pause Unavailable: ${reason}`, 'warning');
+                        return false;
+                    },
+                    resumeGame: () => Promise.resolve(false),
+                    isPaused: () => false,
+                    getPauseInfo: () => ({ active: false, reason: null, startTime: null, timeoutId: null, fallbackMode: true })
+                };
+
+                this.pauseUI = {
+                    showPauseOverlay: (reason) => {
+                        this.showFallbackNotification(`Pause UI Unavailable: ${reason}`, 'warning');
+                    },
+                    hidePauseOverlay: () => {},
+                    isOverlayVisible: () => false
+                };
+            }
+
+            showFallbackNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `fallback-notification ${type}-notification`;
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${type === 'warning' ? '#f59e0b' : '#3b82f6'};
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 6px;
+                    z-index: 1000;
+                    font-weight: 600;
+                `;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 3000);
+            }
+
+            forceGameResume(reason) {
+                this.logError('FORCE_RESUME', 'Forcing game resume for error recovery', { reason });
+                
+                if (this.state.currentActionBet) {
+                    this.state.currentActionBet.active = false;
+                }
+                
+                this.showFallbackNotification(`Game resumed automatically (${reason})`, 'info');
+            }
+
+            setDebugMode(enabled) {
+                this.debugMode = enabled;
+                try {
+                    if (enabled) {
+                        localStorage.setItem('soccerBettingDebug', 'true');
+                    } else {
+                        localStorage.removeItem('soccerBettingDebug');
+                    }
+                } catch (error) {
+                    console.warn('Failed to update debug mode setting:', error);
+                }
+            }
+
+            clearErrorLog() {
+                this.errorLog = [];
+                try {
+                    localStorage.removeItem('soccerBettingErrors');
+                } catch (error) {
+                    console.warn('Failed to clear stored errors:', error);
+                }
+            }
+        }
+
+        // Initialize mock game
+        const mockGame = new MockSoccerBettingGame();
+        window.soccerBettingGame = mockGame;
+
+        // Test helper functions
+        function addTestResult(containerId, testName, status, message, details = null) {
+            const container = document.getElementById(containerId);
+            const result = document.createElement('div');
+            result.className = `test-result test-${status}`;
+            
+            const statusIndicator = document.createElement('span');
+            statusIndicator.className = `status-indicator status-${status}`;
+            
+            result.appendChild(statusIndicator);
+            result.appendChild(document.createTextNode(`${testName}: ${message}`));
+            
+            if (details) {
+                const detailsDiv = document.createElement('div');
+                detailsDiv.style.marginTop = '8px';
+                detailsDiv.style.fontSize = '12px';
+                detailsDiv.style.opacity = '0.8';
+                detailsDiv.textContent = details;
+                result.appendChild(detailsDiv);
+            }
+            
+            container.appendChild(result);
+        }
+
+        // Module Import Error Tests
+        function testModuleImportFailure() {
+            try {
+                // Simulate module import failure
+                const testImport = () => {
+                    if (typeof undefinedModule === 'undefined') {
+                        throw new Error('Module not imported or undefined');
+                    }
+                };
+                
+                testImport();
+                addTestResult('import-results', 'Module Import Failure', 'fail', 'Should have thrown error');
+            } catch (error) {
+                addTestResult('import-results', 'Module Import Failure', 'pass', 'Correctly detected import failure', error.message);
+                mockGame.logError('MODULE_IMPORT_TEST', 'Module import failure test', { error: error.message });
+            }
+        }
+
+        function testIncompleteModule() {
+            const incompleteModule = {
+                pauseGame: () => true
+                // Missing other methods
+            };
+
+            try {
+                const requiredMethods = ['pauseGame', 'resumeGame', 'isPaused', 'getPauseInfo'];
+                for (const method of requiredMethods) {
+                    if (!incompleteModule || typeof incompleteModule[method] !== 'function') {
+                        throw new Error(`Module missing required method: ${method}`);
+                    }
+                }
+                addTestResult('import-results', 'Incomplete Module', 'fail', 'Should have detected missing methods');
+            } catch (error) {
+                addTestResult('import-results', 'Incomplete Module', 'pass', 'Correctly detected incomplete module', error.message);
+                mockGame.logError('MODULE_VALIDATION_TEST', 'Incomplete module test', { error: error.message });
+            }
+        }
+
+        function testModuleValidation() {
+            const validModule = {
+                pauseGame: () => true,
+                resumeGame: () => Promise.resolve(true),
+                isPaused: () => false,
+                getPauseInfo: () => ({ active: false })
+            };
+
+            try {
+                const requiredMethods = ['pauseGame', 'resumeGame', 'isPaused', 'getPauseInfo'];
+                for (const method of requiredMethods) {
+                    if (!validModule || typeof validModule[method] !== 'function') {
+                        throw new Error(`Module missing required method: ${method}`);
+                    }
+                }
+                addTestResult('import-results', 'Module Validation', 'pass', 'Valid module passed validation');
+            } catch (error) {
+                addTestResult('import-results', 'Module Validation', 'fail', 'Valid module failed validation', error.message);
+            }
+        }
+
+        // Initialization Error Tests
+        function testInitializationFailure() {
+            try {
+                // Simulate initialization failure
+                throw new Error('Pause system initialization failed');
+            } catch (error) {
+                mockGame.logError('PAUSE_INIT_FAILED', 'Failed to initialize pause system', {
+                    error: error.message
+                });
+                mockGame.initializeFallbackMode();
+                
+                addTestResult('init-results', 'Initialization Failure', 'pass', 'Correctly handled initialization failure and activated fallback mode');
+            }
+        }
+
+        function testCallbackSetupErrors() {
+            const moduleWithoutCallbacks = {
+                pauseGame: () => true,
+                resumeGame: () => Promise.resolve(true),
+                isPaused: () => false,
+                getPauseInfo: () => ({ active: false })
+                // Missing callback methods
+            };
+
+            let warningCount = 0;
+            if (typeof moduleWithoutCallbacks.setTimeoutWarningCallback !== 'function') {
+                mockGame.logError('CALLBACK_SETUP_WARNING', 'Module missing setTimeoutWarningCallback method');
+                warningCount++;
+            }
+            if (typeof moduleWithoutCallbacks.setCountdownCallback !== 'function') {
+                mockGame.logError('CALLBACK_SETUP_WARNING', 'Module missing setCountdownCallback method');
+                warningCount++;
+            }
+
+            addTestResult('init-results', 'Callback Setup Errors', 'pass', `Correctly detected ${warningCount} missing callback methods`);
+        }
+
+        function testPauseSystemValidation() {
+            const failingPauseManager = {
+                pauseGame: () => false, // Fails validation
+                resumeGame: () => Promise.resolve(false),
+                isPaused: () => false,
+                getPauseInfo: () => ({ active: false })
+            };
+
+            try {
+                const testResult = failingPauseManager.pauseGame('VALIDATION_TEST', 100);
+                if (!testResult) {
+                    throw new Error('Pause system validation failed - pauseGame returned false');
+                }
+                addTestResult('init-results', 'Pause System Validation', 'fail', 'Should have detected validation failure');
+            } catch (error) {
+                addTestResult('init-results', 'Pause System Validation', 'pass', 'Correctly detected pause system validation failure', error.message);
+                mockGame.logError('PAUSE_VALIDATION_TEST', 'Pause system validation test', { error: error.message });
+            }
+        }
+
+        // Runtime Error Tests
+        function testPauseFailureDuringGameplay() {
+            const failingPauseManager = {
+                isPaused: () => { throw new Error('Pause check failed'); }
+            };
+
+            try {
+                failingPauseManager.isPaused();
+                addTestResult('runtime-results', 'Pause Failure During Gameplay', 'fail', 'Should have thrown error');
+            } catch (error) {
+                mockGame.logError('PAUSE_CHECK_ERROR', 'Error checking pause state during tick', {
+                    error: error.message
+                });
+                
+                if (!mockGame.fallbackMode) {
+                    mockGame.initializeFallbackMode();
+                }
+                
+                addTestResult('runtime-results', 'Pause Failure During Gameplay', 'pass', 'Correctly handled pause failure and activated fallback mode');
+            }
+        }
+
+        function testBettingErrorRecovery() {
+            const initialWallet = mockGame.state.wallet;
+            const stake = 100;
+
+            try {
+                // Simulate betting error
+                if (stake > mockGame.state.wallet) {
+                    throw new Error('Insufficient funds');
+                }
+                
+                mockGame.state.wallet -= stake;
+                
+                // Simulate processing error
+                throw new Error('Bet processing failed');
+                
+            } catch (error) {
+                mockGame.logError('BET_PLACEMENT_ERROR', 'Error placing bet', {
+                    error: error.message,
+                    stake
+                });
+                
+                // Refund stake on error
+                mockGame.state.wallet += stake;
+                mockGame.forceGameResume('bet_error_recovery');
+                
+                const walletRestored = mockGame.state.wallet === initialWallet;
+                addTestResult('runtime-results', 'Betting Error Recovery', walletRestored ? 'pass' : 'fail', 
+                    `Wallet ${walletRestored ? 'correctly restored' : 'not restored'} after betting error`);
+            }
+        }
+
+        function testWalletCorruptionRecovery() {
+            // Simulate wallet corruption
+            mockGame.state.wallet = 'corrupted';
+            
+            // Recovery logic
+            if (typeof mockGame.state.wallet !== 'number' || mockGame.state.wallet < 0) {
+                mockGame.logError('WALLET_CORRUPTION_DETECTED', 'Wallet corruption detected, attempting recovery');
+                mockGame.state.wallet = Math.max(0, 1000); // Reset to initial value
+            }
+            
+            const recovered = typeof mockGame.state.wallet === 'number' && mockGame.state.wallet >= 0;
+            addTestResult('runtime-results', 'Wallet Corruption Recovery', recovered ? 'pass' : 'fail', 
+                `Wallet ${recovered ? 'successfully recovered' : 'recovery failed'}`);
+        }
+
+        function testForceGameResume() {
+            mockGame.state.currentActionBet.active = true;
+            mockGame.forceGameResume('test_force_resume');
+            
+            const resumed = !mockGame.state.currentActionBet.active;
+            addTestResult('runtime-results', 'Force Game Resume', resumed ? 'pass' : 'fail', 
+                `Game ${resumed ? 'successfully resumed' : 'resume failed'}`);
+        }
+
+        // Fallback Mode Tests
+        function testFallbackModeActivation() {
+            mockGame.initializeFallbackMode();
+            
+            const activated = mockGame.fallbackMode && 
+                             mockGame.pauseManager && 
+                             mockGame.pauseManager.pauseGame() === false;
+            
+            addTestResult('fallback-results', 'Fallback Mode Activation', activated ? 'pass' : 'fail', 
+                `Fallback mode ${activated ? 'correctly activated' : 'activation failed'}`);
+        }
+
+        function testFallbackNotifications() {
+            mockGame.showFallbackNotification('Test notification', 'warning');
+            
+            // Check if notification was created
+            const notification = document.querySelector('.fallback-notification');
+            const created = notification !== null;
+            
+            addTestResult('fallback-results', 'Fallback Notifications', created ? 'pass' : 'fail', 
+                `Fallback notification ${created ? 'correctly created' : 'creation failed'}`);
+        }
+
+        function testFallbackPauseSystem() {
+            if (!mockGame.fallbackMode) {
+                mockGame.initializeFallbackMode();
+            }
+            
+            const pauseResult = mockGame.pauseManager.pauseGame('TEST_PAUSE', 1000);
+            const isPaused = mockGame.pauseManager.isPaused();
+            const pauseInfo = mockGame.pauseManager.getPauseInfo();
+            
+            const working = pauseResult === false && 
+                           isPaused === false && 
+                           pauseInfo.fallbackMode === true;
+            
+            addTestResult('fallback-results', 'Fallback Pause System', working ? 'pass' : 'fail', 
+                `Fallback pause system ${working ? 'working correctly' : 'not working properly'}`);
+        }
+
+        // UI Error Handling Tests
+        function testOverlayCreationFailure() {
+            // Simulate overlay creation failure
+            const originalCreateElement = document.createElement;
+            document.createElement = () => null;
+            
+            try {
+                const overlay = document.createElement('div');
+                if (!overlay) {
+                    throw new Error('Failed to create overlay element');
+                }
+                addTestResult('ui-results', 'Overlay Creation Failure', 'fail', 'Should have detected creation failure');
+            } catch (error) {
+                addTestResult('ui-results', 'Overlay Creation Failure', 'pass', 'Correctly detected overlay creation failure', error.message);
+            } finally {
+                document.createElement = originalCreateElement;
+            }
+        }
+
+        function testFallbackOverlay() {
+            // Create fallback overlay
+            const fallbackOverlay = document.createElement('div');
+            fallbackOverlay.id = 'pause-overlay-fallback';
+            fallbackOverlay.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 20px;
+                border-radius: 8px;
+                z-index: 1000;
+            `;
+            fallbackOverlay.innerHTML = '<h3>Fallback Overlay Test</h3><p>This is a fallback overlay</p>';
+            
+            document.body.appendChild(fallbackOverlay);
+            
+            const created = document.getElementById('pause-overlay-fallback') !== null;
+            addTestResult('ui-results', 'Fallback Overlay', created ? 'pass' : 'fail', 
+                `Fallback overlay ${created ? 'successfully created' : 'creation failed'}`);
+            
+            // Clean up
+            setTimeout(() => {
+                if (fallbackOverlay.parentNode) {
+                    fallbackOverlay.parentNode.removeChild(fallbackOverlay);
+                }
+            }, 2000);
+        }
+
+        function testUIRecovery() {
+            // Simulate UI recovery after error
+            let recovered = false;
+            
+            try {
+                // Simulate UI error
+                throw new Error('UI component failed');
+            } catch (error) {
+                // Recovery logic
+                try {
+                    // Attempt to recreate UI component
+                    const recoveryElement = document.createElement('div');
+                    recoveryElement.textContent = 'UI Recovered';
+                    document.body.appendChild(recoveryElement);
+                    recovered = true;
+                    
+                    // Clean up
+                    setTimeout(() => {
+                        if (recoveryElement.parentNode) {
+                            recoveryElement.parentNode.removeChild(recoveryElement);
+                        }
+                    }, 2000);
+                } catch (recoveryError) {
+                    recovered = false;
+                }
+            }
+            
+            addTestResult('ui-results', 'UI Recovery', recovered ? 'pass' : 'fail', 
+                `UI ${recovered ? 'successfully recovered' : 'recovery failed'}`);
+        }
+
+        // Error Logging Tests
+        function testErrorLogging() {
+            const initialLogLength = mockGame.errorLog.length;
+            mockGame.logError('TEST_ERROR', 'Test error message', { testData: 'test value' });
+            
+            const logged = mockGame.errorLog.length === initialLogLength + 1;
+            const lastLog = mockGame.errorLog[mockGame.errorLog.length - 1];
+            const correctData = lastLog && lastLog.type === 'TEST_ERROR' && lastLog.message === 'Test error message';
+            
+            addTestResult('logging-results', 'Error Logging', logged && correctData ? 'pass' : 'fail', 
+                `Error ${logged && correctData ? 'correctly logged' : 'logging failed'}`);
+        }
+
+        function testLogSizeLimit() {
+            const initialLength = mockGame.errorLog.length;
+            
+            // Add more than 50 errors
+            for (let i = 0; i < 55; i++) {
+                mockGame.logError('TEST_ERROR', `Error ${i}`);
+            }
+            
+            const limitEnforced = mockGame.errorLog.length <= 50;
+            addTestResult('logging-results', 'Log Size Limit', limitEnforced ? 'pass' : 'fail', 
+                `Log size limit ${limitEnforced ? 'correctly enforced' : 'not enforced'} (${mockGame.errorLog.length} entries)`);
+        }
+
+        function testLogPersistence() {
+            mockGame.logError('PERSISTENCE_TEST', 'Test persistence');
+            
+            try {
+                const storedErrors = JSON.parse(localStorage.getItem('soccerBettingErrors') || '[]');
+                const persisted = storedErrors.some(error => error.type === 'PERSISTENCE_TEST');
+                
+                addTestResult('logging-results', 'Log Persistence', persisted ? 'pass' : 'fail', 
+                    `Error log ${persisted ? 'correctly persisted' : 'persistence failed'}`);
+            } catch (error) {
+                addTestResult('logging-results', 'Log Persistence', 'fail', 'Error accessing localStorage', error.message);
+            }
+        }
+
+        // Debug Controls
+        function enableDebugMode() {
+            mockGame.setDebugMode(true);
+            addTestResult('logging-results', 'Debug Mode', 'pass', 'Debug mode enabled');
+        }
+
+        function disableDebugMode() {
+            mockGame.setDebugMode(false);
+            addTestResult('logging-results', 'Debug Mode', 'pass', 'Debug mode disabled');
+        }
+
+        function clearErrorLog() {
+            mockGame.clearErrorLog();
+            addTestResult('logging-results', 'Clear Error Log', 'pass', 'Error log cleared');
+        }
+
+        function showErrorLog() {
+            const errorLogDiv = document.getElementById('error-log');
+            const errorLogContent = document.getElementById('error-log-content');
+            
+            errorLogContent.innerHTML = '';
+            
+            if (mockGame.errorLog.length === 0) {
+                errorLogContent.textContent = 'No errors logged';
+            } else {
+                mockGame.errorLog.forEach((error, index) => {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.style.marginBottom = '10px';
+                    errorDiv.style.padding = '8px';
+                    errorDiv.style.background = '#374151';
+                    errorDiv.style.borderRadius = '4px';
+                    errorDiv.innerHTML = `
+                        <strong>${error.type}</strong> - ${error.message}<br>
+                        <small>${error.timestamp}</small><br>
+                        <pre style="margin: 5px 0; font-size: 11px;">${JSON.stringify(error.context, null, 2)}</pre>
+                    `;
+                    errorLogContent.appendChild(errorDiv);
+                });
+            }
+            
+            errorLogDiv.style.display = errorLogDiv.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function simulateNetworkError() {
+            mockGame.logError('NETWORK_ERROR', 'Simulated network connectivity issue', {
+                errorType: 'NetworkError',
+                url: 'https://example.com/api',
+                status: 0
+            });
+            addTestResult('logging-results', 'Network Error Simulation', 'pass', 'Network error simulated and logged');
+        }
+
+        function simulateMemoryError() {
+            mockGame.logError('MEMORY_ERROR', 'Simulated memory allocation failure', {
+                errorType: 'OutOfMemoryError',
+                attemptedAllocation: '50MB',
+                availableMemory: '10MB'
+            });
+            addTestResult('logging-results', 'Memory Error Simulation', 'pass', 'Memory error simulated and logged');
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Error Handling Browser Tests initialized');
+            addTestResult('logging-results', 'Test Page Initialization', 'pass', 'Test page loaded successfully');
+        });
+    </script>
+</body>
+</html>

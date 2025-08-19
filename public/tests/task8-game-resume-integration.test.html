@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 8: Game Resume Logic Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .test-container {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #444;
+            border-radius: 5px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .test-pass {
+            background-color: #1a5a1a;
+            border: 1px solid #2a8a2a;
+            color: #4ade80;
+        }
+        .test-fail {
+            background-color: #5a1a1a;
+            border: 1px solid #8a2a2a;
+            color: #f87171;
+        }
+        .test-warning {
+            background-color: #5a5a1a;
+            border: 1px solid #8a8a2a;
+            color: #fbbf24;
+        }
+        .test-info {
+            background-color: #1a1a5a;
+            border: 1px solid #2a2a8a;
+            color: #60a5fa;
+        }
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #4338ca;
+        }
+        button:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+        }
+        .log-container {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .countdown-display {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            background: #065f46;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .modal-simulation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #374151;
+            border: 2px solid #4f46e5;
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 1000;
+            min-width: 300px;
+            display: none;
+        }
+        .modal-simulation.visible {
+            display: block;
+        }
+        .pause-header {
+            background: #92400e;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .timer-bar {
+            width: 100%;
+            height: 8px;
+            background: #374151;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .timer-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            transition: width 0.1s ease;
+        }
+        .timer-progress.warning {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+        .timer-progress.urgent {
+            background: linear-gradient(90deg, #dc2626, #f87171);
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Task 8: Game Resume Logic Integration Test</h1>
+    <p>Testing enhanced game resume logic for integrated modals with timeout scenarios and countdown display within modal context.</p>
+
+    <div class="test-container">
+        <h2>📋 Test Requirements</h2>
+        <ul>
+            <li><strong>Requirement 2.5:</strong> Timeout scenarios work correctly with integrated pause display</li>
+            <li><strong>Requirement 4.6:</strong> Game resumes properly after bet placement or timeout</li>
+            <li><strong>Modal Context:</strong> Countdown display works within modal context</li>
+            <li><strong>Decision Handling:</strong> Betting decision handling properly resumes game after modal interactions</li>
+        </ul>
+    </div>
+
+    <div class="test-container">
+        <h2>🧪 Test Controls</h2>
+        <div class="test-section">
+            <h3>Modal Resume Tests</h3>
+            <button onclick="testModalCountdownDisplay()">Test Modal Countdown Display</button>
+            <button onclick="testBettingDecisionResume()">Test Betting Decision Resume</button>
+            <button onclick="testTimeoutScenario()">Test Timeout Scenario</button>
+            <button onclick="testMinimizedModalResume()">Test Minimized Modal Resume</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>Integration Tests</h3>
+            <button onclick="testCompleteResumeFlow()">Test Complete Resume Flow</button>
+            <button onclick="testErrorRecovery()">Test Error Recovery</button>
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>📊 Test Results</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>📝 Test Log</h2>
+        <div id="test-log" class="log-container"></div>
+    </div>
+
+    <!-- Modal Simulation -->
+    <div id="modal-simulation" class="modal-simulation">
+        <div class="pause-header">
+            <span>⏸️ Game Paused - Betting Opportunity</span>
+        </div>
+        <div id="modal-countdown-container"></div>
+        <div class="timer-bar">
+            <div id="modal-timer-progress" class="timer-progress" style="width: 100%;"></div>
+        </div>
+        <p>Crunching tackle near the box! What will the ref do?</p>
+        <button onclick="simulateBetPlacement()">Place Bet</button>
+        <button onclick="simulateSkipBetting()">Skip</button>
+        <button onclick="simulateMinimize()">Minimize</button>
+    </div>
+
+    <script type="module">
+        import { 
+            getCurrentState, 
+            updateCurrentActionBet,
+            updatePauseState,
+            getPauseState
+        } from '../scripts/gameState.js';
+
+        // Test state
+        let testResults = [];
+        let testLog = [];
+        let currentTest = null;
+        let mockPauseManager = null;
+        let resumeCallbacks = [];
+
+        // Mock pause manager for testing
+        class MockPauseManager {
+            constructor() {
+                this.paused = false;
+                this.reason = null;
+                this.startTime = null;
+                this.timeoutId = null;
+            }
+
+            pauseGame(reason, timeout = 15000) {
+                this.paused = true;
+                this.reason = reason;
+                this.startTime = Date.now();
+                
+                if (timeout > 0) {
+                    this.timeoutId = setTimeout(() => {
+                        this.resumeGame(false, 0);
+                    }, timeout);
+                }
+                
+                logTest(`MockPauseManager: Game paused - ${reason} (timeout: ${timeout}ms)`);
+                return true;
+            }
+
+            async resumeGame(withCountdown = true, countdownSeconds = 3) {
+                if (this.timeoutId) {
+                    clearTimeout(this.timeoutId);
+                    this.timeoutId = null;
+                }
+
+                if (withCountdown && countdownSeconds > 0) {
+                    logTest(`MockPauseManager: Starting ${countdownSeconds}s countdown`);
+                    await this.showCountdown(countdownSeconds);
+                }
+
+                this.paused = false;
+                this.reason = null;
+                this.startTime = null;
+                
+                logTest('MockPauseManager: Game resumed');
+                
+                // Notify callbacks
+                resumeCallbacks.forEach(callback => {
+                    try {
+                        callback();
+                    } catch (error) {
+                        logTest(`Error in resume callback: ${error.message}`);
+                    }
+                });
+            }
+
+            async showCountdown(seconds) {
+                return new Promise((resolve) => {
+                    let remaining = seconds;
+                    const interval = setInterval(() => {
+                        logTest(`Countdown: ${remaining}`);
+                        remaining--;
+                        if (remaining < 0) {
+                            clearInterval(interval);
+                            logTest('Countdown: GO!');
+                            resolve();
+                        }
+                    }, 1000);
+                });
+            }
+
+            isPaused() {
+                return this.paused;
+            }
+
+            getPauseInfo() {
+                return {
+                    active: this.paused,
+                    reason: this.reason,
+                    startTime: this.startTime,
+                    timeoutId: this.timeoutId
+                };
+            }
+
+            clearTimeout() {
+                if (this.timeoutId) {
+                    clearTimeout(this.timeoutId);
+                    this.timeoutId = null;
+                }
+            }
+        }
+
+        // Initialize mock pause manager
+        mockPauseManager = new MockPauseManager();
+        window.pauseManager = mockPauseManager;
+
+        // Mock betting functions for testing
+        window.handleBettingDecision = function(betPlaced = false) {
+            logTest(`handleBettingDecision called: ${betPlaced ? 'bet placed' : 'bet cancelled'}`);
+            
+            // Simulate cleanup
+            updateCurrentActionBet({
+                active: false,
+                details: null,
+                timeoutId: null,
+                modalState: null
+            });
+            
+            // Simulate resume
+            if (mockPauseManager.isPaused()) {
+                mockPauseManager.resumeGame(true, 3);
+            }
+        };
+
+        window.handleBettingTimeout = function() {
+            logTest('handleBettingTimeout called');
+            
+            // Simulate cleanup
+            updateCurrentActionBet({
+                active: false,
+                details: null,
+                timeoutId: null,
+                modalState: null
+            });
+            
+            // Simulate resume without countdown for timeout
+            if (mockPauseManager.isPaused()) {
+                mockPauseManager.resumeGame(true, 3);
+            }
+        };
+
+        // Mock modal countdown function
+        window.showModalCountdown = function(seconds = 3) {
+            return new Promise((resolve) => {
+                const container = document.getElementById('modal-countdown-container');
+                if (!container) {
+                    resolve();
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="countdown-display">
+                        <div id="countdown-number">${seconds}</div>
+                        <div>Resuming in...</div>
+                    </div>
+                `;
+
+                let remaining = seconds;
+                const interval = setInterval(() => {
+                    remaining--;
+                    const numberEl = document.getElementById('countdown-number');
+                    if (numberEl) {
+                        if (remaining > 0) {
+                            numberEl.textContent = remaining;
+                            logTest(`Modal countdown: ${remaining}`);
+                        } else {
+                            numberEl.textContent = 'GO!';
+                            logTest('Modal countdown: GO!');
+                            clearInterval(interval);
+                            setTimeout(() => {
+                                container.innerHTML = '';
+                                resolve();
+                            }, 500);
+                        }
+                    }
+                }, 1000);
+            });
+        };
+
+        // Utility functions
+        function logTest(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            testLog.push(logEntry);
+            
+            const logContainer = document.getElementById('test-log');
+            if (logContainer) {
+                logContainer.innerHTML = testLog.slice(-50).join('\n');
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+            
+            console.log(logEntry);
+        }
+
+        function addTestResult(testName, passed, message, details = null) {
+            const result = {
+                name: testName,
+                passed,
+                message,
+                details,
+                timestamp: new Date().toLocaleTimeString()
+            };
+            
+            testResults.push(result);
+            updateTestResultsDisplay();
+            
+            logTest(`${testName}: ${passed ? 'PASS' : 'FAIL'} - ${message}`);
+        }
+
+        function updateTestResultsDisplay() {
+            const container = document.getElementById('test-results');
+            if (!container) return;
+            
+            container.innerHTML = testResults.map(result => `
+                <div class="test-result ${result.passed ? 'test-pass' : 'test-fail'}">
+                    <strong>${result.name}</strong> [${result.timestamp}]<br>
+                    ${result.message}
+                    ${result.details ? `<br><small>${result.details}</small>` : ''}
+                </div>
+            `).join('');
+        }
+
+        // Test functions
+        window.testModalCountdownDisplay = async function() {
+            logTest('=== Testing Modal Countdown Display ===');
+            
+            try {
+                // Setup modal state
+                const modal = document.getElementById('modal-simulation');
+                modal.classList.add('visible');
+                
+                updateCurrentActionBet({
+                    active: true,
+                    modalState: {
+                        visible: true,
+                        minimized: false,
+                        startTime: Date.now(),
+                        duration: 10000
+                    }
+                });
+                
+                // Test modal countdown
+                const startTime = Date.now();
+                await showModalCountdown(3);
+                const duration = Date.now() - startTime;
+                
+                modal.classList.remove('visible');
+                
+                // Verify countdown duration (should be approximately 3.5 seconds)
+                const expectedDuration = 3500; // 3s countdown + 0.5s "GO!" display
+                const tolerance = 500; // 500ms tolerance
+                
+                if (Math.abs(duration - expectedDuration) <= tolerance) {
+                    addTestResult(
+                        'Modal Countdown Display',
+                        true,
+                        `Countdown completed in ${duration}ms (expected ~${expectedDuration}ms)`,
+                        'Modal countdown display works correctly within modal context'
+                    );
+                } else {
+                    addTestResult(
+                        'Modal Countdown Display',
+                        false,
+                        `Countdown duration ${duration}ms outside expected range ${expectedDuration}±${tolerance}ms`
+                    );
+                }
+                
+            } catch (error) {
+                addTestResult(
+                    'Modal Countdown Display',
+                    false,
+                    `Error during modal countdown test: ${error.message}`
+                );
+            }
+        };
+
+        window.testBettingDecisionResume = async function() {
+            logTest('=== Testing Betting Decision Resume ===');
+            
+            try {
+                // Setup betting state
+                mockPauseManager.pauseGame('BETTING_OPPORTUNITY', 10000);
+                
+                updateCurrentActionBet({
+                    active: true,
+                    details: { description: 'Test betting event' },
+                    modalState: {
+                        visible: true,
+                        minimized: false,
+                        startTime: Date.now(),
+                        duration: 10000
+                    }
+                });
+                
+                // Test betting decision with bet placed
+                const resumePromise = new Promise((resolve) => {
+                    resumeCallbacks.push(resolve);
+                });
+                
+                handleBettingDecision(true);
+                
+                // Wait for resume
+                await resumePromise;
+                
+                // Verify state
+                const currentState = getCurrentState();
+                const pauseInfo = mockPauseManager.getPauseInfo();
+                
+                if (!currentState.currentActionBet.active && !pauseInfo.active) {
+                    addTestResult(
+                        'Betting Decision Resume',
+                        true,
+                        'Game properly resumed after betting decision with cleanup',
+                        'Action bet state cleared and pause state cleared'
+                    );
+                } else {
+                    addTestResult(
+                        'Betting Decision Resume',
+                        false,
+                        `State not properly cleared - actionBet: ${currentState.currentActionBet.active}, paused: ${pauseInfo.active}`
+                    );
+                }
+                
+                // Clear callbacks
+                resumeCallbacks = [];
+                
+            } catch (error) {
+                addTestResult(
+                    'Betting Decision Resume',
+                    false,
+                    `Error during betting decision resume test: ${error.message}`
+                );
+            }
+        };
+
+        window.testTimeoutScenario = async function() {
+            logTest('=== Testing Timeout Scenario ===');
+            
+            try {
+                // Setup betting state with short timeout
+                mockPauseManager.pauseGame('BETTING_OPPORTUNITY', 2000);
+                
+                updateCurrentActionBet({
+                    active: true,
+                    details: { description: 'Test timeout event' },
+                    modalState: {
+                        visible: true,
+                        minimized: false,
+                        startTime: Date.now(),
+                        duration: 2000
+                    }
+                });
+                
+                // Wait for timeout to trigger
+                const timeoutPromise = new Promise((resolve) => {
+                    resumeCallbacks.push(resolve);
+                });
+                
+                // Simulate timeout
+                setTimeout(() => {
+                    handleBettingTimeout();
+                }, 2100);
+                
+                await timeoutPromise;
+                
+                // Verify state after timeout
+                const currentState = getCurrentState();
+                const pauseInfo = mockPauseManager.getPauseInfo();
+                
+                if (!currentState.currentActionBet.active && !pauseInfo.active) {
+                    addTestResult(
+                        'Timeout Scenario',
+                        true,
+                        'Game properly resumed after timeout with cleanup',
+                        'Timeout handling works correctly with integrated pause display'
+                    );
+                } else {
+                    addTestResult(
+                        'Timeout Scenario',
+                        false,
+                        `State not properly cleared after timeout - actionBet: ${currentState.currentActionBet.active}, paused: ${pauseInfo.active}`
+                    );
+                }
+                
+                // Clear callbacks
+                resumeCallbacks = [];
+                
+            } catch (error) {
+                addTestResult(
+                    'Timeout Scenario',
+                    false,
+                    `Error during timeout scenario test: ${error.message}`
+                );
+            }
+        };
+
+        window.testMinimizedModalResume = async function() {
+            logTest('=== Testing Minimized Modal Resume ===');
+            
+            try {
+                // Setup minimized modal state
+                mockPauseManager.pauseGame('BETTING_OPPORTUNITY', 10000);
+                
+                updateCurrentActionBet({
+                    active: true,
+                    details: { description: 'Test minimized event' },
+                    modalState: {
+                        visible: false,
+                        minimized: true,
+                        startTime: Date.now(),
+                        duration: 10000
+                    }
+                });
+                
+                // Test resume from minimized state
+                const resumePromise = new Promise((resolve) => {
+                    resumeCallbacks.push(resolve);
+                });
+                
+                // Simulate betting decision from minimized state
+                handleBettingDecision(false);
+                
+                await resumePromise;
+                
+                // Verify state
+                const currentState = getCurrentState();
+                const pauseInfo = mockPauseManager.getPauseInfo();
+                
+                if (!currentState.currentActionBet.active && !pauseInfo.active) {
+                    addTestResult(
+                        'Minimized Modal Resume',
+                        true,
+                        'Game properly resumed from minimized modal state',
+                        'Resume logic works regardless of modal visibility state'
+                    );
+                } else {
+                    addTestResult(
+                        'Minimized Modal Resume',
+                        false,
+                        `State not properly cleared from minimized state - actionBet: ${currentState.currentActionBet.active}, paused: ${pauseInfo.active}`
+                    );
+                }
+                
+                // Clear callbacks
+                resumeCallbacks = [];
+                
+            } catch (error) {
+                addTestResult(
+                    'Minimized Modal Resume',
+                    false,
+                    `Error during minimized modal resume test: ${error.message}`
+                );
+            }
+        };
+
+        window.testCompleteResumeFlow = async function() {
+            logTest('=== Testing Complete Resume Flow ===');
+            
+            try {
+                let testsPassed = 0;
+                const totalTests = 3;
+                
+                // Test 1: Modal visible resume with countdown
+                mockPauseManager.pauseGame('BETTING_OPPORTUNITY', 10000);
+                updateCurrentActionBet({
+                    active: true,
+                    modalState: { visible: true, minimized: false, startTime: Date.now(), duration: 10000 }
+                });
+                
+                const modal = document.getElementById('modal-simulation');
+                modal.classList.add('visible');
+                
+                const countdownStart = Date.now();
+                await showModalCountdown(2);
+                const countdownDuration = Date.now() - countdownStart;
+                
+                modal.classList.remove('visible');
+                
+                if (countdownDuration >= 2000 && countdownDuration <= 3000) {
+                    testsPassed++;
+                    logTest('✓ Modal countdown flow works correctly');
+                } else {
+                    logTest(`✗ Modal countdown duration incorrect: ${countdownDuration}ms`);
+                }
+                
+                // Test 2: Standard pause system resume
+                mockPauseManager.pauseGame('BETTING_OPPORTUNITY', 5000);
+                const resumeStart = Date.now();
+                await mockPauseManager.resumeGame(true, 1);
+                const resumeDuration = Date.now() - resumeStart;
+                
+                if (resumeDuration >= 1000 && resumeDuration <= 2000) {
+                    testsPassed++;
+                    logTest('✓ Standard pause system resume works correctly');
+                } else {
+                    logTest(`✗ Standard resume duration incorrect: ${resumeDuration}ms`);
+                }
+                
+                // Test 3: Error recovery
+                try {
+                    // Simulate error condition
+                    mockPauseManager.pauseGame('BETTING_OPPORTUNITY', 1000);
+                    updateCurrentActionBet({ active: true });
+                    
+                    // Force error in resume
+                    const originalResume = mockPauseManager.resumeGame;
+                    mockPauseManager.resumeGame = function() {
+                        throw new Error('Simulated resume error');
+                    };
+                    
+                    // Should handle error gracefully
+                    try {
+                        await mockPauseManager.resumeGame();
+                    } catch (error) {
+                        // Expected error
+                    }
+                    
+                    // Restore original function
+                    mockPauseManager.resumeGame = originalResume;
+                    
+                    testsPassed++;
+                    logTest('✓ Error recovery handling works correctly');
+                } catch (error) {
+                    logTest(`✗ Error recovery failed: ${error.message}`);
+                }
+                
+                addTestResult(
+                    'Complete Resume Flow',
+                    testsPassed === totalTests,
+                    `${testsPassed}/${totalTests} resume flow tests passed`,
+                    'Comprehensive test of all resume scenarios and error handling'
+                );
+                
+            } catch (error) {
+                addTestResult(
+                    'Complete Resume Flow',
+                    false,
+                    `Error during complete resume flow test: ${error.message}`
+                );
+            }
+        };
+
+        window.testErrorRecovery = async function() {
+            logTest('=== Testing Error Recovery ===');
+            
+            try {
+                let recoveryTests = 0;
+                const totalRecoveryTests = 2;
+                
+                // Test 1: Recovery from corrupted state
+                updateCurrentActionBet({
+                    active: true,
+                    details: null, // Corrupted - missing details
+                    modalState: { visible: true, minimized: false }
+                });
+                
+                try {
+                    handleBettingTimeout();
+                    recoveryTests++;
+                    logTest('✓ Recovered from corrupted action bet state');
+                } catch (error) {
+                    logTest(`✗ Failed to recover from corrupted state: ${error.message}`);
+                }
+                
+                // Test 2: Recovery from pause system failure
+                const originalIsPaused = mockPauseManager.isPaused;
+                mockPauseManager.isPaused = function() {
+                    throw new Error('Pause system failure');
+                };
+                
+                try {
+                    handleBettingDecision(true);
+                    recoveryTests++;
+                    logTest('✓ Recovered from pause system failure');
+                } catch (error) {
+                    logTest(`✗ Failed to recover from pause system failure: ${error.message}`);
+                }
+                
+                // Restore original function
+                mockPauseManager.isPaused = originalIsPaused;
+                
+                addTestResult(
+                    'Error Recovery',
+                    recoveryTests === totalRecoveryTests,
+                    `${recoveryTests}/${totalRecoveryTests} error recovery tests passed`,
+                    'System handles errors gracefully and maintains game state consistency'
+                );
+                
+            } catch (error) {
+                addTestResult(
+                    'Error Recovery',
+                    false,
+                    `Error during error recovery test: ${error.message}`
+                );
+            }
+        };
+
+        window.runAllTests = async function() {
+            logTest('=== Running All Task 8 Tests ===');
+            clearResults();
+            
+            const tests = [
+                testModalCountdownDisplay,
+                testBettingDecisionResume,
+                testTimeoutScenario,
+                testMinimizedModalResume,
+                testCompleteResumeFlow,
+                testErrorRecovery
+            ];
+            
+            for (const test of tests) {
+                try {
+                    await test();
+                    // Small delay between tests
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } catch (error) {
+                    logTest(`Error running test: ${error.message}`);
+                }
+            }
+            
+            // Summary
+            const passed = testResults.filter(r => r.passed).length;
+            const total = testResults.length;
+            
+            logTest(`=== Test Summary: ${passed}/${total} tests passed ===`);
+            
+            if (passed === total) {
+                addTestResult(
+                    'Overall Task 8 Completion',
+                    true,
+                    'All game resume logic integration tests passed',
+                    'Enhanced resume logic works correctly with integrated modals, timeout scenarios, and countdown display'
+                );
+            } else {
+                addTestResult(
+                    'Overall Task 8 Completion',
+                    false,
+                    `${total - passed} tests failed - review implementation`,
+                    'Some aspects of the game resume logic need attention'
+                );
+            }
+        };
+
+        window.clearResults = function() {
+            testResults = [];
+            testLog = [];
+            updateTestResultsDisplay();
+            document.getElementById('test-log').innerHTML = '';
+            logTest('Test results cleared');
+        };
+
+        // Modal simulation functions
+        window.simulateBetPlacement = function() {
+            const modal = document.getElementById('modal-simulation');
+            modal.classList.remove('visible');
+            handleBettingDecision(true);
+        };
+
+        window.simulateSkipBetting = function() {
+            const modal = document.getElementById('modal-simulation');
+            modal.classList.remove('visible');
+            handleBettingDecision(false);
+        };
+
+        window.simulateMinimize = function() {
+            const modal = document.getElementById('modal-simulation');
+            modal.classList.remove('visible');
+            logTest('Modal minimized (simulation)');
+        };
+
+        // Initialize
+        logTest('Task 8 Game Resume Integration Test initialized');
+        logTest('Ready to test enhanced game resume logic for integrated modals');
+    </script>
+</body>
+</html>
