@@ -1255,6 +1255,21 @@ export function showMultiChoiceActionBet(event) {
                 
                 actionBetModal.classList.remove('hidden');
                 
+                // Force proper modal positioning with inline styles
+                actionBetModal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.85);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
+                    padding: 1rem;
+                `;
+                
                 console.log('Modal classes after removing hidden:', actionBetModal.className);
                 console.log('Modal display style:', window.getComputedStyle(actionBetModal).display);
                 
@@ -1263,12 +1278,17 @@ export function showMultiChoiceActionBet(event) {
                 if (modalContent) {
                     modalContent.classList.remove('enhanced-modal-exit');
                     modalContent.classList.add('enhanced-modal-entrance');
-                }
-                
-                // Force display if still hidden
-                if (window.getComputedStyle(actionBetModal).display === 'none') {
-                    console.warn('Modal still hidden, forcing display...');
-                    actionBetModal.style.display = 'flex';
+                    
+                    // Also force modal content positioning
+                    modalContent.style.cssText = `
+                        background: linear-gradient(145deg, #1f2937, #111827);
+                        border-radius: 1rem;
+                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+                        padding: 1.5rem;
+                        width: 100%;
+                        max-width: 24rem;
+                        position: relative;
+                    `;
                 }
                 
                 modalShown = true;
