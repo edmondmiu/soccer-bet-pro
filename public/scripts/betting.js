@@ -1246,75 +1246,125 @@ export function showMultiChoiceActionBet(event) {
             }
         }
 
-        // Show modal FIRST before starting any timers
-        let modalShown = false;
-        try {
-            if (actionBetModal) {
-                console.log('Showing action bet modal...');
-                console.log('Modal classes before:', actionBetModal.className);
-                
-                actionBetModal.classList.remove('hidden');
-                
-                // Force proper modal positioning with inline styles
-                actionBetModal.style.cssText = `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0, 0, 0, 0.85);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 9999;
-                    padding: 1rem;
-                `;
-                
-                console.log('Modal classes after removing hidden:', actionBetModal.className);
-                console.log('Modal display style:', window.getComputedStyle(actionBetModal).display);
-                
-                // Apply enhanced entrance animation
-                const modalContent = actionBetModal.querySelector('.action-bet-modal-content');
-                if (modalContent) {
-                    modalContent.classList.remove('enhanced-modal-exit');
-                    modalContent.classList.add('enhanced-modal-entrance');
-                    
-                    // Also force modal content positioning
-                    modalContent.style.cssText = `
-                        background: linear-gradient(145deg, #1f2937, #111827);
-                        border-radius: 1rem;
-                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
-                        padding: 1.5rem;
-                        width: 100%;
-                        max-width: 24rem;
-                        position: relative;
-                    `;
-                }
-                
-                modalShown = true;
-                console.log('✅ Modal successfully shown');
-                
-                // Add click-outside-to-minimize behavior (Requirement 1.1)
-                try {
-                    setupModalMinimizeHandlers(actionBetModal);
-                } catch (handlerError) {
-                    console.error('Error setting up modal minimize handlers:', handlerError);
-                    // Continue without click-outside behavior
-                }
-                
-            } else {
-                console.error('Action bet modal element not found after fallback attempts');
-            }
-        } catch (modalShowError) {
-            console.error('Error showing modal:', modalShowError);
+        // Create a completely new modal that bypasses all CSS issues
+        console.log('Creating new betting modal...');
+        
+        // Remove any existing modal
+        const existingModal = document.getElementById('betting-modal-simple');
+        if (existingModal) {
+            existingModal.remove();
         }
         
-        // Only start timer if modal was successfully shown
-        if (!modalShown) {
-            console.error('Modal not shown, aborting betting opportunity');
+        // Create new modal with inline styles
+        const newModal = document.createElement('div');
+        newModal.id = 'betting-modal-simple';
+        newModal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            font-family: Arial, sans-serif;
+        `;
+        
+        // Create modal content
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: #1f2937;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            color: white;
+            text-align: center;
+            border: 2px solid #4f46e5;
+        `;
+        
+        // Add header
+        const header = document.createElement('h2');
+        header.textContent = '⏸️ Game Paused - Betting Opportunity';
+        header.style.cssText = 'margin: 0 0 16px 0; color: #fbbf24; font-size: 18px; font-weight: bold;';
+        modalContent.appendChild(header);
+        
+        // Add description
+        const description = document.createElement('p');
+        description.textContent = event.description;
+        description.style.cssText = 'margin: 0 0 20px 0; color: #d1d5db;';
+        modalContent.appendChild(description);
+        
+        // Add choices
+        event.choices.forEach((choice, index) => {
+            const button = document.createElement('button');
+            button.textContent = `${choice.text} @${choice.odds}`;
+            button.style.cssText = `
+                display: block;
+                width: 100%;
+                padding: 12px;
+                margin: 8px 0;
+                background: #4f46e5;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 16px;
+                font-weight: 600;
+            `;
+            
+            button.onmouseover = () => button.style.background = '#3730a3';
+            button.onmouseout = () => button.style.background = '#4f46e5';
+            
+            button.onclick = () => {
+                console.log(`Choice selected: ${choice.text}`);
+                newModal.remove();
+                showActionBetSlip('action', choice.text, choice.odds, event.betType);
+            };
+            
+            modalContent.appendChild(button);
+        });
+        
+        // Add skip button
+        const skipButton = document.createElement('button');
+        skipButton.textContent = 'Skip Betting';
+        skipButton.style.cssText = `
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 12px 0 0 0;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        `;
+        
+        skipButton.onmouseover = () => skipButton.style.background = '#b91c1c';
+        skipButton.onmouseout = () => skipButton.style.background = '#dc2626';
+        
+        skipButton.onclick = () => {
+            console.log('Betting skipped');
+            newModal.remove();
             resumeGameAfterBetting();
-            return;
-        }
+        };
+        
+        modalContent.appendChild(skipButton);
+        newModal.appendChild(modalContent);
+        document.body.appendChild(newModal);
+        
+        console.log('✅ New modal created and shown');
+        
+        // Set timeout to auto-remove
+        setTimeout(() => {
+            if (newModal.parentNode) {
+                newModal.remove();
+                resumeGameAfterBetting();
+            }
+        }, 10000);
 
         // Wait a moment for modal to render, then start timer
         setTimeout(() => {
