@@ -1090,56 +1090,25 @@ export function showMultiChoiceActionBet(event) {
                 finalChoicesContainer.innerHTML = '';
                 console.log('Cleared choices container, adding', event.choices.length, 'choices');
 
-                // Show fallback buttons first as a test
-                const fallbackButtons = [
-                    document.getElementById('fallback-choice-1'),
-                    document.getElementById('fallback-choice-2'),
-                    document.getElementById('fallback-choice-3')
-                ];
-                
-                fallbackButtons.forEach((btn, idx) => {
-                    if (btn && event.choices[idx]) {
-                        btn.style.display = 'block';
-                        btn.onclick = () => {
-                            console.log('Fallback button clicked:', event.choices[idx].text);
-                            minimizeActionBet();
-                            showActionBetSlip('action', event.choices[idx].text, event.choices[idx].odds, event.betType);
-                        };
-                    }
-                });
-
                 event.choices.forEach((choice, index) => {
+                    console.log(`Creating button ${index}: ${choice.text} @${choice.odds}`);
+                    
                     try {
                         const button = document.createElement('button');
-                        button.className = 'betting-choice-button';
+                        button.className = 'w-full py-3 bg-gray-700 hover:bg-indigo-600 rounded-lg text-white font-semibold transition mb-2';
+                        button.style.display = 'block';
+                        button.innerHTML = `${choice.text} <span class="text-gray-400 text-xs">@${choice.odds.toFixed(2)}</span>`;
                         
-                        // Create structured content for enhanced visual hierarchy
-                        const choiceText = document.createElement('span');
-                        choiceText.className = 'betting-choice-text';
-                        choiceText.textContent = choice.text;
-                        
-                        const choiceOdds = document.createElement('span');
-                        choiceOdds.className = 'betting-choice-odds';
-                        choiceOdds.textContent = `@${choice.odds.toFixed(2)}`;
-                        
-                        button.appendChild(choiceText);
-                        button.appendChild(choiceOdds);
-                        
-                        // Enhanced interaction with animation
                         button.onclick = () => {
+                            console.log(`Choice clicked: ${choice.text}`);
                             try {
-                                // Add selection animation
-                                button.classList.add('choice-selection-animation');
-                                
-                                setTimeout(() => {
-                                    minimizeActionBet();
-                                    showActionBetSlip('action', choice.text, choice.odds, event.betType);
-                                }, 150); // Allow animation to play
+                                minimizeActionBet();
+                                showActionBetSlip('action', choice.text, choice.odds, event.betType);
                             } catch (choiceError) {
                                 console.error(`Error handling choice selection for ${choice.text}:`, choiceError);
-                                // Fallback: try direct bet placement
+                                // Fallback: try direct bet placement with default amount
                                 try {
-                                    placeBet('action', choice.text, choice.odds, 10, event.betType);
+                                    placeBet('action', choice.text, choice.odds, 25, event.betType);
                                 } catch (betError) {
                                     console.error('Fallback bet placement also failed:', betError);
                                     if (typeof window !== 'undefined' && window.addEventToFeed) {
@@ -1149,25 +1118,44 @@ export function showMultiChoiceActionBet(event) {
                             }
                         };
                         
-                        // Add button press animation on click
-                        button.addEventListener('mousedown', () => {
-                            button.classList.add('button-press-animation');
-                        });
-                        
-                        button.addEventListener('animationend', (e) => {
-                            if (e.animationName === 'buttonPress') {
-                                button.classList.remove('button-press-animation');
-                            } else if (e.animationName === 'choiceSelection') {
-                                button.classList.remove('choice-selection-animation');
-                            }
-                        });
-                        
                         finalChoicesContainer.appendChild(button);
+                        console.log(`✅ Button ${index} added to container`);
+                        
                     } catch (buttonError) {
-                        console.error(`Error creating choice button ${index}:`, buttonError);
-                        // Continue with other choices
+                        console.error(`❌ Error creating choice button ${index}:`, buttonError);
+                        
+                        // Create simple fallback button
+                        try {
+                            const fallbackButton = document.createElement('button');
+                            fallbackButton.textContent = `${choice.text} @${choice.odds}`;
+                            fallbackButton.style.cssText = 'width: 100%; padding: 12px; margin: 4px 0; background: #4f46e5; color: white; border: none; border-radius: 8px; cursor: pointer;';
+                            fallbackButton.onclick = () => {
+                                console.log(`Fallback choice clicked: ${choice.text}`);
+                                placeBet('action', choice.text, choice.odds, 25, event.betType);
+                            };
+                            finalChoicesContainer.appendChild(fallbackButton);
+                            console.log(`✅ Fallback button ${index} created`);
+                        } catch (fallbackError) {
+                            console.error(`❌ Even fallback button failed:`, fallbackError);
+                        }
                     }
                 });
+                
+                // Add a simple skip button at the end
+                try {
+                    const skipButton = document.createElement('button');
+                    skipButton.textContent = 'Skip Betting';
+                    skipButton.className = 'w-full py-2 bg-red-600 hover:bg-red-500 rounded-lg text-white font-medium transition mt-2';
+                    skipButton.onclick = () => {
+                        console.log('Skip button clicked');
+                        hideActionBet();
+                        resumeGameAfterBetting();
+                    };
+                    finalChoicesContainer.appendChild(skipButton);
+                    console.log('✅ Skip button added');
+                } catch (skipError) {
+                    console.error('Error adding skip button:', skipError);
+                }
 
                 // Enhanced action buttons are now handled by the HTML structure
                 // Update the existing button event handlers
