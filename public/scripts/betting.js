@@ -1237,7 +1237,13 @@ export function showMultiChoiceActionBet(event) {
         // Show modal with enhanced animations and error handling
         try {
             if (actionBetModal) {
+                console.log('Showing action bet modal...');
+                console.log('Modal classes before:', actionBetModal.className);
+                
                 actionBetModal.classList.remove('hidden');
+                
+                console.log('Modal classes after removing hidden:', actionBetModal.className);
+                console.log('Modal display style:', window.getComputedStyle(actionBetModal).display);
                 
                 // Apply enhanced entrance animation
                 const modalContent = actionBetModal.querySelector('.action-bet-modal-content');
@@ -1253,6 +1259,13 @@ export function showMultiChoiceActionBet(event) {
                     console.error('Error setting up modal minimize handlers:', handlerError);
                     // Continue without click-outside behavior
                 }
+                
+                // Force display if still hidden
+                if (window.getComputedStyle(actionBetModal).display === 'none') {
+                    console.warn('Modal still hidden, forcing display...');
+                    actionBetModal.style.display = 'flex';
+                }
+                
             } else {
                 console.error('Action bet modal element not found after fallback attempts');
             }

@@ -135,6 +135,15 @@
     padding: 1rem;
 }
 
+/* Override Tailwind's hidden class for our modal */
+.action-bet-modal-enhanced.hidden {
+    display: none !important;
+}
+
+.action-bet-modal-enhanced:not(.hidden) {
+    display: flex !important;
+}
+
 .action-bet-modal-content {
     background: linear-gradient(145deg, #1f2937, #111827);
     border-radius: 1rem;

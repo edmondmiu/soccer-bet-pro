@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Betting Modal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="styles/components.css" rel="stylesheet">
+    <link href="styles/animations.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="p-8">
+        <h1 class="text-2xl font-bold mb-4">Debug Betting Modal</h1>
+        
+        <button id="test-modal-btn" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded mb-4">
+            Test Show Modal
+        </button>
+        
+        <button id="check-modal-btn" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded mb-4 ml-2">
+            Check Modal State
+        </button>
+        
+        <div id="debug-output" class="bg-gray-800 p-4 rounded mb-4">
+            <p>Debug output will appear here...</p>
+        </div>
+    </div>
+
+    <!-- Modal: Multi-Choice Action Bet - Enhanced Structure -->
+    <div id="action-bet-modal" class="hidden action-bet-modal-enhanced">
+        <div class="action-bet-modal-content enhanced-modal-entrance">
+            <!-- 1. Pause Information Header (Top Priority) -->
+            <div id="action-bet-pause-header" class="pause-info-header">
+                <div class="pause-info-content">
+                    <span class="pause-info-icon">⏸️</span>
+                    <span class="pause-info-text">Game Paused - Betting Opportunity</span>
+                </div>
+            </div>
+            
+            <!-- 2. Timer Bar Integration (High Priority) -->
+            <div class="modal-timer-container">
+                <div class="modal-timer-bar">
+                    <div id="action-bet-timer-bar" class="modal-timer-progress"></div>
+                </div>
+            </div>
+            
+            <!-- 3. Betting Content Section (Medium Priority) -->
+            <div class="betting-content-section">
+                <h2 id="action-bet-title" class="betting-title">⚡ Action Bet! ⚡</h2>
+                <p id="action-bet-main-description" class="betting-description">Test betting opportunity</p>
+            </div>
+            
+            <!-- 4. Betting Choices Section (Medium Priority) -->
+            <div id="action-bet-choices" class="betting-choices-container">
+                <button class="betting-choice-button">Yellow Card @2.5</button>
+                <button class="betting-choice-button">Red Card @8.0</button>
+                <button class="betting-choice-button">Warning @1.5</button>
+            </div>
+            
+            <!-- 5. Action Buttons Section (Lower Priority) -->
+            <div class="modal-actions-container">
+                <button id="minimize-action-bet-btn" class="modal-action-button minimize">Minimize</button>
+                <button id="skip-action-bet-btn" class="modal-action-button skip">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('action-bet-modal');
+        const debugOutput = document.getElementById('debug-output');
+        
+        function log(message) {
+            debugOutput.innerHTML += '<p>' + message + '</p>';
+        }
+        
+        document.getElementById('test-modal-btn').addEventListener('click', () => {
+            log('Testing modal display...');
+            
+            // Check if modal exists
+            if (!modal) {
+                log('❌ Modal element not found!');
+                return;
+            }
+            
+            log('✅ Modal element found');
+            log('Current classes: ' + modal.className);
+            
+            // Remove hidden class
+            modal.classList.remove('hidden');
+            log('✅ Removed hidden class');
+            log('New classes: ' + modal.className);
+            
+            // Check computed styles
+            const computedStyle = window.getComputedStyle(modal);
+            log('Display: ' + computedStyle.display);
+            log('Visibility: ' + computedStyle.visibility);
+            log('Opacity: ' + computedStyle.opacity);
+        });
+        
+        document.getElementById('check-modal-btn').addEventListener('click', () => {
+            log('--- Modal State Check ---');
+            if (modal) {
+                log('Modal exists: ✅');
+                log('Classes: ' + modal.className);
+                log('Display: ' + window.getComputedStyle(modal).display);
+                log('Visibility: ' + window.getComputedStyle(modal).visibility);
+                log('Z-index: ' + window.getComputedStyle(modal).zIndex);
+            } else {
+                log('Modal not found: ❌');
+            }
+        });
+        
+        // Add click to hide
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+                log('Modal hidden by click outside');
+            }
+        });
+    </script>
+</body>
+</html>
