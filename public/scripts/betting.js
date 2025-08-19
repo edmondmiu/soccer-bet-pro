@@ -939,6 +939,8 @@ export function showMultiChoiceActionBet(event) {
 
         const duration = 10000; // 10 seconds
         const startTime = Date.now();
+        
+        console.log('Setting up betting opportunity with duration:', duration, 'ms');
 
         // Set current action bet state with modal state management
         updateCurrentActionBet({
@@ -1080,9 +1082,31 @@ export function showMultiChoiceActionBet(event) {
         // Handle choices container with enhanced styling and error handling
         const finalChoicesContainer = choicesContainer || document.getElementById('action-bet-choices');
         
+        console.log('Choices container found:', !!finalChoicesContainer);
+        console.log('Event choices:', event.choices);
+        
         if (finalChoicesContainer) {
             try {
                 finalChoicesContainer.innerHTML = '';
+                console.log('Cleared choices container, adding', event.choices.length, 'choices');
+
+                // Show fallback buttons first as a test
+                const fallbackButtons = [
+                    document.getElementById('fallback-choice-1'),
+                    document.getElementById('fallback-choice-2'),
+                    document.getElementById('fallback-choice-3')
+                ];
+                
+                fallbackButtons.forEach((btn, idx) => {
+                    if (btn && event.choices[idx]) {
+                        btn.style.display = 'block';
+                        btn.onclick = () => {
+                            console.log('Fallback button clicked:', event.choices[idx].text);
+                            minimizeActionBet();
+                            showActionBetSlip('action', event.choices[idx].text, event.choices[idx].odds, event.betType);
+                        };
+                    }
+                });
 
                 event.choices.forEach((choice, index) => {
                     try {
@@ -1234,7 +1258,8 @@ export function showMultiChoiceActionBet(event) {
             }
         }
 
-        // Show modal with enhanced animations and error handling
+        // Show modal FIRST before starting any timers
+        let modalShown = false;
         try {
             if (actionBetModal) {
                 console.log('Showing action bet modal...');
@@ -1252,6 +1277,15 @@ export function showMultiChoiceActionBet(event) {
                     modalContent.classList.add('enhanced-modal-entrance');
                 }
                 
+                // Force display if still hidden
+                if (window.getComputedStyle(actionBetModal).display === 'none') {
+                    console.warn('Modal still hidden, forcing display...');
+                    actionBetModal.style.display = 'flex';
+                }
+                
+                modalShown = true;
+                console.log('✅ Modal successfully shown');
+                
                 // Add click-outside-to-minimize behavior (Requirement 1.1)
                 try {
                     setupModalMinimizeHandlers(actionBetModal);
@@ -1260,19 +1294,27 @@ export function showMultiChoiceActionBet(event) {
                     // Continue without click-outside behavior
                 }
                 
-                // Force display if still hidden
-                if (window.getComputedStyle(actionBetModal).display === 'none') {
-                    console.warn('Modal still hidden, forcing display...');
-                    actionBetModal.style.display = 'flex';
-                }
-                
             } else {
                 console.error('Action bet modal element not found after fallback attempts');
             }
         } catch (modalShowError) {
             console.error('Error showing modal:', modalShowError);
         }
+        
+        // Only start timer if modal was successfully shown
+        if (!modalShown) {
+            console.error('Modal not shown, aborting betting opportunity');
+            resumeGameAfterBetting();
+            return;
+        }
 
+        // Wait a moment for modal to render, then start timer
+        setTimeout(() => {
+            console.log('Starting timer after modal render delay...');
+            startBettingTimer();
+        }, 100);
+        
+        function startBettingTimer() {
         // Initialize and start TimerBar component with graceful degradation (Requirements 2.1, 2.2, 2.3, 2.4, 2.5)
         try {
             if (typeof TimerBar !== 'undefined') {
