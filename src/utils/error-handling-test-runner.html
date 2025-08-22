@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Handling System Test Runner</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #10b981;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .test-section h2 {
+            color: #34d399;
+            margin-top: 0;
+            border-bottom: 1px solid #475569;
+            padding-bottom: 10px;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            border: 2px solid #34d399;
+            border-radius: 8px;
+            color: white;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .test-button:hover {
+            background: linear-gradient(135deg, #047857 0%, #059669 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(5, 150, 105, 0.4);
+        }
+
+        .test-button:active {
+            transform: translateY(0);
+        }
+
+        .test-button.danger {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            border-color: #f87171;
+        }
+
+        .test-button.danger:hover {
+            background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+        }
+
+        .results {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .results h3 {
+            color: #60a5fa;
+            margin-top: 0;
+        }
+
+        .log-entry {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .log-entry.success {
+            background: rgba(5, 150, 105, 0.2);
+            border-left: 4px solid #10b981;
+        }
+
+        .log-entry.error {
+            background: rgba(220, 38, 38, 0.2);
+            border-left: 4px solid #ef4444;
+        }
+
+        .log-entry.warning {
+            background: rgba(245, 158, 11, 0.2);
+            border-left: 4px solid #f59e0b;
+        }
+
+        .log-entry.info {
+            background: rgba(59, 130, 246, 0.2);
+            border-left: 4px solid #3b82f6;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: rgba(51, 65, 85, 0.6);
+            border: 1px solid #64748b;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #10b981;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .clear-button {
+            background: #475569;
+            border: 1px solid #64748b;
+            border-radius: 6px;
+            color: white;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .clear-button:hover {
+            background: #64748b;
+        }
+
+        @media (max-width: 768px) {
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ Error Handling System Test Runner</h1>
+        
+        <div class="test-section">
+            <h2>Basic Error Handling Tests</h2>
+            <div class="test-grid">
+                <button class="test-button" onclick="testBasicErrorHandling()">
+                    Test Basic Error Handling
+                </button>
+                <button class="test-button" onclick="testErrorTypes()">
+                    Test Different Error Types
+                </button>
+                <button class="test-button" onclick="testErrorLogging()">
+                    Test Error Logging
+                </button>
+                <button class="test-button" onclick="testRecoveryStrategies()">
+                    Test Recovery Strategies
+                </button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Module Error Handling Tests</h2>
+            <div class="test-grid">
+                <button class="test-button" onclick="testStateManagerErrors()">
+                    Test StateManager Errors
+                </button>
+                <button class="test-button" onclick="testBettingManagerErrors()">
+                    Test BettingManager Errors
+                </button>
+                <button class="test-button" onclick="testTimerManagerErrors()">
+                    Test TimerManager Errors
+                </button>
+                <button class="test-button" onclick="testUIManagerErrors()">
+                    Test UIManager Errors
+                </button>
+                <button class="test-button" onclick="testAudioManagerErrors()">
+                    Test AudioManager Errors
+                </button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Stress Tests & Edge Cases</h2>
+            <div class="test-grid">
+                <button class="test-button danger" onclick="testCascadingErrors()">
+                    Test Cascading Errors
+                </button>
+                <button class="test-button danger" onclick="testErrorStorm()">
+                    Test Error Storm (100 errors)
+                </button>
+                <button class="test-button" onclick="testRecoveryFailures()">
+                    Test Recovery Failures
+                </button>
+                <button class="test-button" onclick="testGlobalErrorHandlers()">
+                    Test Global Error Handlers
+                </button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>System Health & Recovery</h2>
+            <div class="test-grid">
+                <button class="test-button" onclick="checkSystemHealth()">
+                    Check System Health
+                </button>
+                <button class="test-button" onclick="testGracefulDegradation()">
+                    Test Graceful Degradation
+                </button>
+                <button class="test-button" onclick="testErrorRecovery()">
+                    Test Error Recovery
+                </button>
+                <button class="test-button" onclick="exportErrorLog()">
+                    Export Error Log
+                </button>
+            </div>
+        </div>
+
+        <div class="results">
+            <h3>Test Results</h3>
+            <button class="clear-button" onclick="clearResults()">Clear Results</button>
+            <div id="test-results"></div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="total-errors">0</div>
+                <div class="stat-label">Total Errors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="handled-errors">0</div>
+                <div class="stat-label">Handled Errors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="recovery-attempts">0</div>
+                <div class="stat-label">Recovery Attempts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="system-health">Unknown</div>
+                <div class="stat-label">System Health</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { errorHandler, ERROR_TYPES } from './ErrorHandler.js';
+        import { StateManager } from '../core/StateManager.js';
+        import { BettingManager } from '../betting/BettingManager.js';
+        import { TimerManager } from '../systems/TimerManager.js';
+        import { UIManager } from '../ui/UIManager.js';
+        import { AudioManager } from '../systems/AudioManager.js';
+
+        // Make modules available globally for testing
+        window.errorHandler = errorHandler;
+        window.ERROR_TYPES = ERROR_TYPES;
+        window.StateManager = StateManager;
+        window.BettingManager = BettingManager;
+        window.TimerManager = TimerManager;
+        window.UIManager = UIManager;
+        window.AudioManager = AudioManager;
+
+        // Test instances
+        let stateManager, bettingManager, timerManager, uiManager, audioManager;
+
+        // Initialize test instances
+        function initializeTestInstances() {
+            try {
+                stateManager = new StateManager();
+                bettingManager = new BettingManager(stateManager, null);
+                timerManager = new TimerManager();
+                uiManager = new UIManager();
+                audioManager = new AudioManager();
+                
+                logResult('Test instances initialized successfully', 'success');
+            } catch (error) {
+                logResult(`Failed to initialize test instances: ${error.message}`, 'error');
+            }
+        }
+
+        // Utility functions
+        function logResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            resultsDiv.appendChild(entry);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+            
+            updateStats();
+        }
+
+        function updateStats() {
+            const stats = errorHandler.getErrorStats();
+            document.getElementById('total-errors').textContent = stats.total;
+            document.getElementById('handled-errors').textContent = stats.handled;
+            
+            // Update system health indicator
+            const healthIndicator = document.getElementById('system-health');
+            const isHealthy = stats.total < 10 && stats.unhandled < 5;
+            healthIndicator.textContent = isHealthy ? 'Good' : 'Degraded';
+            healthIndicator.style.color = isHealthy ? '#10b981' : '#ef4444';
+        }
+
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+            errorHandler.clearErrorLog();
+            updateStats();
+        }
+
+        // Basic Error Handling Tests
+        window.testBasicErrorHandling = function() {
+            logResult('Testing basic error handling...', 'info');
+            
+            try {
+                // Test different error types
+                const error1 = errorHandler.handleError(new Error('Test validation error'), ERROR_TYPES.VALIDATION);
+                const error2 = errorHandler.handleError('String error message', ERROR_TYPES.UI);
+                const error3 = errorHandler.handleError(new Error('Critical system error'), ERROR_TYPES.CRITICAL);
+                
+                logResult(`Handled validation error: ${error1.success ? 'PASS' : 'FAIL'}`, error1.success ? 'success' : 'error');
+                logResult(`Handled string error: ${error2.success ? 'PASS' : 'FAIL'}`, error2.success ? 'success' : 'error');
+                logResult(`Handled critical error: ${error3.success ? 'PASS' : 'FAIL'}`, error3.success ? 'success' : 'error');
+                
+                logResult('Basic error handling test completed', 'success');
+            } catch (error) {
+                logResult(`Basic error handling test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testErrorTypes = function() {
+            logResult('Testing different error types...', 'info');
+            
+            const errorTypes = Object.values(ERROR_TYPES);
+            let passCount = 0;
+            
+            errorTypes.forEach(type => {
+                try {
+                    const result = errorHandler.handleError(`Test ${type} error`, type);
+                    if (result.error && result.error.type === type) {
+                        passCount++;
+                        logResult(`${type} error type: PASS`, 'success');
+                    } else {
+                        logResult(`${type} error type: FAIL`, 'error');
+                    }
+                } catch (error) {
+                    logResult(`${type} error type failed: ${error.message}`, 'error');
+                }
+            });
+            
+            logResult(`Error types test: ${passCount}/${errorTypes.length} passed`, passCount === errorTypes.length ? 'success' : 'warning');
+        };
+
+        window.testErrorLogging = function() {
+            logResult('Testing error logging...', 'info');
+            
+            try {
+                const initialStats = errorHandler.getErrorStats();
+                
+                // Generate some test errors
+                for (let i = 0; i < 5; i++) {
+                    errorHandler.handleError(`Test log error ${i}`, ERROR_TYPES.VALIDATION);
+                }
+                
+                const finalStats = errorHandler.getErrorStats();
+                const newErrors = finalStats.total - initialStats.total;
+                
+                logResult(`Generated ${newErrors} new errors`, 'info');
+                logResult(`Total errors in log: ${finalStats.total}`, 'info');
+                logResult(`Errors by type: ${JSON.stringify(finalStats.byType)}`, 'info');
+                
+                logResult('Error logging test completed', 'success');
+            } catch (error) {
+                logResult(`Error logging test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testRecoveryStrategies = async function() {
+            logResult('Testing recovery strategies...', 'info');
+            
+            try {
+                // Register a test recovery callback
+                let recoveryExecuted = false;
+                errorHandler.registerRecoveryCallback('test_recovery', async (errorInfo, options) => {
+                    recoveryExecuted = true;
+                    return { success: true, message: 'Test recovery successful' };
+                });
+                
+                // Test recovery execution
+                const result = await errorHandler.executeRecoveryStrategy(
+                    { type: ERROR_TYPES.STATE },
+                    'test_recovery',
+                    {}
+                );
+                
+                logResult(`Recovery callback executed: ${recoveryExecuted ? 'PASS' : 'FAIL'}`, recoveryExecuted ? 'success' : 'error');
+                logResult(`Recovery result: ${result.success ? 'PASS' : 'FAIL'}`, result.success ? 'success' : 'error');
+                
+                logResult('Recovery strategies test completed', 'success');
+            } catch (error) {
+                logResult(`Recovery strategies test failed: ${error.message}`, 'error');
+            }
+        };
+
+        // Module Error Tests
+        window.testStateManagerErrors = function() {
+            logResult('Testing StateManager error handling...', 'info');
+            
+            try {
+                if (!stateManager) {
+                    stateManager = new StateManager();
+                }
+                
+                // Test invalid state updates
+                const result1 = stateManager.safeUpdateState({ wallet: -100 });
+                logResult(`Invalid wallet update handled: ${result1.success ? 'RECOVERED' : 'FAILED'}`, result1.success ? 'warning' : 'error');
+                
+                // Test invalid screen transition
+                const result2 = stateManager.safeUpdateState({ currentScreen: 'invalid_screen' });
+                logResult(`Invalid screen update handled: ${result2.success ? 'RECOVERED' : 'FAILED'}`, result2.success ? 'warning' : 'error');
+                
+                // Test state recovery info
+                const recoveryInfo = stateManager.getRecoveryInfo();
+                logResult(`State recovery available: ${recoveryInfo.canRestore ? 'YES' : 'NO'}`, 'info');
+                
+                logResult('StateManager error handling test completed', 'success');
+            } catch (error) {
+                logResult(`StateManager error test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testBettingManagerErrors = function() {
+            logResult('Testing BettingManager error handling...', 'info');
+            
+            try {
+                if (!bettingManager) {
+                    bettingManager = new BettingManager(stateManager, null);
+                }
+                
+                // Test invalid bet data
+                const result1 = bettingManager.safePlaceBet({
+                    type: 'invalid_type',
+                    outcome: 'home',
+                    stake: -50,
+                    odds: 0
+                });
+                logResult(`Invalid bet handled: ${result1.success ? 'RECOVERED' : 'FAILED'}`, result1.success ? 'warning' : 'error');
+                
+                // Test system health
+                const health = bettingManager.getSystemHealth();
+                logResult(`Betting system health: ${health.healthy ? 'GOOD' : 'DEGRADED'}`, health.healthy ? 'success' : 'warning');
+                
+                logResult('BettingManager error handling test completed', 'success');
+            } catch (error) {
+                logResult(`BettingManager error test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testTimerManagerErrors = function() {
+            logResult('Testing TimerManager error handling...', 'info');
+            
+            try {
+                if (!timerManager) {
+                    timerManager = new TimerManager();
+                }
+                
+                // Test invalid countdown duration
+                const result1 = timerManager.safeStartCountdown(-10);
+                logResult(`Invalid countdown handled: ${result1.success ? 'RECOVERED' : 'FAILED'}`, result1.success ? 'warning' : 'error');
+                
+                // Test timer health
+                const health = timerManager.getSystemHealth();
+                logResult(`Timer system health: ${health.healthy ? 'GOOD' : 'DEGRADED'}`, health.healthy ? 'success' : 'warning');
+                logResult(`Fallback mode: ${health.fallbackMode ? 'ACTIVE' : 'INACTIVE'}`, health.fallbackMode ? 'warning' : 'success');
+                
+                logResult('TimerManager error handling test completed', 'success');
+            } catch (error) {
+                logResult(`TimerManager error test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testUIManagerErrors = function() {
+            logResult('Testing UIManager error handling...', 'info');
+            
+            try {
+                if (!uiManager) {
+                    uiManager = new UIManager();
+                }
+                
+                // Test invalid screen transition
+                const result1 = uiManager.safeShowScreen('nonexistent_screen');
+                logResult(`Invalid screen handled: ${result1.success ? 'RECOVERED' : 'FAILED'}`, result1.success ? 'warning' : 'error');
+                
+                // Test UI health
+                const health = uiManager.getSystemHealth();
+                logResult(`UI system health: ${health.healthy ? 'GOOD' : 'DEGRADED'}`, health.healthy ? 'success' : 'warning');
+                logResult(`Minimal mode: ${health.minimalMode ? 'ACTIVE' : 'INACTIVE'}`, health.minimalMode ? 'warning' : 'success');
+                
+                logResult('UIManager error handling test completed', 'success');
+            } catch (error) {
+                logResult(`UIManager error test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testAudioManagerErrors = function() {
+            logResult('Testing AudioManager error handling...', 'info');
+            
+            try {
+                if (!audioManager) {
+                    audioManager = new AudioManager();
+                }
+                
+                // Test invalid sound event
+                const result1 = audioManager.safePlaySound('nonexistent_sound');
+                logResult(`Invalid sound handled: ${result1.success ? 'RECOVERED' : 'FAILED'}`, result1.success ? 'warning' : 'error');
+                
+                // Test audio health
+                const health = audioManager.getSystemHealth();
+                logResult(`Audio system health: ${health.healthy ? 'GOOD' : 'DEGRADED'}`, health.healthy ? 'success' : 'warning');
+                logResult(`Silent mode: ${health.silentMode ? 'ACTIVE' : 'INACTIVE'}`, health.silentMode ? 'warning' : 'success');
+                
+                logResult('AudioManager error handling test completed', 'success');
+            } catch (error) {
+                logResult(`AudioManager error test failed: ${error.message}`, 'error');
+            }
+        };
+
+        // Stress Tests
+        window.testCascadingErrors = async function() {
+            logResult('Testing cascading errors...', 'warning');
+            
+            try {
+                let cascadeCount = 0;
+                
+                // Register a recovery that might fail
+                errorHandler.registerRecoveryCallback('cascade_test', async (errorInfo, options) => {
+                    cascadeCount++;
+                    if (cascadeCount < 3) {
+                        throw new Error(`Cascade error ${cascadeCount}`);
+                    }
+                    return { success: true, message: 'Finally recovered' };
+                });
+                
+                const result = errorHandler.handleError('Initial cascade error', ERROR_TYPES.CRITICAL, {}, {
+                    attemptRecovery: true
+                });
+                
+                logResult(`Cascading errors handled: ${cascadeCount} attempts`, 'warning');
+                logResult('Cascading error test completed', 'success');
+            } catch (error) {
+                logResult(`Cascading error test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testErrorStorm = function() {
+            logResult('Testing error storm (100 errors)...', 'warning');
+            
+            try {
+                const startTime = Date.now();
+                
+                for (let i = 0; i < 100; i++) {
+                    const errorType = Object.values(ERROR_TYPES)[i % Object.values(ERROR_TYPES).length];
+                    errorHandler.handleError(`Storm error ${i}`, errorType);
+                }
+                
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                logResult(`Generated 100 errors in ${duration}ms`, 'warning');
+                
+                const stats = errorHandler.getErrorStats();
+                logResult(`Total errors after storm: ${stats.total}`, 'info');
+                logResult(`Log size maintained: ${stats.total <= 100 ? 'PASS' : 'FAIL'}`, stats.total <= 100 ? 'success' : 'warning');
+                
+                logResult('Error storm test completed', 'success');
+            } catch (error) {
+                logResult(`Error storm test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testRecoveryFailures = async function() {
+            logResult('Testing recovery failures...', 'info');
+            
+            try {
+                // Register a recovery that always fails
+                errorHandler.registerRecoveryCallback('always_fail', async (errorInfo, options) => {
+                    throw new Error('Recovery always fails');
+                });
+                
+                const result = errorHandler.handleError('Recovery failure test', ERROR_TYPES.STATE, {}, {
+                    attemptRecovery: true
+                });
+                
+                logResult(`Recovery failure handled gracefully: ${!result.success ? 'PASS' : 'FAIL'}`, !result.success ? 'success' : 'error');
+                
+                logResult('Recovery failure test completed', 'success');
+            } catch (error) {
+                logResult(`Recovery failure test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testGlobalErrorHandlers = function() {
+            logResult('Testing global error handlers...', 'info');
+            
+            try {
+                // Simulate unhandled promise rejection
+                const promise = Promise.reject(new Error('Test unhandled rejection'));
+                promise.catch(() => {}); // Prevent actual unhandled rejection
+                
+                // Simulate global error
+                setTimeout(() => {
+                    try {
+                        throw new Error('Test global error');
+                    } catch (error) {
+                        errorHandler.handleError(error, ERROR_TYPES.CRITICAL, {
+                            context: 'global_error_simulation'
+                        });
+                    }
+                }, 100);
+                
+                logResult('Global error handlers test completed', 'success');
+            } catch (error) {
+                logResult(`Global error handlers test failed: ${error.message}`, 'error');
+            }
+        };
+
+        // System Health & Recovery
+        window.checkSystemHealth = function() {
+            logResult('Checking system health...', 'info');
+            
+            try {
+                const modules = [
+                    { name: 'StateManager', instance: stateManager },
+                    { name: 'BettingManager', instance: bettingManager },
+                    { name: 'TimerManager', instance: timerManager },
+                    { name: 'UIManager', instance: uiManager },
+                    { name: 'AudioManager', instance: audioManager }
+                ];
+                
+                modules.forEach(module => {
+                    if (module.instance && module.instance.getSystemHealth) {
+                        const health = module.instance.getSystemHealth();
+                        logResult(`${module.name}: ${health.healthy ? 'HEALTHY' : 'DEGRADED'}`, health.healthy ? 'success' : 'warning');
+                    } else {
+                        logResult(`${module.name}: NOT INITIALIZED`, 'warning');
+                    }
+                });
+                
+                const errorStats = errorHandler.getErrorStats();
+                logResult(`Error Handler: ${errorStats.total} total errors, ${errorStats.unhandled} unhandled`, 'info');
+                
+                logResult('System health check completed', 'success');
+            } catch (error) {
+                logResult(`System health check failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testGracefulDegradation = function() {
+            logResult('Testing graceful degradation...', 'info');
+            
+            try {
+                // Test UI minimal mode
+                if (uiManager) {
+                    uiManager.enableMinimalMode();
+                    logResult('UI minimal mode enabled', 'warning');
+                }
+                
+                // Test audio silent mode
+                if (audioManager) {
+                    audioManager.enableSilentMode();
+                    logResult('Audio silent mode enabled', 'warning');
+                }
+                
+                // Test timer fallback mode
+                if (timerManager) {
+                    timerManager.enableFallbackMode();
+                    logResult('Timer fallback mode enabled', 'warning');
+                }
+                
+                logResult('Graceful degradation test completed', 'success');
+            } catch (error) {
+                logResult(`Graceful degradation test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testErrorRecovery = async function() {
+            logResult('Testing error recovery...', 'info');
+            
+            try {
+                // Attempt to recover from degraded states
+                if (uiManager && uiManager.minimalMode) {
+                    const result = await uiManager.disableMinimalMode();
+                    logResult(`UI recovery: ${result.success ? 'SUCCESS' : 'FAILED'}`, result.success ? 'success' : 'error');
+                }
+                
+                if (audioManager && audioManager.silentMode) {
+                    const result = await audioManager.disableSilentMode();
+                    logResult(`Audio recovery: ${result.success ? 'SUCCESS' : 'FAILED'}`, result.success ? 'success' : 'error');
+                }
+                
+                // Reset error counts
+                if (uiManager) uiManager.resetErrorCount();
+                if (audioManager) audioManager.resetErrorCount();
+                
+                logResult('Error recovery test completed', 'success');
+            } catch (error) {
+                logResult(`Error recovery test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.exportErrorLog = function() {
+            logResult('Exporting error log...', 'info');
+            
+            try {
+                const exported = errorHandler.exportErrorLog();
+                
+                // Create downloadable file
+                const blob = new Blob([JSON.stringify(exported, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `error-log-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                logResult(`Exported ${exported.errors.length} errors to file`, 'success');
+                logResult('Error log export completed', 'success');
+            } catch (error) {
+                logResult(`Error log export failed: ${error.message}`, 'error');
+            }
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTestInstances();
+            updateStats();
+            
+            // Auto-update stats every 5 seconds
+            setInterval(updateStats, 5000);
+        });
+    </script>
+</body>
+</html>

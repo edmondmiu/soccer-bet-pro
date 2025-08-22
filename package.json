@@ -1,6 +1,7 @@
 {
   "name": "soccer-betting-game",
   "version": "1.0.0",
+  "type": "module",
   "description": "Soccer Betting Game Prototype with Pause System",
   "main": "game_prototype.html",
   "scripts": {
@@ -9,10 +10,16 @@
     "dev": "live-server --port=8000 --open=game_prototype.html",
     "test": "live-server --port=8001 --open=tests/betting-pause-complete-integration.html"
   },
-  "keywords": ["game", "betting", "soccer", "prototype"],
+  "keywords": [
+    "game",
+    "betting",
+    "soccer",
+    "prototype"
+  ],
   "author": "Your Name",
   "license": "MIT",
   "devDependencies": {
+    "jsdom": "^26.1.0",
     "live-server": "^1.2.2"
   }
 }

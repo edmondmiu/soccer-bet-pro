@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AudioManager Test Runner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        
+        .test-section {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .test-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            border: 2px solid #34d399;
+            border-radius: 6px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: linear-gradient(135deg, #047857 0%, #059669 100%);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+        
+        button:disabled {
+            background: #475569;
+            border-color: #64748b;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        
+        .status {
+            background-color: #334155;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: #475569;
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #10b981;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .test-results {
+            background-color: #1f2937;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .warning { color: #f59e0b; }
+        .info { color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <h1>🔊 AudioManager Test Runner</h1>
+    <p>Interactive testing for the AudioManager sound effects system</p>
+
+    <div class="test-section">
+        <h2>Audio System Status</h2>
+        <div id="status" class="status">Loading...</div>
+        <button onclick="updateStatus()">Refresh Status</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Volume Controls</h2>
+        <div class="volume-control">
+            <label>Volume:</label>
+            <input type="range" id="volumeSlider" min="0" max="100" value="70" oninput="setVolume(this.value)">
+            <span id="volumeDisplay">70%</span>
+        </div>
+        <button onclick="toggleMute()">Toggle Mute</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Individual Sound Tests</h2>
+        <div class="test-controls">
+            <button onclick="playSound('betPlaced')">Bet Placed</button>
+            <button onclick="playSound('betWin')">Bet Win</button>
+            <button onclick="playSound('betLoss')">Bet Loss</button>
+            <button onclick="playSound('powerUpAwarded')">Power-Up Awarded</button>
+            <button onclick="playSound('actionBettingOpportunity')">Action Betting</button>
+            <button onclick="playSound('countdownTick')">Countdown Tick</button>
+            <button onclick="playSound('countdownWarning')">Countdown Warning</button>
+            <button onclick="playSound('goal')">Goal</button>
+            <button onclick="playSound('matchStart')">Match Start</button>
+            <button onclick="playSound('matchEnd')">Match End</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Automated Tests</h2>
+        <div class="test-controls">
+            <button onclick="testAllSounds()">Test All Sounds</button>
+            <button onclick="testCountdownSequence()">Test Countdown Sequence</button>
+            <button onclick="testBettingSequence()">Test Betting Sequence</button>
+            <button onclick="testMatchSequence()">Test Match Sequence</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Error Handling Tests</h2>
+        <div class="test-controls">
+            <button onclick="testInvalidSound()">Test Invalid Sound</button>
+            <button onclick="testVolumeValidation()">Test Volume Validation</button>
+            <button onclick="testMutedPlayback()">Test Muted Playback</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="testResults" class="test-results">
+            <div class="info">Click any test button to see results here...</div>
+        </div>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <script type="module">
+        import { AudioManager } from './AudioManager.js';
+        
+        // Initialize AudioManager
+        const audioManager = new AudioManager();
+        
+        // Make functions available globally for onclick handlers
+        window.audioManager = audioManager;
+        window.playSound = playSound;
+        window.setVolume = setVolume;
+        window.toggleMute = toggleMute;
+        window.updateStatus = updateStatus;
+        window.testAllSounds = testAllSounds;
+        window.testCountdownSequence = testCountdownSequence;
+        window.testBettingSequence = testBettingSequence;
+        window.testMatchSequence = testMatchSequence;
+        window.testInvalidSound = testInvalidSound;
+        window.testVolumeValidation = testVolumeValidation;
+        window.testMutedPlayback = testMutedPlayback;
+        window.clearResults = clearResults;
+
+        // Initialize UI
+        updateStatus();
+        
+        function playSound(eventType) {
+            logResult(`Playing sound: ${eventType}`, 'info');
+            try {
+                audioManager.playSound(eventType);
+                logResult(`✓ Successfully played ${eventType}`, 'success');
+            } catch (error) {
+                logResult(`✗ Failed to play ${eventType}: ${error.message}`, 'error');
+            }
+        }
+
+        function setVolume(value) {
+            const volume = value / 100;
+            document.getElementById('volumeDisplay').textContent = `${value}%`;
+            
+            try {
+                audioManager.setVolume(volume);
+                logResult(`Volume set to ${value}%`, 'info');
+            } catch (error) {
+                logResult(`Failed to set volume: ${error.message}`, 'error');
+            }
+        }
+
+        function toggleMute() {
+            const muted = audioManager.toggleMute();
+            logResult(`Audio ${muted ? 'muted' : 'unmuted'}`, 'info');
+            updateStatus();
+        }
+
+        function updateStatus() {
+            const status = audioManager.getStatus();
+            const statusDiv = document.getElementById('status');
+            
+            statusDiv.innerHTML = `
+                <strong>Initialized:</strong> ${status.initialized ? '✓' : '✗'}<br>
+                <strong>Muted:</strong> ${status.muted ? '🔇' : '🔊'}<br>
+                <strong>Volume:</strong> ${Math.round(status.volume * 100)}%<br>
+                <strong>Context State:</strong> ${status.contextState}<br>
+                <strong>Supported Events:</strong> ${status.supportedEvents.length}
+            `;
+        }
+
+        function testAllSounds() {
+            logResult('Testing all sounds...', 'info');
+            audioManager.testAllSounds();
+            logResult('All sounds test initiated (check console for details)', 'success');
+        }
+
+        function testCountdownSequence() {
+            logResult('Testing countdown sequence...', 'info');
+            
+            // Simulate countdown: 3 ticks, then warning
+            let count = 3;
+            const interval = setInterval(() => {
+                if (count > 1) {
+                    audioManager.playCountdownTick();
+                    logResult(`Countdown tick: ${count}`, 'info');
+                } else if (count === 1) {
+                    audioManager.playCountdownWarning();
+                    logResult('Countdown warning!', 'warning');
+                } else {
+                    clearInterval(interval);
+                    logResult('Countdown sequence completed', 'success');
+                }
+                count--;
+            }, 500);
+        }
+
+        function testBettingSequence() {
+            logResult('Testing betting sequence...', 'info');
+            
+            setTimeout(() => {
+                audioManager.playBetPlaced();
+                logResult('1. Bet placed', 'info');
+            }, 0);
+            
+            setTimeout(() => {
+                audioManager.playActionBettingOpportunity();
+                logResult('2. Action betting opportunity', 'info');
+            }, 1000);
+            
+            setTimeout(() => {
+                audioManager.playBetWin();
+                logResult('3. Bet won', 'success');
+            }, 2000);
+            
+            setTimeout(() => {
+                audioManager.playPowerUpAwarded();
+                logResult('4. Power-up awarded', 'success');
+            }, 3000);
+            
+            setTimeout(() => {
+                logResult('Betting sequence completed', 'success');
+            }, 4000);
+        }
+
+        function testMatchSequence() {
+            logResult('Testing match sequence...', 'info');
+            
+            setTimeout(() => {
+                audioManager.playMatchStart();
+                logResult('1. Match started', 'info');
+            }, 0);
+            
+            setTimeout(() => {
+                audioManager.playGoal();
+                logResult('2. Goal scored!', 'success');
+            }, 2000);
+            
+            setTimeout(() => {
+                audioManager.playGoal();
+                logResult('3. Another goal!', 'success');
+            }, 4000);
+            
+            setTimeout(() => {
+                audioManager.playMatchEnd();
+                logResult('4. Match ended', 'info');
+            }, 6000);
+            
+            setTimeout(() => {
+                logResult('Match sequence completed', 'success');
+            }, 7000);
+        }
+
+        function testInvalidSound() {
+            logResult('Testing invalid sound event...', 'info');
+            try {
+                audioManager.playSound('invalidEvent');
+                logResult('Invalid sound test completed (check console for warning)', 'warning');
+            } catch (error) {
+                logResult(`Unexpected error: ${error.message}`, 'error');
+            }
+        }
+
+        function testVolumeValidation() {
+            logResult('Testing volume validation...', 'info');
+            
+            const testValues = [-0.1, 1.5, 'invalid', null, undefined];
+            let errors = 0;
+            
+            testValues.forEach(value => {
+                try {
+                    audioManager.setVolume(value);
+                    logResult(`✗ Volume ${value} should have been rejected`, 'error');
+                } catch (error) {
+                    logResult(`✓ Volume ${value} correctly rejected`, 'success');
+                    errors++;
+                }
+            });
+            
+            logResult(`Volume validation test completed: ${errors}/${testValues.length} errors caught`, 'info');
+        }
+
+        function testMutedPlayback() {
+            logResult('Testing muted playback...', 'info');
+            
+            const wasMuted = audioManager.isMuted();
+            
+            // Mute and try to play
+            audioManager.mute(true);
+            audioManager.playSound('betPlaced');
+            logResult('Attempted to play sound while muted', 'info');
+            
+            // Restore original mute state
+            audioManager.mute(wasMuted);
+            logResult('Muted playback test completed', 'success');
+        }
+
+        function logResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('testResults');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            resultsDiv.appendChild(logEntry);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = 
+                '<div class="info">Results cleared. Click any test button to see new results...</div>';
+        }
+
+        // Handle user interaction for audio context
+        document.addEventListener('click', () => {
+            if (audioManager.audioContext && audioManager.audioContext.state === 'suspended') {
+                audioManager.resumeAudioContext();
+            }
+        }, { once: true });
+    </script>
+</body>
+</html>

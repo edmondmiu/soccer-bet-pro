@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameController Integration Tests</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 12px;
+            border: 2px solid #475569;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 8px;
+            border: 1px solid #475569;
+        }
+        
+        .test-section h3 {
+            color: #10b981;
+            margin-top: 0;
+            border-bottom: 2px solid #10b981;
+            padding-bottom: 10px;
+        }
+        
+        .test-case {
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 6px;
+            border-left: 4px solid #64748b;
+        }
+        
+        .test-case.running {
+            border-left-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+        
+        .test-case.passed {
+            border-left-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+        
+        .test-case.failed {
+            border-left-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .test-name {
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .test-result {
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        
+        .test-error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        
+        .summary {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid #10b981;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 200px;
+            backdrop-filter: blur(4px);
+        }
+        
+        .summary h4 {
+            margin: 0 0 10px 0;
+            color: #10b981;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            border: 2px solid #34d399;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 0 10px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn:hover {
+            background: linear-gradient(135deg, #047857 0%, #059669 100%);
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #334155;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎮 GameController Integration Tests</h1>
+        <p>Comprehensive testing of game orchestration and module coordination</p>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </div>
+
+    <div class="summary" id="summary">
+        <h4>Test Summary</h4>
+        <div class="summary-item">
+            <span>Total:</span>
+            <span id="totalTests">0</span>
+        </div>
+        <div class="summary-item">
+            <span>Passed:</span>
+            <span id="passedTests" style="color: #10b981;">0</span>
+        </div>
+        <div class="summary-item">
+            <span>Failed:</span>
+            <span id="failedTests" style="color: #ef4444;">0</span>
+        </div>
+        <div class="summary-item">
+            <span>Running:</span>
+            <span id="runningTests" style="color: #f59e0b;">0</span>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" id="runAllBtn" onclick="runAllTests()">Run All Tests</button>
+        <button class="btn" id="runSelectedBtn" onclick="runSelectedTests()">Run Selected</button>
+        <button class="btn" id="clearBtn" onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="testResults"></div>
+
+    <script type="module">
+        import { GameController } from './GameController.js';
+
+        // Test framework
+        class TestFramework {
+            constructor() {
+                this.tests = [];
+                this.results = {
+                    total: 0,
+                    passed: 0,
+                    failed: 0,
+                    running: 0
+                };
+            }
+
+            describe(suiteName, testFn) {
+                const suite = {
+                    name: suiteName,
+                    tests: [],
+                    beforeEach: null,
+                    afterEach: null
+                };
+
+                const context = {
+                    test: (testName, testFn) => {
+                        suite.tests.push({
+                            name: testName,
+                            fn: testFn,
+                            suite: suiteName
+                        });
+                    },
+                    beforeEach: (fn) => {
+                        suite.beforeEach = fn;
+                    },
+                    afterEach: (fn) => {
+                        suite.afterEach = fn;
+                    }
+                };
+
+                testFn.call(context, context);
+                this.tests.push(suite);
+            }
+
+            async runTests() {
+                this.clearResults();
+                
+                for (const suite of this.tests) {
+                    await this.runSuite(suite);
+                }
+                
+                this.updateSummary();
+            }
+
+            async runSuite(suite) {
+                const sectionElement = this.createSuiteSection(suite.name);
+                
+                for (const test of suite.tests) {
+                    await this.runTest(test, suite, sectionElement);
+                }
+            }
+
+            async runTest(test, suite, sectionElement) {
+                const testElement = this.createTestElement(test);
+                sectionElement.appendChild(testElement);
+                
+                this.results.running++;
+                this.results.total++;
+                this.updateSummary();
+                
+                try {
+                    // Setup
+                    let testContext = {};
+                    if (suite.beforeEach) {
+                        testContext = await suite.beforeEach() || {};
+                    }
+                    
+                    // Run test
+                    await test.fn.call(testContext);
+                    
+                    // Cleanup
+                    if (suite.afterEach) {
+                        await suite.afterEach.call(testContext);
+                    }
+                    
+                    this.markTestPassed(testElement);
+                    this.results.passed++;
+                } catch (error) {
+                    this.markTestFailed(testElement, error);
+                    this.results.failed++;
+                }
+                
+                this.results.running--;
+                this.updateSummary();
+                this.updateProgress();
+            }
+
+            createSuiteSection(suiteName) {
+                const section = document.createElement('div');
+                section.className = 'test-section';
+                section.innerHTML = `<h3>${suiteName}</h3>`;
+                document.getElementById('testResults').appendChild(section);
+                return section;
+            }
+
+            createTestElement(test) {
+                const element = document.createElement('div');
+                element.className = 'test-case running';
+                element.innerHTML = `
+                    <div class="test-name">${test.name}</div>
+                    <div class="test-result">Running...</div>
+                `;
+                return element;
+            }
+
+            markTestPassed(element) {
+                element.className = 'test-case passed';
+                element.querySelector('.test-result').textContent = '✅ Passed';
+            }
+
+            markTestFailed(element, error) {
+                element.className = 'test-case failed';
+                element.querySelector('.test-result').innerHTML = `
+                    ❌ Failed
+                    <div class="test-error">${error.message}\n${error.stack}</div>
+                `;
+            }
+
+            updateSummary() {
+                document.getElementById('totalTests').textContent = this.results.total;
+                document.getElementById('passedTests').textContent = this.results.passed;
+                document.getElementById('failedTests').textContent = this.results.failed;
+                document.getElementById('runningTests').textContent = this.results.running;
+            }
+
+            updateProgress() {
+                const completed = this.results.passed + this.results.failed;
+                const percentage = this.results.total > 0 ? (completed / this.results.total) * 100 : 0;
+                document.getElementById('progressFill').style.width = `${percentage}%`;
+            }
+
+            clearResults() {
+                this.results = { total: 0, passed: 0, failed: 0, running: 0 };
+                document.getElementById('testResults').innerHTML = '';
+                this.updateSummary();
+                this.updateProgress();
+            }
+        }
+
+        // Mock DOM for testing
+        const mockDOM = () => {
+            // Create minimal DOM mocks for testing
+            if (!document.getElementById('app')) {
+                const app = document.createElement('div');
+                app.id = 'app';
+                document.body.appendChild(app);
+            }
+        };
+
+        // Test assertions
+        const expect = (actual) => ({
+            toBe: (expected) => {
+                if (actual !== expected) {
+                    throw new Error(`Expected ${actual} to be ${expected}`);
+                }
+            },
+            toEqual: (expected) => {
+                if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                    throw new Error(`Expected ${JSON.stringify(actual)} to equal ${JSON.stringify(expected)}`);
+                }
+            },
+            toBeDefined: () => {
+                if (actual === undefined) {
+                    throw new Error(`Expected ${actual} to be defined`);
+                }
+            },
+            toBeNull: () => {
+                if (actual !== null) {
+                    throw new Error(`Expected ${actual} to be null`);
+                }
+            },
+            toBeGreaterThan: (expected) => {
+                if (actual <= expected) {
+                    throw new Error(`Expected ${actual} to be greater than ${expected}`);
+                }
+            },
+            toContain: (expected) => {
+                if (!actual.includes(expected)) {
+                    throw new Error(`Expected ${actual} to contain ${expected}`);
+                }
+            },
+            toBeInstanceOf: (expected) => {
+                if (!(actual instanceof expected)) {
+                    throw new Error(`Expected ${actual} to be instance of ${expected.name}`);
+                }
+            }
+        });
+
+        const expect_not = (actual) => ({
+            toThrow: () => {
+                try {
+                    actual();
+                    throw new Error('Expected function to throw');
+                } catch (error) {
+                    // Expected to throw
+                }
+            }
+        });
+
+        // Initialize test framework
+        const testFramework = new TestFramework();
+
+        // Define tests
+        testFramework.describe('GameController Initialization', function() {
+            this.beforeEach(async function() {
+                mockDOM();
+                this.gameController = new GameController();
+                return this;
+            });
+
+            this.afterEach(function() {
+                if (this.gameController) {
+                    this.gameController.destroy();
+                }
+            });
+
+            this.test('should initialize successfully', async function() {
+                const result = await this.gameController.initialize();
+                expect(result.success).toBe(true);
+                expect(this.gameController.isInitialized).toBe(true);
+            });
+
+            this.test('should initialize all required modules', async function() {
+                await this.gameController.initialize();
+                
+                const expectedModules = [
+                    'stateManager', 'timerManager', 'audioManager', 'powerUpManager',
+                    'bettingManager', 'eventManager', 'uiManager'
+                ];
+                
+                expectedModules.forEach(moduleName => {
+                    expect(this.gameController.modules[moduleName]).toBeDefined();
+                });
+            });
+        });
+
+        testFramework.describe('Match Lifecycle', function() {
+            this.beforeEach(async function() {
+                mockDOM();
+                this.gameController = new GameController();
+                await this.gameController.initialize();
+                return this;
+            });
+
+            this.afterEach(function() {
+                if (this.gameController) {
+                    this.gameController.destroy();
+                }
+            });
+
+            this.test('should start match successfully', async function() {
+                const matchData = {
+                    homeTeam: 'Team A',
+                    awayTeam: 'Team B',
+                    odds: { home: 1.85, draw: 3.50, away: 4.20 }
+                };
+                
+                const result = await this.gameController.startMatch(matchData);
+                expect(result.success).toBe(true);
+                expect(this.gameController.gamePhase).toBe('match');
+            });
+
+            this.test('should pause and resume match', function() {
+                this.gameController.gamePhase = 'match';
+                
+                const pauseResult = this.gameController.pauseForActionBet({
+                    id: 'test_event',
+                    description: 'Test event'
+                });
+                expect(pauseResult.success).toBe(true);
+                expect(this.gameController.gamePhase).toBe('paused');
+                
+                const resumeResult = this.gameController.resumeMatch();
+                expect(resumeResult.success).toBe(true);
+                expect(this.gameController.gamePhase).toBe('match');
+            });
+
+            this.test('should end match successfully', async function() {
+                this.gameController.gamePhase = 'match';
+                this.gameController.modules.stateManager.updateState({
+                    match: { active: true, homeScore: 2, awayScore: 1 }
+                });
+                
+                const result = await this.gameController.endMatch();
+                expect(result.success).toBe(true);
+                expect(result.outcome).toBe('home');
+            });
+        });
+
+        testFramework.describe('Betting Integration', function() {
+            this.beforeEach(async function() {
+                mockDOM();
+                this.gameController = new GameController();
+                await this.gameController.initialize();
+                return this;
+            });
+
+            this.afterEach(function() {
+                if (this.gameController) {
+                    this.gameController.destroy();
+                }
+            });
+
+            this.test('should place bet successfully', async function() {
+                const betData = {
+                    type: 'fullMatch',
+                    outcome: 'home',
+                    stake: 25,
+                    odds: 1.85
+                };
+                
+                const result = await this.gameController.placeBet(betData);
+                expect(result.success).toBe(true);
+                expect(result.bet).toBeDefined();
+            });
+
+            this.test('should handle insufficient funds', async function() {
+                const betData = {
+                    type: 'fullMatch',
+                    outcome: 'home',
+                    stake: 2000,
+                    odds: 1.85
+                };
+                
+                const result = await this.gameController.placeBet(betData);
+                expect(result.success).toBe(false);
+            });
+        });
+
+        testFramework.describe('Error Handling', function() {
+            this.beforeEach(async function() {
+                mockDOM();
+                this.gameController = new GameController();
+                await this.gameController.initialize();
+                return this;
+            });
+
+            this.afterEach(function() {
+                if (this.gameController) {
+                    this.gameController.destroy();
+                }
+            });
+
+            this.test('should handle errors gracefully', function() {
+                const error = new Error('Test error');
+                const result = this.gameController.handleError('test', error);
+                
+                expect(result.success).toBe(false);
+                expect(result.error).toBe('Test error');
+            });
+
+            this.test('should attempt recovery', function() {
+                this.gameController.gamePhase = 'match';
+                const error = new Error('Match error');
+                
+                const result = this.gameController.handleError('matchStart', error);
+                expect(result.recovered).toBe(true);
+            });
+        });
+
+        testFramework.describe('Complete Game Flow', function() {
+            this.beforeEach(async function() {
+                mockDOM();
+                this.gameController = new GameController();
+                await this.gameController.initialize();
+                return this;
+            });
+
+            this.afterEach(function() {
+                if (this.gameController) {
+                    this.gameController.destroy();
+                }
+            });
+
+            this.test('should execute full match cycle', async function() {
+                // Start match
+                const matchData = {
+                    homeTeam: 'Team A',
+                    awayTeam: 'Team B'
+                };
+                
+                await this.gameController.startMatch(matchData);
+                expect(this.gameController.gamePhase).toBe('match');
+                
+                // Place bet
+                const betData = {
+                    type: 'fullMatch',
+                    outcome: 'home',
+                    stake: 50,
+                    odds: 1.85
+                };
+                
+                await this.gameController.placeBet(betData);
+                
+                // End match
+                this.gameController.modules.stateManager.updateState({
+                    'match.homeScore': 1,
+                    'match.awayScore': 0
+                });
+                
+                await this.gameController.endMatch();
+                expect(this.gameController.gamePhase).toBe('ended');
+                
+                // Return to lobby
+                this.gameController.returnToLobby();
+                expect(this.gameController.gamePhase).toBe('lobby');
+            });
+        });
+
+        // Global functions for buttons
+        window.runAllTests = () => {
+            testFramework.runTests();
+        };
+
+        window.runSelectedTests = () => {
+            // For now, just run all tests
+            testFramework.runTests();
+        };
+
+        window.clearResults = () => {
+            testFramework.clearResults();
+        };
+
+        // Auto-run tests on load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('GameController Integration Tests Ready');
+        });
+    </script>
+</body>
+</html>

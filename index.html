@@ -1,59 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Soccer Betting Game - Demo</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-    </style>
-</head>
-<body class="bg-gray-900 text-gray-200 min-h-screen flex items-center justify-center">
-    <div class="max-w-2xl mx-auto p-8 text-center">
-        <h1 class="text-4xl font-bold text-white mb-4">⚽ Soccer Betting Game</h1>
-        <p class="text-xl text-gray-300 mb-8">Prototype with Pause System & Betting Modal Improvements</p>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
-                <h2 class="text-2xl font-semibold text-indigo-400 mb-3">🎮 Main Game</h2>
-                <p class="text-gray-400 mb-4">Play the full soccer betting game with pause system</p>
-                <a href="game_prototype.html" class="inline-block w-full py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-bold transition">
-                    Play Game
-                </a>
-            </div>
-            
-            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
-                <h2 class="text-2xl font-semibold text-green-400 mb-3">🧪 Integration Test</h2>
-                <p class="text-gray-400 mb-4">Test the pause system and betting integration</p>
-                <a href="tests/betting-pause-complete-integration.html" class="inline-block w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg text-white font-bold transition">
-                    Run Tests
-                </a>
-            </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Soccer Betting Game</title>
+    <meta
+      name="description"
+      content="Interactive soccer betting game with dual betting systems"
+    />
+
+    <!-- Preload critical CSS -->
+    <link rel="preload" href="./styles/main.css" as="style" />
+    <link rel="stylesheet" href="./styles/main.css" />
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>"
+    />
+  </head>
+  <body>
+    <!-- Main Application Container -->
+    <div id="app" class="app-container">
+      <!-- Loading Screen -->
+      <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+          <div class="loading-spinner"></div>
+          <h2>Loading Soccer Betting Game...</h2>
+          <p>Preparing your betting experience</p>
         </div>
-        
-        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
-            <h3 class="text-lg font-semibold text-yellow-400 mb-3">✨ Features Implemented</h3>
-            <div class="grid grid-cols-2 gap-4 text-sm">
-                <div class="text-left">
-                    <div class="text-green-400">✅ Game Pause System</div>
-                    <div class="text-green-400">✅ Betting Integration</div>
-                    <div class="text-green-400">✅ Timer Countdown</div>
-                    <div class="text-green-400">✅ Visual Timer Bar</div>
-                </div>
-                <div class="text-left">
-                    <div class="text-green-400">✅ Minimizable Modals</div>
-                    <div class="text-green-400">✅ Floating Indicators</div>
-                    <div class="text-green-400">✅ Error Handling</div>
-                    <div class="text-green-400">✅ Responsive Design</div>
-                </div>
+      </div>
+
+      <!-- Lobby Screen -->
+      <div id="lobby-screen" class="screen lobby-screen hidden">
+        <header class="lobby-header">
+          <h1 class="game-title">
+            <span class="title-icon">⚽</span>
+            Soccer Betting Game
+          </h1>
+          <div class="wallet-display">
+            <span class="wallet-label">Wallet:</span>
+            <span class="wallet-amount" id="wallet-amount">$1000</span>
+          </div>
+        </header>
+
+        <main class="lobby-main">
+          <div class="match-selection">
+            <h2>Available Matches</h2>
+            <div id="match-list" class="match-list">
+              <!-- Matches will be populated by JavaScript -->
             </div>
+          </div>
+
+          <div class="game-settings">
+            <label class="setting-item">
+              <input
+                type="checkbox"
+                id="classic-mode"
+                class="classic-mode-toggle"
+              />
+              <span class="setting-label">Classic Mode (No Power-ups)</span>
+            </label>
+          </div>
+        </main>
+      </div>
+
+      <!-- Match Screen -->
+      <div id="match-screen" class="screen match-screen hidden">
+        <header class="match-header">
+          <div class="match-info">
+            <div class="teams">
+              <span id="home-team" class="team-name">Home Team</span>
+              <span class="vs">vs</span>
+              <span id="away-team" class="team-name">Away Team</span>
+            </div>
+            <div class="score">
+              <span id="home-score" class="score-value">0</span>
+              <span class="score-separator">-</span>
+              <span id="away-score" class="score-value">0</span>
+            </div>
+          </div>
+
+          <div class="match-timer">
+            <span id="match-time" class="timer-display">0'</span>
+          </div>
+
+          <div class="match-stats">
+            <div class="wallet-info">
+              <span class="wallet-label">Wallet:</span>
+              <span id="match-wallet" class="wallet-amount">$1000</span>
+            </div>
+            <div id="power-up-display" class="power-up-display hidden">
+              <button id="use-power-up" class="power-up-button">
+                ⭐ Use Power-Up (2x)
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main class="match-main">
+          <!-- Full Match Betting Section -->
+          <section class="full-match-betting">
+            <h3>Match Outcome Betting</h3>
+            <div class="betting-buttons">
+              <button
+                id="bet-home"
+                class="bet-button home-bet"
+                data-outcome="home"
+              >
+                <span class="bet-label" id="home-team-bet">Home</span>
+                <span class="bet-odds" id="home-odds">1.85</span>
+              </button>
+              <button
+                id="bet-draw"
+                class="bet-button draw-bet"
+                data-outcome="draw"
+              >
+                <span class="bet-label">Draw</span>
+                <span class="bet-odds" id="draw-odds">3.50</span>
+              </button>
+              <button
+                id="bet-away"
+                class="bet-button away-bet"
+                data-outcome="away"
+              >
+                <span class="bet-label" id="away-team-bet">Away</span>
+                <span class="bet-odds" id="away-odds">4.20</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- Event Feed -->
+          <section class="event-feed">
+            <h3>Match Events</h3>
+            <div id="event-list" class="event-list">
+              <div class="event-item">
+                <span class="event-time">0'</span>
+                <span class="event-description">Match started</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Active Bets Display -->
+          <section class="active-bets">
+            <h3>Your Bets</h3>
+            <div id="bets-list" class="bets-list">
+              <p class="no-bets">No active bets</p>
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <!-- Betting Modal -->
+      <div id="betting-modal" class="modal-overlay hidden">
+        <div class="modal-content betting-modal">
+          <button
+            class="close-modal"
+            onclick="window.gameController?.hideActionBettingModal?.()"
+          >
+            &times;
+          </button>
+          <div class="modal-header">
+            <h3 id="modal-title" class="modal-title">
+              Action Betting Opportunity
+            </h3>
+            <div id="countdown-timer" class="countdown-timer">10s</div>
+          </div>
+          <div class="modal-body">
+            <div class="betting-options">
+              <!-- Betting options will be populated dynamically -->
+            </div>
+            <div class="modal-actions">
+              <button
+                class="skip-bet"
+                onclick="window.gameController?.modules?.actionBetting?.skipBetting?.()"
+              >
+                Skip
+              </button>
+            </div>
+          </div>
         </div>
-        
-        <div class="mt-8 text-sm text-gray-500">
-            <p>Built with modular architecture • Comprehensive test coverage • Ready for multiplayer</p>
-        </div>
+      </div>
+
+      <!-- Notification System -->
+      <div id="notification-container" class="notification-container">
+        <!-- Notifications will be added here by JavaScript -->
+      </div>
     </div>
-</body>
+
+    <!-- Game Scripts -->
+    <script type="module" src="./src/index.js"></script>
+
+    <!-- Error Handling -->
+    <script>
+      window.addEventListener("error", (event) => {
+        console.error("Game Error:", event.error);
+        // Show user-friendly error message
+        const notification = document.createElement("div");
+        notification.className = "notification error";
+        notification.textContent =
+          "An error occurred. Please refresh the page.";
+        document
+          .getElementById("notification-container")
+          .appendChild(notification);
+      });
+
+      window.addEventListener("unhandledrejection", (event) => {
+        console.error("Unhandled Promise Rejection:", event.reason);
+        event.preventDefault();
+      });
+    </script>
+  </body>
 </html>

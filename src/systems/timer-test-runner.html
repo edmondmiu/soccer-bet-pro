@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimerManager Test Runner</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 10px;
+            border: 2px solid #059669;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #1e293b;
+            border-radius: 8px;
+            border-left: 4px solid #059669;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+
+        button:disabled {
+            background: #475569;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .status-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .status-card {
+            background-color: #334155;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+        }
+
+        .status-card h4 {
+            margin: 0 0 10px 0;
+            color: #34d399;
+        }
+
+        .status-value {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            color: #ffffff;
+        }
+
+        .test-results {
+            margin-top: 20px;
+        }
+
+        .test-result {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+
+        .test-result.passed {
+            background-color: rgba(5, 150, 105, 0.1);
+            border-left-color: #059669;
+        }
+
+        .test-result.failed {
+            background-color: rgba(220, 38, 38, 0.1);
+            border-left-color: #dc2626;
+        }
+
+        .countdown-display {
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            border-radius: 10px;
+            margin: 10px 0;
+            color: white;
+        }
+
+        .log-output {
+            background-color: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .accuracy-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+
+        .accuracy-good { background-color: #059669; }
+        .accuracy-warning { background-color: #f59e0b; }
+        .accuracy-error { background-color: #dc2626; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🕐 TimerManager Test Suite</h1>
+        <p>Comprehensive testing for match timing, pause/resume functionality, and countdown timers</p>
+    </div>
+
+    <div class="test-section">
+        <h2>Match Timer Controls</h2>
+        <div class="test-controls">
+            <button id="startMatch">Start Match</button>
+            <button id="pauseMatch">Pause Match</button>
+            <button id="resumeMatch">Resume Match</button>
+            <button id="stopMatch">Stop Match</button>
+            <button id="resetTimer">Reset All</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Countdown Timer Controls</h2>
+        <div class="test-controls">
+            <button id="countdown10">10 Second Countdown</button>
+            <button id="countdown5">5 Second Countdown</button>
+            <button id="countdown3">3 Second Countdown</button>
+            <button id="stopCountdown">Stop Countdown</button>
+        </div>
+        <div id="countdownDisplay" class="countdown-display" style="display: none;">
+            <div id="countdownTime">--</div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Timer Status</h2>
+        <div class="status-display">
+            <div class="status-card">
+                <h4>Match Timer</h4>
+                <div class="status-value" id="matchTime">0.00 minutes</div>
+                <div class="status-value" id="matchStatus">Stopped</div>
+            </div>
+            <div class="status-card">
+                <h4>Countdown Timer</h4>
+                <div class="status-value" id="countdownStatus">Inactive</div>
+                <div class="status-value" id="countdownRemaining">0.0 seconds</div>
+            </div>
+            <div class="status-card">
+                <h4>Timer Accuracy</h4>
+                <div class="status-value" id="timerAccuracy">
+                    Good <span class="accuracy-indicator accuracy-good"></span>
+                </div>
+                <div class="status-value" id="timerDrift">Drift: 0ms</div>
+            </div>
+            <div class="status-card">
+                <h4>Pause Statistics</h4>
+                <div class="status-value" id="pauseCount">Pauses: 0</div>
+                <div class="status-value" id="totalPauseTime">Total: 0.0s</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Automated Tests</h2>
+        <div class="test-controls">
+            <button id="runBasicTests">Run Basic Tests</button>
+            <button id="runPauseTests">Run Pause/Resume Tests</button>
+            <button id="runCountdownTests">Run Countdown Tests</button>
+            <button id="runAccuracyTests">Run Accuracy Tests</button>
+            <button id="runAllTests">Run All Tests</button>
+        </div>
+        <div id="testResults" class="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Console Log</h2>
+        <div id="logOutput" class="log-output"></div>
+    </div>
+
+    <script type="module">
+        import { TimerManager } from './TimerManager.js';
+
+        let timerManager;
+        let statusUpdateInterval;
+        let pauseCount = 0;
+
+        // Initialize
+        function init() {
+            timerManager = new TimerManager();
+            
+            // Set up callbacks
+            timerManager.setCallbacks({
+                onMatchTimeUpdate: (time) => {
+                    log(`Match time updated: ${time.toFixed(2)} minutes`);
+                },
+                onCountdownUpdate: (remaining) => {
+                    updateCountdownDisplay(remaining);
+                },
+                onCountdownComplete: () => {
+                    log('Countdown completed!');
+                    hideCountdownDisplay();
+                }
+            });
+
+            setupEventListeners();
+            startStatusUpdates();
+            log('TimerManager initialized');
+        }
+
+        function setupEventListeners() {
+            // Match timer controls
+            document.getElementById('startMatch').addEventListener('click', () => {
+                timerManager.startMatch();
+                log('Match started');
+            });
+
+            document.getElementById('pauseMatch').addEventListener('click', () => {
+                timerManager.pauseTimer();
+                pauseCount++;
+                log('Match paused');
+            });
+
+            document.getElementById('resumeMatch').addEventListener('click', () => {
+                timerManager.resumeTimer();
+                log('Match resumed');
+            });
+
+            document.getElementById('stopMatch').addEventListener('click', () => {
+                timerManager.stopMatch();
+                log('Match stopped');
+            });
+
+            document.getElementById('resetTimer').addEventListener('click', () => {
+                timerManager.reset();
+                pauseCount = 0;
+                hideCountdownDisplay();
+                log('All timers reset');
+            });
+
+            // Countdown controls
+            document.getElementById('countdown10').addEventListener('click', () => {
+                startCountdown(10);
+            });
+
+            document.getElementById('countdown5').addEventListener('click', () => {
+                startCountdown(5);
+            });
+
+            document.getElementById('countdown3').addEventListener('click', () => {
+                startCountdown(3);
+            });
+
+            document.getElementById('stopCountdown').addEventListener('click', () => {
+                timerManager.stopCountdown();
+                hideCountdownDisplay();
+                log('Countdown stopped');
+            });
+
+            // Test controls
+            document.getElementById('runBasicTests').addEventListener('click', runBasicTests);
+            document.getElementById('runPauseTests').addEventListener('click', runPauseTests);
+            document.getElementById('runCountdownTests').addEventListener('click', runCountdownTests);
+            document.getElementById('runAccuracyTests').addEventListener('click', runAccuracyTests);
+            document.getElementById('runAllTests').addEventListener('click', runAllTests);
+        }
+
+        function startCountdown(seconds) {
+            showCountdownDisplay();
+            timerManager.startCountdown(seconds, () => {
+                log(`${seconds}-second countdown completed`);
+            });
+            log(`Started ${seconds}-second countdown`);
+        }
+
+        function showCountdownDisplay() {
+            document.getElementById('countdownDisplay').style.display = 'block';
+        }
+
+        function hideCountdownDisplay() {
+            document.getElementById('countdownDisplay').style.display = 'none';
+        }
+
+        function updateCountdownDisplay(remaining) {
+            document.getElementById('countdownTime').textContent = remaining.toFixed(1);
+        }
+
+        function startStatusUpdates() {
+            statusUpdateInterval = setInterval(updateStatus, 100);
+        }
+
+        function updateStatus() {
+            const status = timerManager.getStatus();
+            
+            // Match timer status
+            document.getElementById('matchTime').textContent = 
+                `${status.match.currentTime.toFixed(2)} minutes`;
+            
+            let matchStatusText = 'Stopped';
+            if (status.match.isRunning && status.match.isPaused) {
+                matchStatusText = 'Paused';
+            } else if (status.match.isRunning) {
+                matchStatusText = 'Running';
+            }
+            document.getElementById('matchStatus').textContent = matchStatusText;
+
+            // Countdown status
+            document.getElementById('countdownStatus').textContent = 
+                status.countdown.isRunning ? 'Active' : 'Inactive';
+            document.getElementById('countdownRemaining').textContent = 
+                `${status.countdown.remainingTime.toFixed(1)} seconds`;
+
+            // Accuracy status
+            const accuracyClass = status.accuracy.isAccurate ? 'accuracy-good' : 
+                                 status.accuracy.drift > 500 ? 'accuracy-error' : 'accuracy-warning';
+            const accuracyText = status.accuracy.syncStatus === 'good' ? 'Good' : 'Drift Detected';
+            
+            document.getElementById('timerAccuracy').innerHTML = 
+                `${accuracyText} <span class="accuracy-indicator ${accuracyClass}"></span>`;
+            document.getElementById('timerDrift').textContent = 
+                `Drift: ${status.accuracy.drift.toFixed(0)}ms`;
+
+            // Pause statistics
+            document.getElementById('pauseCount').textContent = `Pauses: ${pauseCount}`;
+            document.getElementById('totalPauseTime').textContent = 
+                `Total: ${status.match.totalPausedDuration.toFixed(1)}s`;
+        }
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logOutput = document.getElementById('logOutput');
+            logOutput.innerHTML += `[${timestamp}] ${message}\n`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+        }
+
+        function displayTestResult(testName, passed, details = null) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${passed ? 'passed' : 'failed'}`;
+            
+            let content = `${passed ? '✅' : '❌'} ${testName}`;
+            if (details) {
+                content += ` - ${details}`;
+            }
+            
+            resultDiv.textContent = content;
+            resultsDiv.appendChild(resultDiv);
+            
+            log(`Test: ${testName} - ${passed ? 'PASSED' : 'FAILED'}`);
+        }
+
+        // Test functions
+        async function runBasicTests() {
+            log('Running basic functionality tests...');
+            document.getElementById('testResults').innerHTML = '';
+
+            try {
+                // Test 1: Timer initialization
+                timerManager.reset();
+                const initialRunning = timerManager.isMatchRunning();
+                const initialTime = timerManager.getMatchTime();
+                displayTestResult('Timer Initialization', !initialRunning && initialTime === 0);
+
+                // Test 2: Start timer
+                timerManager.startMatch();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                const runningAfterStart = timerManager.isMatchRunning();
+                const timeAfterStart = timerManager.getMatchTime();
+                displayTestResult('Start Timer', runningAfterStart && timeAfterStart > 0);
+
+                // Test 3: Stop timer
+                timerManager.stopMatch();
+                const stoppedAfterStop = !timerManager.isMatchRunning();
+                displayTestResult('Stop Timer', stoppedAfterStop);
+
+            } catch (error) {
+                displayTestResult('Basic Tests', false, error.message);
+            }
+        }
+
+        async function runPauseTests() {
+            log('Running pause/resume tests...');
+            document.getElementById('testResults').innerHTML = '';
+
+            try {
+                timerManager.reset();
+                timerManager.startMatch();
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                // Test 1: Pause functionality
+                const timeBeforePause = timerManager.getMatchTime();
+                timerManager.pauseTimer();
+                const isPausedAfterPause = timerManager.isMatchPaused();
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+                const timeAfterPause = timerManager.getMatchTime();
+                const timeDifference = Math.abs(timeAfterPause - timeBeforePause);
+                
+                displayTestResult('Pause Functionality', 
+                    isPausedAfterPause && timeDifference < 0.01,
+                    `Time difference: ${timeDifference.toFixed(4)} minutes`);
+
+                // Test 2: Resume functionality
+                timerManager.resumeTimer();
+                const isResumedAfterResume = !timerManager.isMatchPaused();
+                
+                await new Promise(resolve => setTimeout(resolve, 300));
+                const timeAfterResume = timerManager.getMatchTime();
+                const resumedCorrectly = timeAfterResume > timeAfterPause;
+                
+                displayTestResult('Resume Functionality', 
+                    isResumedAfterResume && resumedCorrectly,
+                    `Time progressed: ${resumedCorrectly}`);
+
+            } catch (error) {
+                displayTestResult('Pause/Resume Tests', false, error.message);
+            }
+        }
+
+        async function runCountdownTests() {
+            log('Running countdown timer tests...');
+            document.getElementById('testResults').innerHTML = '';
+
+            try {
+                // Test 1: Countdown start
+                timerManager.startCountdown(2);
+                const isRunningAfterStart = timerManager.isCountdownRunning();
+                const initialTime = timerManager.getCountdownTime();
+                
+                displayTestResult('Countdown Start', 
+                    isRunningAfterStart && initialTime > 1.5 && initialTime <= 2,
+                    `Initial time: ${initialTime.toFixed(2)}s`);
+
+                // Test 2: Countdown progression
+                await new Promise(resolve => setTimeout(resolve, 500));
+                const timeAfterDelay = timerManager.getCountdownTime();
+                const hasProgressed = timeAfterDelay < initialTime;
+                
+                displayTestResult('Countdown Progression', hasProgressed,
+                    `Time decreased: ${(initialTime - timeAfterDelay).toFixed(2)}s`);
+
+                // Test 3: Countdown completion
+                await new Promise(resolve => setTimeout(resolve, 1600));
+                const isRunningAfterCompletion = timerManager.isCountdownRunning();
+                const finalTime = timerManager.getCountdownTime();
+                
+                displayTestResult('Countdown Completion', 
+                    !isRunningAfterCompletion && finalTime === 0,
+                    `Final state: running=${isRunningAfterCompletion}, time=${finalTime}`);
+
+            } catch (error) {
+                displayTestResult('Countdown Tests', false, error.message);
+            }
+        }
+
+        async function runAccuracyTests() {
+            log('Running timer accuracy tests...');
+            document.getElementById('testResults').innerHTML = '';
+
+            try {
+                // Test 1: Accuracy validation
+                const validation1 = timerManager.validateTimerAccuracy();
+                displayTestResult('Initial Accuracy Check', 
+                    validation1.isAccurate && validation1.syncStatus === 'good',
+                    `Drift: ${validation1.drift}ms`);
+
+                // Test 2: Status reporting
+                timerManager.startMatch();
+                const status = timerManager.getStatus();
+                const hasRequiredProperties = status.match && status.countdown && status.accuracy;
+                
+                displayTestResult('Status Reporting', hasRequiredProperties,
+                    `Properties present: ${Object.keys(status).join(', ')}`);
+
+                // Test 3: Timer synchronization over time
+                await new Promise(resolve => setTimeout(resolve, 1100));
+                const validation2 = timerManager.validateTimerAccuracy();
+                
+                displayTestResult('Timer Synchronization', 
+                    validation2.drift < 1000, // Allow up to 1 second drift for browser timing
+                    `Drift after 1s: ${validation2.drift}ms`);
+
+            } catch (error) {
+                displayTestResult('Accuracy Tests', false, error.message);
+            }
+        }
+
+        async function runAllTests() {
+            log('Running complete test suite...');
+            document.getElementById('testResults').innerHTML = '';
+            
+            await runBasicTests();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await runPauseTests();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await runCountdownTests();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await runAccuracyTests();
+            
+            log('All tests completed!');
+        }
+
+        // Initialize when page loads
+        init();
+    </script>
+</body>
+</html>

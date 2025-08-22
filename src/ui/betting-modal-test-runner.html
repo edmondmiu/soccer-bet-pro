@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BettingModal Test Runner</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            border-radius: 12px;
+            color: white;
+        }
+
+        .test-section {
+            background: rgba(71, 85, 105, 0.3);
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .test-section h3 {
+            color: #10b981;
+            margin-top: 0;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid #059669;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #047857 0%, #059669 100%);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(71, 85, 105, 0.5);
+            border-color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(100, 116, 139, 0.7);
+        }
+
+        .test-results {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .success {
+            color: #10b981;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .warning {
+            color: #f59e0b;
+        }
+
+        .info {
+            color: #3b82f6;
+        }
+
+        .demo-area {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            min-height: 200px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-pass {
+            background-color: #10b981;
+        }
+
+        .status-fail {
+            background-color: #ef4444;
+        }
+
+        .status-pending {
+            background-color: #f59e0b;
+        }
+
+        .modal-demo {
+            position: relative;
+            min-height: 400px;
+            background: rgba(71, 85, 105, 0.2);
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 15px;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .test-summary {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border: 2px solid #059669;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 6px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 BettingModal Test Runner</h1>
+        <p>Comprehensive testing suite for all betting modal interfaces</p>
+    </div>
+
+    <div class="test-section">
+        <h3>🧪 Unit Tests</h3>
+        <div class="test-controls">
+            <button class="btn" onclick="runAllTests()">Run All Tests</button>
+            <button class="btn btn-secondary" onclick="runInitializationTests()">Initialization</button>
+            <button class="btn btn-secondary" onclick="runActionBettingTests()">Action Betting</button>
+            <button class="btn btn-secondary" onclick="runBetSlipTests()">Bet Slip</button>
+            <button class="btn btn-secondary" onclick="runMatchSummaryTests()">Match Summary</button>
+            <button class="btn btn-secondary" onclick="runModalManagementTests()">Modal Management</button>
+            <button class="btn btn-secondary" onclick="clearResults()">Clear Results</button>
+        </div>
+        <div class="test-results" id="test-results">
+Ready to run tests...
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>🎮 Interactive Demo</h3>
+        <div class="demo-controls">
+            <button class="btn" onclick="demoActionBettingModal()">Action Betting Modal</button>
+            <button class="btn" onclick="demoBetSlipModal()">Bet Slip Modal</button>
+            <button class="btn" onclick="demoMatchSummaryModal()">Match Summary Modal</button>
+            <button class="btn btn-secondary" onclick="closeAllModals()">Close All Modals</button>
+        </div>
+        <div class="modal-demo" id="modal-demo">
+            <p>Click the buttons above to test modal interfaces interactively.</p>
+        </div>
+    </div>
+
+    <div class="test-summary" id="test-summary" style="display: none;">
+        <h3>📊 Test Summary</h3>
+        <div class="summary-stats">
+            <div class="stat-item">
+                <div class="stat-value" id="total-tests">0</div>
+                <div class="stat-label">Total Tests</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="passed-tests">0</div>
+                <div class="stat-label">Passed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="failed-tests">0</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="success-rate">0%</div>
+                <div class="stat-label">Success Rate</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { BettingModal } from './BettingModal.js';
+        import { StateManager } from '../core/StateManager.js';
+        import { TimerManager } from '../systems/TimerManager.js';
+        import { BettingManager } from '../betting/BettingManager.js';
+
+        // Global test state
+        let testResults = {
+            total: 0,
+            passed: 0,
+            failed: 0,
+            tests: []
+        };
+
+        let bettingModal;
+        let stateManager;
+        let timerManager;
+        let bettingManager;
+
+        // Initialize test environment
+        function initializeTestEnvironment() {
+            try {
+                // Create mock dependencies
+                stateManager = new StateManager();
+                stateManager.updateState({
+                    wallet: 1000,
+                    match: {
+                        homeTeam: 'Arsenal',
+                        awayTeam: 'Chelsea',
+                        homeScore: 1,
+                        awayScore: 2,
+                        odds: { home: 1.85, draw: 3.50, away: 4.20 }
+                    },
+                    bets: {
+                        fullMatch: [
+                            {
+                                id: 'bet1',
+                                type: 'fullMatch',
+                                outcome: 'home',
+                                stake: 50,
+                                odds: 1.85,
+                                status: 'won',
+                                actualWinnings: 92.50,
+                                powerUpApplied: false
+                            }
+                        ],
+                        actionBets: [
+                            {
+                                id: 'bet2',
+                                type: 'actionBet',
+                                outcome: 'Goal scored',
+                                stake: 25,
+                                odds: 2.50,
+                                status: 'won',
+                                actualWinnings: 62.50,
+                                powerUpApplied: true
+                            }
+                        ]
+                    },
+                    betAmountMemory: {
+                        fullMatch: 50,
+                        opportunity: 25
+                    }
+                });
+
+                timerManager = new TimerManager();
+                bettingManager = new BettingManager(stateManager);
+                bettingModal = new BettingModal(stateManager, timerManager, bettingManager);
+
+                logResult('✅ Test environment initialized successfully', 'success');
+                return true;
+            } catch (error) {
+                logResult(`❌ Failed to initialize test environment: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Test helper functions
+        function logResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const timestamp = new Date().toLocaleTimeString();
+            const colorClass = type === 'success' ? 'success' : 
+                              type === 'error' ? 'error' : 
+                              type === 'warning' ? 'warning' : 'info';
+            
+            resultsDiv.innerHTML += `<span class="${colorClass}">[${timestamp}] ${message}</span>\n`;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        function runTest(testName, testFunction) {
+            testResults.total++;
+            try {
+                const result = testFunction();
+                if (result) {
+                    testResults.passed++;
+                    logResult(`✅ ${testName}`, 'success');
+                    testResults.tests.push({ name: testName, status: 'passed' });
+                } else {
+                    testResults.failed++;
+                    logResult(`❌ ${testName} - Test returned false`, 'error');
+                    testResults.tests.push({ name: testName, status: 'failed' });
+                }
+            } catch (error) {
+                testResults.failed++;
+                logResult(`❌ ${testName} - ${error.message}`, 'error');
+                testResults.tests.push({ name: testName, status: 'failed', error: error.message });
+            }
+        }
+
+        function updateTestSummary() {
+            const summaryDiv = document.getElementById('test-summary');
+            const successRate = testResults.total > 0 ? 
+                Math.round((testResults.passed / testResults.total) * 100) : 0;
+
+            document.getElementById('total-tests').textContent = testResults.total;
+            document.getElementById('passed-tests').textContent = testResults.passed;
+            document.getElementById('failed-tests').textContent = testResults.failed;
+            document.getElementById('success-rate').textContent = `${successRate}%`;
+
+            summaryDiv.style.display = 'block';
+        }
+
+        // Test suites
+        function runInitializationTests() {
+            logResult('🧪 Running Initialization Tests...', 'info');
+
+            runTest('BettingModal initializes with dependencies', () => {
+                return bettingModal.stateManager === stateManager &&
+                       bettingModal.timerManager === timerManager &&
+                       bettingModal.bettingManager === bettingManager;
+            });
+
+            runTest('Modal overlay is created', () => {
+                return bettingModal.modalOverlay !== null &&
+                       bettingModal.modalOverlay.classList.contains('modal-overlay');
+            });
+
+            runTest('Initial modal state is correct', () => {
+                return bettingModal.activeModal === null &&
+                       bettingModal.countdownInterval === null &&
+                       !bettingModal.isModalActive();
+            });
+
+            runTest('Callbacks object is initialized', () => {
+                return typeof bettingModal.callbacks === 'object' &&
+                       bettingModal.callbacks.hasOwnProperty('onModalShow');
+            });
+
+            updateTestSummary();
+        }
+
+        function runActionBettingTests() {
+            logResult('🎯 Running Action Betting Modal Tests...', 'info');
+
+            const mockEventData = {
+                id: 'event1',
+                description: 'Corner kick for Arsenal - will it lead to a goal?',
+                choices: [
+                    { id: 'choice1', description: 'Goal from corner', odds: 3.50, outcome: 'goal' },
+                    { id: 'choice2', description: 'No goal from corner', odds: 1.30, outcome: 'no_goal' }
+                ]
+            };
+
+            runTest('Action betting modal shows successfully', async () => {
+                const result = await bettingModal.showActionBettingModal(mockEventData);
+                return result.success && bettingModal.isModalActive();
+            });
+
+            runTest('Modal type is correctly identified', () => {
+                return bettingModal.getActiveModalType() === 'actionBetting';
+            });
+
+            runTest('Modal contains correct content', () => {
+                const modal = bettingModal.activeModal;
+                return modal.innerHTML.includes('⏸️ Game Paused - Betting Opportunity') &&
+                       modal.innerHTML.includes(mockEventData.description) &&
+                       modal.innerHTML.includes('Goal from corner');
+            });
+
+            runTest('Skip betting works correctly', () => {
+                bettingModal.skipBetting();
+                return !bettingModal.isModalActive();
+            });
+
+            updateTestSummary();
+        }
+
+        function runBetSlipTests() {
+            logResult('💰 Running Bet Slip Modal Tests...', 'info');
+
+            const mockChoice = {
+                id: 'choice1',
+                description: 'Goal from corner',
+                odds: 3.50,
+                outcome: 'goal'
+            };
+
+            const mockEventData = {
+                id: 'event1',
+                description: 'Corner kick event',
+                choices: [mockChoice]
+            };
+
+            runTest('Bet slip modal shows with pre-populated amount', () => {
+                bettingModal.showBetSlipModal(mockChoice, mockEventData);
+                const modal = bettingModal.activeModal;
+                return bettingModal.isModalActive() &&
+                       bettingModal.getActiveModalType() === 'betSlip' &&
+                       modal.innerHTML.includes('value="25"');
+            });
+
+            runTest('Potential winnings calculated correctly', () => {
+                const modal = bettingModal.activeModal;
+                const expectedWinnings = 25 * 3.50;
+                return modal.innerHTML.includes(`$${expectedWinnings.toFixed(2)}`);
+            });
+
+            runTest('Quick amount buttons generated', () => {
+                const modal = bettingModal.activeModal;
+                return modal.innerHTML.includes('data-amount="25"') &&
+                       modal.innerHTML.includes('data-amount="50"');
+            });
+
+            runTest('Bet placement works', () => {
+                const initialBetCount = bettingManager.getAllBets().length;
+                bettingModal.placeBet(mockChoice, 50, mockEventData);
+                return bettingManager.getAllBets().length > initialBetCount &&
+                       !bettingModal.isModalActive();
+            });
+
+            updateTestSummary();
+        }
+
+        function runMatchSummaryTests() {
+            logResult('🏆 Running Match Summary Modal Tests...', 'info');
+
+            const mockMatchData = {
+                homeTeam: 'Arsenal',
+                awayTeam: 'Chelsea',
+                homeScore: 1,
+                awayScore: 2
+            };
+
+            runTest('Match summary modal shows correctly', () => {
+                bettingModal.showMatchSummaryModal(mockMatchData);
+                const modal = bettingModal.activeModal;
+                return bettingModal.isModalActive() &&
+                       bettingModal.getActiveModalType() === 'matchSummary' &&
+                       modal.innerHTML.includes('🏆 Match Complete') &&
+                       modal.innerHTML.includes('Arsenal vs Chelsea');
+            });
+
+            runTest('Final score displayed correctly', () => {
+                const modal = bettingModal.activeModal;
+                return modal.innerHTML.includes('1 - 2');
+            });
+
+            runTest('Betting summary calculated', () => {
+                const modal = bettingModal.activeModal;
+                return modal.innerHTML.includes('Total Bets Placed') &&
+                       modal.innerHTML.includes('Total Winnings');
+            });
+
+            runTest('Individual bet details shown', () => {
+                const modal = bettingModal.activeModal;
+                return modal.innerHTML.includes('Arsenal Win') &&
+                       modal.innerHTML.includes('Goal scored');
+            });
+
+            updateTestSummary();
+        }
+
+        function runModalManagementTests() {
+            logResult('⚙️ Running Modal Management Tests...', 'info');
+
+            runTest('Modal closes correctly', () => {
+                bettingModal.closeModal();
+                return !bettingModal.isModalActive() &&
+                       bettingModal.activeModal === null;
+            });
+
+            runTest('Countdown timer starts and stops', () => {
+                bettingModal.startCountdown(5);
+                const hasInterval = bettingModal.countdownInterval !== null;
+                bettingModal.stopCountdown();
+                const intervalCleared = bettingModal.countdownInterval === null;
+                return hasInterval && intervalCleared;
+            });
+
+            runTest('Callbacks can be set and retrieved', () => {
+                const testCallback = () => {};
+                bettingModal.setCallbacks({ onModalShow: testCallback });
+                return bettingModal.callbacks.onModalShow === testCallback;
+            });
+
+            runTest('Quick amount buttons filter by wallet', () => {
+                const buttons = bettingModal.generateQuickAmountButtons(75);
+                return buttons.includes('data-amount="25"') &&
+                       buttons.includes('data-amount="50"') &&
+                       !buttons.includes('data-amount="100"');
+            });
+
+            runTest('Bet outcome labels are correct', () => {
+                const fullMatchBet = { type: 'fullMatch', outcome: 'home' };
+                const actionBet = { type: 'actionBet', outcome: 'Goal scored' };
+                return bettingModal.getBetOutcomeLabel(fullMatchBet) === 'Arsenal Win' &&
+                       bettingModal.getBetOutcomeLabel(actionBet) === 'Goal scored';
+            });
+
+            updateTestSummary();
+        }
+
+        // Demo functions
+        function demoActionBettingModal() {
+            const eventData = {
+                id: 'demo_event_1',
+                description: 'Arsenal player dribbles into the penalty area - what happens next?',
+                choices: [
+                    { id: 'choice1', description: 'Shot on target', odds: 2.50, outcome: 'shot' },
+                    { id: 'choice2', description: 'Penalty awarded', odds: 4.00, outcome: 'penalty' },
+                    { id: 'choice3', description: 'Ball cleared by defender', odds: 1.80, outcome: 'cleared' }
+                ]
+            };
+
+            bettingModal.showActionBettingModal(eventData);
+            logResult('🎮 Action betting modal demo launched', 'info');
+        }
+
+        function demoBetSlipModal() {
+            const choice = {
+                id: 'demo_choice_1',
+                description: 'Next goal scorer: Bukayo Saka',
+                odds: 3.25,
+                outcome: 'saka_goal'
+            };
+
+            const eventData = {
+                id: 'demo_event_2',
+                description: 'Goal scorer prediction',
+                choices: [choice]
+            };
+
+            bettingModal.showBetSlipModal(choice, eventData);
+            logResult('🎮 Bet slip modal demo launched', 'info');
+        }
+
+        function demoMatchSummaryModal() {
+            const matchData = {
+                homeTeam: 'Arsenal',
+                awayTeam: 'Chelsea',
+                homeScore: 3,
+                awayScore: 1
+            };
+
+            bettingModal.showMatchSummaryModal(matchData);
+            logResult('🎮 Match summary modal demo launched', 'info');
+        }
+
+        function closeAllModals() {
+            bettingModal.closeModal();
+            logResult('🎮 All modals closed', 'info');
+        }
+
+        // Global functions for buttons
+        window.runAllTests = async function() {
+            if (!initializeTestEnvironment()) return;
+
+            testResults = { total: 0, passed: 0, failed: 0, tests: [] };
+            
+            logResult('🚀 Starting comprehensive BettingModal test suite...', 'info');
+            
+            runInitializationTests();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            runActionBettingTests();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            runBetSlipTests();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            runMatchSummaryTests();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            runModalManagementTests();
+            
+            logResult(`🏁 Test suite completed: ${testResults.passed}/${testResults.total} tests passed`, 
+                     testResults.failed === 0 ? 'success' : 'warning');
+        };
+
+        window.runInitializationTests = function() {
+            if (!initializeTestEnvironment()) return;
+            testResults = { total: 0, passed: 0, failed: 0, tests: [] };
+            runInitializationTests();
+        };
+
+        window.runActionBettingTests = function() {
+            if (!initializeTestEnvironment()) return;
+            testResults = { total: 0, passed: 0, failed: 0, tests: [] };
+            runActionBettingTests();
+        };
+
+        window.runBetSlipTests = function() {
+            if (!initializeTestEnvironment()) return;
+            testResults = { total: 0, passed: 0, failed: 0, tests: [] };
+            runBetSlipTests();
+        };
+
+        window.runMatchSummaryTests = function() {
+            if (!initializeTestEnvironment()) return;
+            testResults = { total: 0, passed: 0, failed: 0, tests: [] };
+            runMatchSummaryTests();
+        };
+
+        window.runModalManagementTests = function() {
+            if (!initializeTestEnvironment()) return;
+            testResults = { total: 0, passed: 0, failed: 0, tests: [] };
+            runModalManagementTests();
+        };
+
+        window.clearResults = function() {
+            document.getElementById('test-results').innerHTML = 'Results cleared...\n';
+            document.getElementById('test-summary').style.display = 'none';
+            testResults = { total: 0, passed: 0, failed: 0, tests: [] };
+        };
+
+        window.demoActionBettingModal = demoActionBettingModal;
+        window.demoBetSlipModal = demoBetSlipModal;
+        window.demoMatchSummaryModal = demoMatchSummaryModal;
+        window.closeAllModals = closeAllModals;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            logResult('🎯 BettingModal Test Runner initialized', 'success');
+            logResult('Click "Run All Tests" to start comprehensive testing', 'info');
+        });
+    </script>
+</body>
+</html>

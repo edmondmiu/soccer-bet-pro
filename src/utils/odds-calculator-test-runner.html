@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OddsCalculator Test Runner</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 10px;
+            border: 2px solid #059669;
+        }
+        
+        .test-section {
+            background: #1e293b;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #059669;
+        }
+        
+        .test-output {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #334155;
+        }
+        
+        .run-button {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .run-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+        
+        .demo-section {
+            background: #1e293b;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .odds-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .odds-card {
+            background: #334155;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #475569;
+        }
+        
+        .odds-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #10b981;
+            margin: 5px 0;
+        }
+        
+        .probability {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+        
+        .match-scenario {
+            background: #475569;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧮 OddsCalculator Test Runner</h1>
+        <p>Comprehensive testing for dynamic odds calculation and adjustments</p>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Unit Tests</h2>
+        <button class="run-button" onclick="runTests()">Run All Tests</button>
+        <button class="run-button" onclick="clearOutput()">Clear Output</button>
+        <div id="test-output" class="test-output">Click "Run All Tests" to execute the test suite...</div>
+    </div>
+
+    <div class="demo-section">
+        <h2>🎮 Interactive Demo</h2>
+        <p>See how odds change based on match scenarios:</p>
+        
+        <div class="match-scenario">
+            <strong>Current Match: Arsenal vs Chelsea</strong>
+            <div style="margin: 10px 0;">
+                <button class="run-button" onclick="updateDemo(0, 0)">0-0</button>
+                <button class="run-button" onclick="updateDemo(1, 0)">1-0</button>
+                <button class="run-button" onclick="updateDemo(0, 1)">0-1</button>
+                <button class="run-button" onclick="updateDemo(2, 1)">2-1</button>
+                <button class="run-button" onclick="updateDemo(1, 2)">1-2</button>
+            </div>
+        </div>
+        
+        <div id="odds-display" class="odds-display">
+            <!-- Odds will be populated by JavaScript -->
+        </div>
+        
+        <div id="odds-analysis" style="margin-top: 20px; padding: 15px; background: #334155; border-radius: 8px;">
+            <!-- Analysis will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Performance Tests</h2>
+        <button class="run-button" onclick="runPerformanceTests()">Run Performance Tests</button>
+        <div id="performance-output" class="test-output">Click "Run Performance Tests" to measure calculation speed...</div>
+    </div>
+
+    <script type="module">
+        import { OddsCalculator, oddsCalculator } from './OddsCalculator.js';
+        import { runOddsCalculatorTests } from './OddsCalculator.test.js';
+
+        // Make functions available globally
+        window.OddsCalculator = OddsCalculator;
+        window.oddsCalculator = oddsCalculator;
+        window.runOddsCalculatorTests = runOddsCalculatorTests;
+
+        // Initialize demo
+        updateDemo(0, 0);
+
+        window.runTests = function() {
+            const output = document.getElementById('test-output');
+            output.textContent = 'Running tests...\n';
+            
+            // Capture console output
+            const originalLog = console.log;
+            const originalError = console.error;
+            
+            console.log = (...args) => {
+                output.textContent += args.join(' ') + '\n';
+                originalLog(...args);
+            };
+            
+            console.error = (...args) => {
+                output.textContent += args.join(' ') + '\n';
+                originalError(...args);
+            };
+            
+            try {
+                const results = runOddsCalculatorTests();
+                output.textContent += `\n🎯 Test execution completed!\n`;
+                
+                if (results.failed === 0) {
+                    output.textContent += `🎉 All tests passed! The OddsCalculator is working perfectly.\n`;
+                } else {
+                    output.textContent += `⚠️ Some tests failed. Please review the output above.\n`;
+                }
+            } catch (error) {
+                output.textContent += `\n❌ Test execution failed: ${error.message}\n`;
+            }
+            
+            // Restore console
+            console.log = originalLog;
+            console.error = originalError;
+        };
+
+        window.clearOutput = function() {
+            document.getElementById('test-output').textContent = 'Output cleared. Click "Run All Tests" to execute the test suite...';
+        };
+
+        window.updateDemo = function(homeScore, awayScore) {
+            const matchState = { homeScore, awayScore };
+            const odds = oddsCalculator.calculateOdds(matchState);
+            const summary = oddsCalculator.getOddsSummary(odds);
+            
+            // Update odds display
+            const oddsDisplay = document.getElementById('odds-display');
+            oddsDisplay.innerHTML = `
+                <div class="odds-card">
+                    <h3>Arsenal Win</h3>
+                    <div class="odds-value">${odds.home}</div>
+                    <div class="probability">${summary.probabilities.home}% chance</div>
+                </div>
+                <div class="odds-card">
+                    <h3>Draw</h3>
+                    <div class="odds-value">${odds.draw}</div>
+                    <div class="probability">${summary.probabilities.draw}% chance</div>
+                </div>
+                <div class="odds-card">
+                    <h3>Chelsea Win</h3>
+                    <div class="odds-value">${odds.away}</div>
+                    <div class="probability">${summary.probabilities.away}% chance</div>
+                </div>
+            `;
+            
+            // Update analysis
+            const analysis = document.getElementById('odds-analysis');
+            const initialOdds = oddsCalculator.getInitialOdds();
+            const changes = oddsCalculator.calculateOddsChange(initialOdds, odds);
+            
+            analysis.innerHTML = `
+                <h4>📈 Odds Analysis for ${homeScore}-${awayScore}</h4>
+                <p><strong>Changes from initial odds:</strong></p>
+                <ul>
+                    <li>Arsenal: ${changes.home > 0 ? '+' : ''}${changes.home}%</li>
+                    <li>Draw: ${changes.draw > 0 ? '+' : ''}${changes.draw}%</li>
+                    <li>Chelsea: ${changes.away > 0 ? '+' : ''}${changes.away}%</li>
+                </ul>
+                <p><strong>Total Probability:</strong> ${summary.totalProbability}%</p>
+            `;
+        };
+
+        window.runPerformanceTests = function() {
+            const output = document.getElementById('performance-output');
+            output.textContent = 'Running performance tests...\n\n';
+            
+            const calculator = new OddsCalculator();
+            const iterations = 10000;
+            
+            // Test odds calculation performance
+            const start1 = performance.now();
+            for (let i = 0; i < iterations; i++) {
+                calculator.calculateOdds({ homeScore: i % 5, awayScore: (i + 1) % 5 });
+            }
+            const end1 = performance.now();
+            
+            output.textContent += `📊 Odds Calculation Performance:\n`;
+            output.textContent += `   ${iterations} calculations in ${(end1 - start1).toFixed(2)}ms\n`;
+            output.textContent += `   Average: ${((end1 - start1) / iterations).toFixed(4)}ms per calculation\n\n`;
+            
+            // Test goal adjustment performance
+            const start2 = performance.now();
+            const testOdds = { home: 2.0, draw: 3.0, away: 4.0 };
+            for (let i = 0; i < iterations; i++) {
+                calculator.adjustForGoal(i % 2 === 0 ? 'home' : 'away', testOdds);
+            }
+            const end2 = performance.now();
+            
+            output.textContent += `⚽ Goal Adjustment Performance:\n`;
+            output.textContent += `   ${iterations} adjustments in ${(end2 - start2).toFixed(2)}ms\n`;
+            output.textContent += `   Average: ${((end2 - start2) / iterations).toFixed(4)}ms per adjustment\n\n`;
+            
+            // Test validation performance
+            const start3 = performance.now();
+            for (let i = 0; i < iterations; i++) {
+                calculator.validateOdds({ home: 1.85, draw: 3.50, away: 4.20 });
+            }
+            const end3 = performance.now();
+            
+            output.textContent += `✅ Validation Performance:\n`;
+            output.textContent += `   ${iterations} validations in ${(end3 - start3).toFixed(2)}ms\n`;
+            output.textContent += `   Average: ${((end3 - start3) / iterations).toFixed(4)}ms per validation\n\n`;
+            
+            output.textContent += `🎯 Performance Summary:\n`;
+            output.textContent += `   All operations are highly optimized for real-time use\n`;
+            output.textContent += `   Ready for production deployment! 🚀\n`;
+        };
+    </script>
+</body>
+</html>

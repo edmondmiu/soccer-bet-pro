@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ActionBetting Test Runner</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 10px;
+            border: 2px solid #059669;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #1e293b;
+            border-radius: 8px;
+            border-left: 4px solid #059669;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            border: 2px solid #34d399;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #047857 0%, #059669 100%);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+
+        button:disabled {
+            background: #475569;
+            border-color: #64748b;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .results {
+            background-color: #334155;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .warning { color: #f59e0b; }
+        .info { color: #3b82f6; }
+
+        .modal-demo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #059669;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #f59e0b;
+        }
+
+        .countdown-display {
+            font-size: 2em;
+            font-weight: bold;
+            color: #ef4444;
+            margin: 20px 0;
+        }
+
+        .betting-choices {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .choice-button {
+            background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+            border: 2px solid #6b7280;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .choice-button:hover {
+            border-color: #059669;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        }
+
+        .bet-amount-input {
+            background: #374151;
+            border: 2px solid #6b7280;
+            color: #e2e8f0;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px;
+            width: 100px;
+            text-align: center;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .status-display {
+            background: #374151;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 ActionBetting Test Runner</h1>
+        <p>Comprehensive testing for time-limited betting opportunities with pause/resume functionality</p>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <div class="test-controls">
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="testModalShow()">Test Modal Show</button>
+            <button onclick="testBetPlacement()">Test Bet Placement</button>
+            <button onclick="testSkipBetting()">Test Skip Betting</button>
+            <button onclick="testTimeout()">Test Timeout</button>
+            <button onclick="testTimerIntegration()">Test Timer Integration</button>
+            <button onclick="demoActionBetting()">Demo Action Betting</button>
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+        
+        <div class="status-display">
+            <h3>System Status</h3>
+            <div id="statusDisplay">
+                <div class="status-item">
+                    <span>ActionBetting Status:</span>
+                    <span id="actionBettingStatus">Not initialized</span>
+                </div>
+                <div class="status-item">
+                    <span>Timer Status:</span>
+                    <span id="timerStatus">Stopped</span>
+                </div>
+                <div class="status-item">
+                    <span>Modal Status:</span>
+                    <span id="modalStatus">Closed</span>
+                </div>
+                <div class="status-item">
+                    <span>Wallet Balance:</span>
+                    <span id="walletBalance">$1000</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Results</h2>
+        <div id="results" class="results">Ready to run tests...</div>
+    </div>
+
+    <!-- Action Betting Modal Demo -->
+    <div id="actionBettingModal" class="modal-demo">
+        <div class="modal-content">
+            <div class="modal-header">⏸️ Game Paused - Betting Opportunity</div>
+            <div id="eventDescription">Corner kick for Home Team</div>
+            <div class="countdown-display" id="countdownDisplay">10</div>
+            
+            <div class="betting-choices">
+                <div class="choice-button" onclick="selectChoice('choice_1')">
+                    <strong>Goal from corner</strong><br>
+                    Odds: 3.5x
+                </div>
+                <div class="choice-button" onclick="selectChoice('choice_2')">
+                    <strong>No goal</strong><br>
+                    Odds: 1.3x
+                </div>
+            </div>
+
+            <div>
+                <label>Bet Amount: $</label>
+                <input type="number" id="betAmountInput" class="bet-amount-input" value="25" min="1" max="1000">
+            </div>
+
+            <div class="modal-actions">
+                <button onclick="placeDemoBet()">Place Bet</button>
+                <button onclick="skipDemoBetting()">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Mock dependencies for testing
+        class MockStateManager {
+            constructor() {
+                this.state = {
+                    wallet: 1000,
+                    betAmountMemory: {
+                        opportunity: 25
+                    },
+                    bets: {
+                        actionBet: []
+                    }
+                };
+                this.observers = [];
+            }
+
+            getState() {
+                return { ...this.state };
+            }
+
+            updateState(updates) {
+                this.state = { ...this.state, ...updates };
+                this.notifyObservers();
+            }
+
+            getBetAmountMemory(type) {
+                return this.state.betAmountMemory[type] || 25;
+            }
+
+            updateBetAmountMemory(type, amount) {
+                this.state.betAmountMemory[type] = amount;
+                this.updateState({});
+            }
+
+            subscribe(callback) {
+                this.observers.push(callback);
+                return () => {
+                    const index = this.observers.indexOf(callback);
+                    if (index > -1) this.observers.splice(index, 1);
+                };
+            }
+
+            notifyObservers() {
+                this.observers.forEach(callback => {
+                    try {
+                        callback(this.state);
+                    } catch (error) {
+                        console.error('Observer error:', error);
+                    }
+                });
+            }
+        }
+
+        class MockTimerManager {
+            constructor() {
+                this.isPaused = false;
+                this.countdownTime = 0;
+                this.callbacks = {};
+                this.countdownInterval = null;
+                this.countdownCallback = null;
+            }
+
+            pauseTimer() {
+                this.isPaused = true;
+                this.log('Timer paused');
+            }
+
+            resumeTimer() {
+                this.isPaused = false;
+                this.log('Timer resumed');
+            }
+
+            startCountdown(duration, callback) {
+                this.countdownTime = duration;
+                this.countdownCallback = callback;
+                
+                this.countdownInterval = setInterval(() => {
+                    this.countdownTime -= 0.1;
+                    
+                    if (this.callbacks.onCountdownUpdate) {
+                        this.callbacks.onCountdownUpdate(Math.max(0, this.countdownTime));
+                    }
+
+                    if (this.countdownTime <= 0) {
+                        this.stopCountdown();
+                        if (callback) callback();
+                        if (this.callbacks.onCountdownComplete) {
+                            this.callbacks.onCountdownComplete();
+                        }
+                    }
+                }, 100);
+
+                this.log(`Countdown started: ${duration} seconds`);
+            }
+
+            stopCountdown() {
+                if (this.countdownInterval) {
+                    clearInterval(this.countdownInterval);
+                    this.countdownInterval = null;
+                }
+                this.countdownTime = 0;
+                this.log('Countdown stopped');
+            }
+
+            getCountdownTime() {
+                return Math.max(0, this.countdownTime);
+            }
+
+            setCallbacks(callbacks) {
+                this.callbacks = { ...this.callbacks, ...callbacks };
+            }
+
+            getStatus() {
+                return {
+                    match: { isPaused: this.isPaused },
+                    countdown: { remainingTime: this.countdownTime }
+                };
+            }
+
+            log(message) {
+                window.logToResults(`[TimerManager] ${message}`, 'info');
+            }
+        }
+
+        class MockBettingManager {
+            constructor() {
+                this.bets = [];
+                this.betIdCounter = 1;
+            }
+
+            placeBet(betData) {
+                const bet = {
+                    id: `bet_${this.betIdCounter++}`,
+                    ...betData,
+                    placedAt: Date.now(),
+                    potentialWinnings: betData.stake * betData.odds
+                };
+                
+                this.bets.push(bet);
+                window.logToResults(`Bet placed: ${bet.outcome} for $${bet.stake} @ ${bet.odds}x`, 'success');
+                
+                return { success: true, bet };
+            }
+
+            getBets() {
+                return [...this.bets];
+            }
+        }
+
+        // Global test instances
+        let mockStateManager;
+        let mockTimerManager;
+        let mockBettingManager;
+        let actionBetting;
+        let demoCountdownInterval;
+        let selectedChoice = null;
+
+        // Initialize test environment
+        async function initializeTests() {
+            try {
+                // Import ActionBetting
+                const { ActionBetting } = await import('./ActionBetting.js');
+                
+                // Create mock instances
+                mockStateManager = new MockStateManager();
+                mockTimerManager = new MockTimerManager();
+                mockBettingManager = new MockBettingManager();
+                
+                // Create ActionBetting instance
+                window.actionBetting = new ActionBetting(
+                    mockStateManager,
+                    mockTimerManager,
+                    mockBettingManager
+                );
+
+                // Set up callbacks for UI updates
+                window.actionBetting.setCallbacks({
+                    onModalShow: (event) => {
+                        window.logToResults(`Modal shown: ${event.description}`, 'info');
+                        updateStatus();
+                    },
+                    onModalHide: () => {
+                        window.logToResults('Modal hidden', 'info');
+                        updateStatus();
+                    },
+                    onCountdownUpdate: (time) => {
+                        updateCountdownDisplay(time);
+                    },
+                    onBetPlaced: (bet, choice) => {
+                        window.logToResults(`Bet placed: ${choice.description} for $${bet.stake}`, 'success');
+                        updateStatus();
+                    },
+                    onTimeout: (event) => {
+                        window.logToResults(`Betting timed out for: ${event.description}`, 'warning');
+                        updateStatus();
+                    },
+                    onSkip: (event) => {
+                        window.logToResults(`Betting skipped for: ${event.description}`, 'info');
+                        updateStatus();
+                    }
+                });
+
+                // Subscribe to state changes
+                mockStateManager.subscribe((state) => {
+                    updateWalletDisplay(state.wallet);
+                });
+
+                window.logToResults('ActionBetting test environment initialized successfully', 'success');
+                updateStatus();
+                
+            } catch (error) {
+                window.logToResults(`Initialization failed: ${error.message}`, 'error');
+                console.error('Initialization error:', error);
+            }
+        }
+
+        // Utility functions
+        window.logToResults = function(message, type = 'info') {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            results.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            results.scrollTop = results.scrollHeight;
+        };
+
+        function updateStatus() {
+            if (!window.actionBetting) return;
+
+            const status = window.actionBetting.getStatus();
+            
+            document.getElementById('actionBettingStatus').textContent = 
+                status.isModalOpen ? 'Modal Open' : 'Ready';
+            document.getElementById('timerStatus').textContent = 
+                status.timerStatus.match.isPaused ? 'Paused' : 'Running';
+            document.getElementById('modalStatus').textContent = 
+                status.isModalOpen ? 'Open' : 'Closed';
+        }
+
+        function updateWalletDisplay(balance) {
+            document.getElementById('walletBalance').textContent = `$${balance}`;
+        }
+
+        function updateCountdownDisplay(time) {
+            const display = document.getElementById('countdownDisplay');
+            if (display) {
+                display.textContent = Math.ceil(time);
+                
+                // Change color based on remaining time
+                if (time <= 3) {
+                    display.style.color = '#ef4444';
+                } else if (time <= 5) {
+                    display.style.color = '#f59e0b';
+                } else {
+                    display.style.color = '#ef4444';
+                }
+            }
+        }
+
+        // Test functions
+        window.runAllTests = async function() {
+            window.logToResults('=== Running All ActionBetting Tests ===', 'info');
+            
+            await testModalShow();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testBetPlacement();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testSkipBetting();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testTimeout();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            await testTimerIntegration();
+            
+            window.logToResults('=== All Tests Complete ===', 'success');
+        };
+
+        window.testModalShow = async function() {
+            try {
+                window.logToResults('Testing modal show functionality...', 'info');
+                
+                const sampleEvent = {
+                    id: 'test_event_1',
+                    description: 'Corner kick for Home Team',
+                    choices: [
+                        { id: 'choice_1', description: 'Goal from corner', odds: 3.5, outcome: 'goal' },
+                        { id: 'choice_2', description: 'No goal', odds: 1.3, outcome: 'no_goal' }
+                    ]
+                };
+
+                const result = await window.actionBetting.showActionBettingModal(sampleEvent);
+                
+                if (result.success) {
+                    window.logToResults('✓ Modal show test passed', 'success');
+                    
+                    // Test modal state
+                    if (window.actionBetting.isModalActive()) {
+                        window.logToResults('✓ Modal is active', 'success');
+                    } else {
+                        window.logToResults('✗ Modal should be active', 'error');
+                    }
+                    
+                    // Test timer pause
+                    const status = window.actionBetting.getStatus();
+                    if (status.timerStatus.match.isPaused) {
+                        window.logToResults('✓ Timer is paused', 'success');
+                    } else {
+                        window.logToResults('✗ Timer should be paused', 'error');
+                    }
+                    
+                } else {
+                    window.logToResults(`✗ Modal show test failed: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                window.logToResults(`✗ Modal show test error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testBetPlacement = async function() {
+            try {
+                window.logToResults('Testing bet placement...', 'info');
+                
+                // Ensure modal is open first
+                const sampleEvent = {
+                    id: 'test_event_2',
+                    description: 'Free kick opportunity',
+                    choices: [
+                        { id: 'choice_1', description: 'Goal', odds: 4.0, outcome: 'goal' },
+                        { id: 'choice_2', description: 'Miss', odds: 1.25, outcome: 'miss' }
+                    ]
+                };
+
+                await window.actionBetting.showActionBettingModal(sampleEvent);
+                
+                const result = window.actionBetting.placeBet('choice_1', 50);
+                
+                if (result.success) {
+                    window.logToResults('✓ Bet placement test passed', 'success');
+                    
+                    // Check if modal closed
+                    if (!window.actionBetting.isModalActive()) {
+                        window.logToResults('✓ Modal closed after bet placement', 'success');
+                    } else {
+                        window.logToResults('✗ Modal should close after bet placement', 'error');
+                    }
+                    
+                    // Check bet amount memory
+                    const memoryAmount = window.actionBetting.getPrePopulatedAmount();
+                    if (memoryAmount === 50) {
+                        window.logToResults('✓ Bet amount memory updated', 'success');
+                    } else {
+                        window.logToResults('✗ Bet amount memory not updated correctly', 'error');
+                    }
+                    
+                } else {
+                    window.logToResults(`✗ Bet placement test failed: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                window.logToResults(`✗ Bet placement test error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testSkipBetting = async function() {
+            try {
+                window.logToResults('Testing skip betting...', 'info');
+                
+                const sampleEvent = {
+                    id: 'test_event_3',
+                    description: 'Penalty kick',
+                    choices: [
+                        { id: 'choice_1', description: 'Goal', odds: 1.8, outcome: 'goal' },
+                        { id: 'choice_2', description: 'Save', odds: 2.2, outcome: 'save' }
+                    ]
+                };
+
+                await window.actionBetting.showActionBettingModal(sampleEvent);
+                
+                const result = window.actionBetting.skipBetting();
+                
+                if (result.success) {
+                    window.logToResults('✓ Skip betting test passed', 'success');
+                    
+                    if (!window.actionBetting.isModalActive()) {
+                        window.logToResults('✓ Modal closed after skip', 'success');
+                    } else {
+                        window.logToResults('✗ Modal should close after skip', 'error');
+                    }
+                    
+                } else {
+                    window.logToResults(`✗ Skip betting test failed: ${result.error}`, 'error');
+                }
+                
+            } catch (error) {
+                window.logToResults(`✗ Skip betting test error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testTimeout = async function() {
+            try {
+                window.logToResults('Testing timeout handling...', 'info');
+                
+                const sampleEvent = {
+                    id: 'test_event_4',
+                    description: 'Throw-in opportunity',
+                    choices: [
+                        { id: 'choice_1', description: 'Quick throw', odds: 2.5, outcome: 'quick' },
+                        { id: 'choice_2', description: 'Normal throw', odds: 1.5, outcome: 'normal' }
+                    ]
+                };
+
+                await window.actionBetting.showActionBettingModal(sampleEvent);
+                
+                // Wait for timeout (simulate by waiting a bit and then triggering)
+                setTimeout(() => {
+                    mockTimerManager.countdownTime = 0;
+                    if (mockTimerManager.callbacks.onCountdownComplete) {
+                        mockTimerManager.callbacks.onCountdownComplete();
+                    }
+                }, 100);
+                
+                // Wait for timeout to process
+                setTimeout(() => {
+                    if (!window.actionBetting.isModalActive()) {
+                        window.logToResults('✓ Timeout test passed - modal closed', 'success');
+                    } else {
+                        window.logToResults('✗ Timeout test failed - modal still open', 'error');
+                    }
+                }, 200);
+                
+            } catch (error) {
+                window.logToResults(`✗ Timeout test error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testTimerIntegration = async function() {
+            try {
+                window.logToResults('Testing timer integration...', 'info');
+                
+                // Test pause/resume coordination
+                const sampleEvent = {
+                    id: 'test_event_5',
+                    description: 'Integration test event',
+                    choices: [
+                        { id: 'choice_1', description: 'Option 1', odds: 2.0, outcome: 'option1' }
+                    ]
+                };
+
+                // Show modal - should pause timer
+                await window.actionBetting.showActionBettingModal(sampleEvent);
+                
+                if (mockTimerManager.isPaused) {
+                    window.logToResults('✓ Timer paused on modal show', 'success');
+                } else {
+                    window.logToResults('✗ Timer should be paused', 'error');
+                }
+                
+                // Place bet - should start resume countdown
+                window.actionBetting.placeBet('choice_1', 25);
+                
+                // Check if resume countdown started
+                setTimeout(() => {
+                    const countdownTime = mockTimerManager.getCountdownTime();
+                    if (countdownTime > 0 && countdownTime <= 3) {
+                        window.logToResults('✓ Resume countdown started', 'success');
+                    } else {
+                        window.logToResults('✗ Resume countdown not started correctly', 'error');
+                    }
+                }, 50);
+                
+            } catch (error) {
+                window.logToResults(`✗ Timer integration test error: ${error.message}`, 'error');
+            }
+        };
+
+        // Demo functions
+        window.demoActionBetting = async function() {
+            try {
+                window.logToResults('Starting ActionBetting demo...', 'info');
+                
+                const sampleEvent = {
+                    id: 'demo_event',
+                    description: 'Corner kick for Home Team',
+                    choices: [
+                        { id: 'choice_1', description: 'Goal from corner', odds: 3.5, outcome: 'goal' },
+                        { id: 'choice_2', description: 'No goal', odds: 1.3, outcome: 'no_goal' }
+                    ]
+                };
+
+                // Show the demo modal
+                document.getElementById('actionBettingModal').style.display = 'flex';
+                document.getElementById('eventDescription').textContent = sampleEvent.description;
+                
+                // Start demo countdown
+                let countdown = 10;
+                demoCountdownInterval = setInterval(() => {
+                    countdown -= 0.1;
+                    updateCountdownDisplay(countdown);
+                    
+                    if (countdown <= 0) {
+                        clearInterval(demoCountdownInterval);
+                        skipDemoBetting();
+                    }
+                }, 100);
+                
+                window.logToResults('Demo modal shown - interact with it!', 'info');
+                
+            } catch (error) {
+                window.logToResults(`Demo error: ${error.message}`, 'error');
+            }
+        };
+
+        window.selectChoice = function(choiceId) {
+            selectedChoice = choiceId;
+            
+            // Update UI to show selection
+            document.querySelectorAll('.choice-button').forEach(button => {
+                button.style.borderColor = '#6b7280';
+                button.style.background = 'linear-gradient(135deg, #374151 0%, #4b5563 100%)';
+            });
+            
+            event.target.style.borderColor = '#059669';
+            event.target.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
+            
+            window.logToResults(`Selected choice: ${choiceId}`, 'info');
+        };
+
+        window.placeDemoBet = function() {
+            if (!selectedChoice) {
+                window.logToResults('Please select a betting choice first', 'warning');
+                return;
+            }
+            
+            const amount = parseInt(document.getElementById('betAmountInput').value);
+            if (!amount || amount < 1) {
+                window.logToResults('Please enter a valid bet amount', 'warning');
+                return;
+            }
+            
+            window.logToResults(`Demo bet placed: ${selectedChoice} for $${amount}`, 'success');
+            closeDemoModal();
+        };
+
+        window.skipDemoBetting = function() {
+            window.logToResults('Demo betting skipped', 'info');
+            closeDemoModal();
+        };
+
+        function closeDemoModal() {
+            if (demoCountdownInterval) {
+                clearInterval(demoCountdownInterval);
+            }
+            
+            document.getElementById('actionBettingModal').style.display = 'none';
+            selectedChoice = null;
+            
+            // Reset choice buttons
+            document.querySelectorAll('.choice-button').forEach(button => {
+                button.style.borderColor = '#6b7280';
+                button.style.background = 'linear-gradient(135deg, #374151 0%, #4b5563 100%)';
+            });
+        }
+
+        window.clearResults = function() {
+            document.getElementById('results').innerHTML = 'Results cleared...\n';
+        };
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeTests);
+
+        // Make functions globally available
+        window.mockStateManager = mockStateManager;
+        window.mockTimerManager = mockTimerManager;
+        window.mockBettingManager = mockBettingManager;
+    </script>
+</body>
+</html>

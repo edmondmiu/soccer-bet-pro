@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LobbyScreen Test Runner</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .test-header {
+            background: #2563eb;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .test-controls {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .test-output {
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f9fafb;
+        }
+        
+        .test-demo {
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        button:hover {
+            background: #1d4ed8;
+        }
+        
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .success { color: #059669; }
+        .error { color: #dc2626; }
+        .info { color: #2563eb; }
+        .warning { color: #d97706; }
+        
+        .demo-container {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            min-height: 400px;
+            background: #0f172a;
+        }
+        
+        .test-result {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        
+        .test-result.pass {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .test-result.fail {
+            background: #fef2f2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>LobbyScreen Component Test Runner</h1>
+            <p>Interactive testing for lobby functionality and match selection</p>
+        </div>
+        
+        <div class="test-controls">
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="testInitialization()">Test Initialization</button>
+            <button onclick="testRendering()">Test Rendering</button>
+            <button onclick="testMatchSelection()">Test Match Selection</button>
+            <button onclick="testClassicMode()">Test Classic Mode</button>
+            <button onclick="testResponsive()">Test Responsive</button>
+            <button onclick="clearOutput()">Clear Output</button>
+            <button onclick="showDemo()">Show Demo</button>
+        </div>
+        
+        <div class="test-output" id="testOutput">
+            <div class="info">Click "Run All Tests" to start testing, or run individual test suites.</div>
+        </div>
+        
+        <div class="test-demo">
+            <h3>Live Demo</h3>
+            <div class="demo-container" id="demoContainer">
+                <div style="padding: 20px; color: #e2e8f0; text-align: center;">
+                    Click "Show Demo" to see the LobbyScreen component in action
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { LobbyScreen } from './LobbyScreen.js';
+        import { StateManager } from '../core/StateManager.js';
+
+        let testResults = [];
+        let lobbyScreen = null;
+        let stateManager = null;
+
+        // Mock UIManager for testing
+        window.uiManager = {
+            showNotification: (message, type, title) => {
+                log(`Notification: ${title || type} - ${message}`, 'info');
+            },
+            showLoading: (message) => {
+                log(`Loading: ${message}`, 'info');
+            },
+            hideLoading: () => {
+                log('Loading hidden', 'info');
+            }
+        };
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('testOutput');
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function logTestResult(testName, passed, error = null) {
+            const result = { testName, passed, error };
+            testResults.push(result);
+            
+            const output = document.getElementById('testOutput');
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.textContent = `${passed ? '✓' : '✗'} ${testName}${error ? ': ' + error : ''}`;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function assert(condition, message) {
+            if (!condition) {
+                throw new Error(message);
+            }
+        }
+
+        function assertEqual(actual, expected, message) {
+            if (actual !== expected) {
+                throw new Error(`${message}: expected ${expected}, got ${actual}`);
+            }
+        }
+
+        function setupTest() {
+            // Clean up previous test
+            if (lobbyScreen) {
+                lobbyScreen.destroy();
+            }
+            
+            // Create fresh instances
+            lobbyScreen = new LobbyScreen();
+            stateManager = new StateManager();
+            lobbyScreen.initialize(stateManager);
+            
+            return { lobbyScreen, stateManager };
+        }
+
+        window.testInitialization = function() {
+            log('Testing LobbyScreen initialization...', 'info');
+            
+            try {
+                const { lobbyScreen, stateManager } = setupTest();
+                
+                // Test 1: Basic initialization
+                assert(lobbyScreen.stateManager === stateManager, 'StateManager should be set');
+                logTestResult('StateManager initialization', true);
+                
+                // Test 2: Available matches generation
+                const matches = lobbyScreen.getAvailableMatches();
+                assert(matches.length >= 3 && matches.length <= 6, 'Should generate 3-6 matches');
+                logTestResult('Available matches generation', true);
+                
+                // Test 3: Match structure validation
+                matches.forEach((match, index) => {
+                    assert(match.id, `Match ${index} should have ID`);
+                    assert(match.homeTeam, `Match ${index} should have home team`);
+                    assert(match.awayTeam, `Match ${index} should have away team`);
+                    assert(match.odds, `Match ${index} should have odds`);
+                    assert(match.kickoff, `Match ${index} should have kickoff time`);
+                });
+                logTestResult('Match structure validation', true);
+                
+                // Test 4: Unique teams
+                const allTeams = [];
+                matches.forEach(match => {
+                    allTeams.push(match.homeTeam, match.awayTeam);
+                });
+                const uniqueTeams = new Set(allTeams);
+                assert(uniqueTeams.size === allTeams.length, 'All teams should be unique');
+                logTestResult('Unique teams validation', true);
+                
+                log('✓ Initialization tests completed successfully', 'success');
+                
+            } catch (error) {
+                logTestResult('Initialization test', false, error.message);
+                log(`✗ Initialization test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testRendering = function() {
+            log('Testing LobbyScreen rendering...', 'info');
+            
+            try {
+                const { lobbyScreen, stateManager } = setupTest();
+                const state = stateManager.getState();
+                
+                // Test 1: Basic rendering
+                const element = lobbyScreen.render(state);
+                assert(element.classList.contains('lobby-screen'), 'Should have lobby-screen class');
+                logTestResult('Basic rendering', true);
+                
+                // Test 2: Header elements
+                assert(element.querySelector('.lobby-header'), 'Should have header');
+                assert(element.querySelector('.lobby-title'), 'Should have title');
+                assert(element.querySelector('.wallet-display'), 'Should have wallet display');
+                assert(element.querySelector('.classic-mode-toggle'), 'Should have classic mode toggle');
+                logTestResult('Header elements rendering', true);
+                
+                // Test 3: Wallet display
+                const walletBalance = element.querySelector('.wallet-balance');
+                assertEqual(walletBalance.textContent, '1000.00', 'Should display correct wallet balance');
+                logTestResult('Wallet display', true);
+                
+                // Test 4: Match cards
+                const matchCards = element.querySelectorAll('.match-card');
+                const availableMatches = lobbyScreen.getAvailableMatches();
+                assertEqual(matchCards.length, availableMatches.length, 'Should render all available matches');
+                logTestResult('Match cards rendering', true);
+                
+                // Test 5: Match card content
+                const firstMatch = availableMatches[0];
+                const firstCard = element.querySelector(`[data-match-id="${firstMatch.id}"]`);
+                assert(firstCard, 'Should find first match card');
+                
+                const homeTeam = firstCard.querySelector('.home-team');
+                const awayTeam = firstCard.querySelector('.away-team');
+                assertEqual(homeTeam.textContent, firstMatch.homeTeam, 'Should display correct home team');
+                assertEqual(awayTeam.textContent, firstMatch.awayTeam, 'Should display correct away team');
+                logTestResult('Match card content', true);
+                
+                log('✓ Rendering tests completed successfully', 'success');
+                
+            } catch (error) {
+                logTestResult('Rendering test', false, error.message);
+                log(`✗ Rendering test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testMatchSelection = function() {
+            log('Testing match selection functionality...', 'info');
+            
+            try {
+                const { lobbyScreen, stateManager } = setupTest();
+                const state = stateManager.getState();
+                const element = lobbyScreen.render(state);
+                
+                // Add to DOM for event testing
+                document.body.appendChild(element);
+                
+                // Test 1: Join button click
+                const firstMatch = lobbyScreen.getAvailableMatches()[0];
+                const joinButton = element.querySelector(`[data-match-id="${firstMatch.id}"] .join-match-btn`);
+                assert(joinButton, 'Should find join button');
+                logTestResult('Join button exists', true);
+                
+                // Test 2: Match selection handling
+                let stateChanged = false;
+                const unsubscribe = stateManager.subscribe((newState) => {
+                    if (newState.currentScreen === 'match') {
+                        stateChanged = true;
+                        assertEqual(newState.match.homeTeam, firstMatch.homeTeam, 'Should set correct home team');
+                        assertEqual(newState.match.awayTeam, firstMatch.awayTeam, 'Should set correct away team');
+                        assert(newState.match.active, 'Match should be active');
+                        logTestResult('State update on match selection', true);
+                    }
+                });
+                
+                // Mock setTimeout to execute immediately
+                const originalSetTimeout = window.setTimeout;
+                window.setTimeout = (callback) => {
+                    callback();
+                    window.setTimeout = originalSetTimeout;
+                };
+                
+                // Trigger match selection
+                joinButton.click();
+                
+                // Verify state change occurred
+                setTimeout(() => {
+                    assert(stateChanged, 'State should have changed');
+                    logTestResult('Match selection state change', true);
+                    
+                    unsubscribe();
+                    element.remove();
+                    log('✓ Match selection tests completed successfully', 'success');
+                }, 100);
+                
+            } catch (error) {
+                logTestResult('Match selection test', false, error.message);
+                log(`✗ Match selection test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testClassicMode = function() {
+            log('Testing classic mode toggle...', 'info');
+            
+            try {
+                const { lobbyScreen, stateManager } = setupTest();
+                const state = stateManager.getState();
+                const element = lobbyScreen.render(state);
+                
+                // Add to DOM for event testing
+                document.body.appendChild(element);
+                
+                // Test 1: Initial state
+                const checkbox = element.querySelector('#classic-mode-checkbox');
+                assert(checkbox, 'Should find classic mode checkbox');
+                assertEqual(checkbox.checked, false, 'Should start with classic mode disabled');
+                logTestResult('Classic mode initial state', true);
+                
+                // Test 2: Toggle classic mode on
+                checkbox.checked = true;
+                checkbox.dispatchEvent(new Event('change'));
+                
+                const updatedState = stateManager.getState();
+                assertEqual(updatedState.classicMode, true, 'Should enable classic mode');
+                logTestResult('Classic mode enable', true);
+                
+                // Test 3: Toggle classic mode off
+                checkbox.checked = false;
+                checkbox.dispatchEvent(new Event('change'));
+                
+                const finalState = stateManager.getState();
+                assertEqual(finalState.classicMode, false, 'Should disable classic mode');
+                logTestResult('Classic mode disable', true);
+                
+                element.remove();
+                log('✓ Classic mode tests completed successfully', 'success');
+                
+            } catch (error) {
+                logTestResult('Classic mode test', false, error.message);
+                log(`✗ Classic mode test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testResponsive = function() {
+            log('Testing responsive design...', 'info');
+            
+            try {
+                const { lobbyScreen, stateManager } = setupTest();
+                const state = stateManager.getState();
+                const element = lobbyScreen.render(state);
+                
+                // Add to DOM for resize testing
+                document.body.appendChild(element);
+                
+                // Test 1: Mobile layout
+                Object.defineProperty(window, 'innerWidth', {
+                    writable: true,
+                    configurable: true,
+                    value: 600
+                });
+                
+                lobbyScreen.handleResize();
+                assert(element.classList.contains('mobile-layout'), 'Should add mobile layout class');
+                logTestResult('Mobile layout detection', true);
+                
+                // Test 2: Desktop layout
+                Object.defineProperty(window, 'innerWidth', {
+                    writable: true,
+                    configurable: true,
+                    value: 1200
+                });
+                
+                lobbyScreen.handleResize();
+                assert(!element.classList.contains('mobile-layout'), 'Should remove mobile layout class');
+                logTestResult('Desktop layout detection', true);
+                
+                element.remove();
+                log('✓ Responsive design tests completed successfully', 'success');
+                
+            } catch (error) {
+                logTestResult('Responsive test', false, error.message);
+                log(`✗ Responsive test failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.runAllTests = function() {
+            log('Running all LobbyScreen tests...', 'info');
+            testResults = [];
+            
+            testInitialization();
+            setTimeout(() => testRendering(), 100);
+            setTimeout(() => testMatchSelection(), 200);
+            setTimeout(() => testClassicMode(), 300);
+            setTimeout(() => testResponsive(), 400);
+            
+            setTimeout(() => {
+                const passed = testResults.filter(r => r.passed).length;
+                const total = testResults.length;
+                
+                if (passed === total) {
+                    log(`✓ All tests passed! (${passed}/${total})`, 'success');
+                } else {
+                    log(`✗ ${total - passed} tests failed. (${passed}/${total} passed)`, 'error');
+                }
+            }, 500);
+        };
+
+        window.showDemo = function() {
+            log('Loading LobbyScreen demo...', 'info');
+            
+            try {
+                const { lobbyScreen, stateManager } = setupTest();
+                const demoContainer = document.getElementById('demoContainer');
+                
+                // Clear demo container
+                demoContainer.innerHTML = '';
+                
+                // Render lobby screen
+                const state = stateManager.getState();
+                const element = lobbyScreen.render(state);
+                
+                demoContainer.appendChild(element);
+                
+                log('✓ Demo loaded successfully', 'success');
+                log('Try interacting with the lobby screen above!', 'info');
+                
+            } catch (error) {
+                log(`✗ Demo failed to load: ${error.message}`, 'error');
+            }
+        };
+
+        window.clearOutput = function() {
+            document.getElementById('testOutput').innerHTML = '';
+            testResults = [];
+        };
+
+        // Auto-run tests on load
+        log('LobbyScreen Test Runner loaded. Ready for testing!', 'success');
+    </script>
+</body>
+</html>

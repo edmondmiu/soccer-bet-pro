@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MatchScreen Test Runner</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #10b981;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            background: rgba(51, 65, 85, 0.3);
+            border: 2px solid #475569;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(4px);
+        }
+
+        .test-section h2 {
+            color: #34d399;
+            margin-top: 0;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: 2px solid #059669;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #047857 0%, #059669 100%);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(71, 85, 105, 0.2);
+            border-color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(100, 116, 139, 0.3);
+            border-color: #64748b;
+        }
+
+        .test-output {
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid #334155;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .success {
+            color: #10b981;
+        }
+
+        .error {
+            color: #ef4444;
+        }
+
+        .warning {
+            color: #f59e0b;
+        }
+
+        .info {
+            color: #3b82f6;
+        }
+
+        .demo-container {
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid #334155;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(5, 150, 105, 0.1);
+            border: 1px solid #059669;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .test-controls {
+                flex-direction: column;
+            }
+            
+            .btn {
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏟️ MatchScreen Test Runner</h1>
+        
+        <div class="test-section">
+            <h2>Test Controls</h2>
+            <div class="test-controls">
+                <button class="btn" onclick="runAllTests()">Run All Tests</button>
+                <button class="btn" onclick="runRenderingTests()">Rendering Tests</button>
+                <button class="btn" onclick="runBettingTests()">Betting Tests</button>
+                <button class="btn" onclick="runUpdateTests()">Update Tests</button>
+                <button class="btn" onclick="runInteractionTests()">Interaction Tests</button>
+                <button class="btn btn-secondary" onclick="clearOutput()">Clear Output</button>
+                <button class="btn btn-secondary" onclick="showDemo()">Show Demo</button>
+            </div>
+            
+            <div class="stats" id="test-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-tests">0</div>
+                    <div class="stat-label">Total Tests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="passed-tests">0</div>
+                    <div class="stat-label">Passed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="failed-tests">0</div>
+                    <div class="stat-label">Failed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="test-time">0ms</div>
+                    <div class="stat-label">Execution Time</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Output</h2>
+            <div class="test-output" id="test-output">
+                Click "Run All Tests" to start testing...
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Live Demo</h2>
+            <div class="demo-container" id="demo-container">
+                <p>Click "Show Demo" to see MatchScreen in action...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { MatchScreen } from './MatchScreen.js';
+
+        // Test framework
+        class TestFramework {
+            constructor() {
+                this.tests = [];
+                this.results = {
+                    total: 0,
+                    passed: 0,
+                    failed: 0,
+                    startTime: 0,
+                    endTime: 0
+                };
+            }
+
+            describe(name, fn) {
+                const suite = { name, tests: [] };
+                const originalTest = this.test.bind(this);
+                this.test = (testName, testFn) => {
+                    suite.tests.push({ name: testName, fn: testFn });
+                };
+                fn();
+                this.test = originalTest;
+                this.tests.push(suite);
+            }
+
+            test(name, fn) {
+                // Individual test method
+            }
+
+            async runTests(filter = null) {
+                this.results = {
+                    total: 0,
+                    passed: 0,
+                    failed: 0,
+                    startTime: Date.now(),
+                    endTime: 0
+                };
+
+                const output = document.getElementById('test-output');
+                output.innerHTML = '';
+
+                for (const suite of this.tests) {
+                    if (filter && !suite.name.toLowerCase().includes(filter.toLowerCase())) {
+                        continue;
+                    }
+
+                    this.log(`\n📋 ${suite.name}`, 'info');
+                    
+                    for (const test of suite.tests) {
+                        this.results.total++;
+                        
+                        try {
+                            await test.fn();
+                            this.results.passed++;
+                            this.log(`  ✅ ${test.name}`, 'success');
+                        } catch (error) {
+                            this.results.failed++;
+                            this.log(`  ❌ ${test.name}`, 'error');
+                            this.log(`     ${error.message}`, 'error');
+                        }
+                    }
+                }
+
+                this.results.endTime = Date.now();
+                this.updateStats();
+                this.logSummary();
+            }
+
+            log(message, type = 'info') {
+                const output = document.getElementById('test-output');
+                const span = document.createElement('span');
+                span.className = type;
+                span.textContent = message + '\n';
+                output.appendChild(span);
+                output.scrollTop = output.scrollHeight;
+            }
+
+            updateStats() {
+                document.getElementById('total-tests').textContent = this.results.total;
+                document.getElementById('passed-tests').textContent = this.results.passed;
+                document.getElementById('failed-tests').textContent = this.results.failed;
+                document.getElementById('test-time').textContent = 
+                    `${this.results.endTime - this.results.startTime}ms`;
+            }
+
+            logSummary() {
+                const { total, passed, failed } = this.results;
+                const passRate = total > 0 ? ((passed / total) * 100).toFixed(1) : 0;
+                
+                this.log(`\n📊 Test Summary:`, 'info');
+                this.log(`   Total: ${total}`, 'info');
+                this.log(`   Passed: ${passed}`, 'success');
+                this.log(`   Failed: ${failed}`, failed > 0 ? 'error' : 'info');
+                this.log(`   Pass Rate: ${passRate}%`, passRate >= 90 ? 'success' : 'warning');
+            }
+
+            expect(actual) {
+                return {
+                    toBe: (expected) => {
+                        if (actual !== expected) {
+                            throw new Error(`Expected ${expected}, but got ${actual}`);
+                        }
+                    },
+                    toBeTruthy: () => {
+                        if (!actual) {
+                            throw new Error(`Expected truthy value, but got ${actual}`);
+                        }
+                    },
+                    toBeFalsy: () => {
+                        if (actual) {
+                            throw new Error(`Expected falsy value, but got ${actual}`);
+                        }
+                    },
+                    toContain: (expected) => {
+                        if (!actual || !actual.includes(expected)) {
+                            throw new Error(`Expected "${actual}" to contain "${expected}"`);
+                        }
+                    },
+                    toBeNull: () => {
+                        if (actual !== null) {
+                            throw new Error(`Expected null, but got ${actual}`);
+                        }
+                    },
+                    not: {
+                        toBe: (expected) => {
+                            if (actual === expected) {
+                                throw new Error(`Expected not to be ${expected}, but got ${actual}`);
+                            }
+                        },
+                        toThrow: () => {
+                            try {
+                                if (typeof actual === 'function') {
+                                    actual();
+                                }
+                            } catch (error) {
+                                throw new Error(`Expected not to throw, but threw: ${error.message}`);
+                            }
+                        }
+                    }
+                };
+            }
+        }
+
+        // Initialize test framework
+        const framework = new TestFramework();
+        window.expect = framework.expect.bind(framework);
+
+        // Mock dependencies
+        class MockStateManager {
+            constructor() {
+                this.state = {
+                    currentScreen: 'match',
+                    wallet: 1000,
+                    classicMode: false,
+                    match: {
+                        active: true,
+                        time: 45,
+                        homeTeam: 'Arsenal',
+                        awayTeam: 'Chelsea',
+                        homeScore: 1,
+                        awayScore: 0,
+                        odds: { home: 1.85, draw: 3.50, away: 4.20 },
+                        initialOdds: { home: 1.85, draw: 3.50, away: 4.20 },
+                        timeline: [
+                            {
+                                id: '1',
+                                type: 'GOAL',
+                                time: 23,
+                                description: 'Arsenal scores! Great shot by Smith.',
+                                data: { team: 'home', player: 'Smith' }
+                            }
+                        ]
+                    },
+                    bets: {
+                        fullMatch: [
+                            {
+                                id: 'bet1',
+                                type: 'fullMatch',
+                                outcome: 'home',
+                                stake: 50,
+                                odds: 1.85,
+                                potentialWinnings: 92.50,
+                                status: 'pending',
+                                placedAt: Date.now(),
+                                powerUpApplied: false
+                            }
+                        ],
+                        actionBets: []
+                    },
+                    powerUp: {
+                        held: {
+                            id: 'power1',
+                            type: '2x_multiplier',
+                            description: '2x Winnings Multiplier',
+                            awardedAt: Date.now()
+                        },
+                        applied: false
+                    },
+                    betAmountMemory: {
+                        fullMatch: 25,
+                        opportunity: 25
+                    }
+                };
+            }
+
+            getState() {
+                return { ...this.state };
+            }
+
+            subscribe(callback) {
+                // Mock subscription
+            }
+        }
+
+        class MockFullMatchBetting {
+            constructor() {
+                this.bets = [];
+            }
+
+            placeBet(outcome, amount) {
+                if (amount <= 0) {
+                    throw new Error('Invalid bet amount');
+                }
+                
+                const bet = {
+                    id: `bet_${Date.now()}`,
+                    outcome,
+                    amount,
+                    timestamp: Date.now()
+                };
+                
+                this.bets.push(bet);
+                return bet;
+            }
+        }
+
+        // Test suites
+        framework.describe('MatchScreen Rendering', () => {
+            framework.test('should render match screen with complete interface', () => {
+                const matchScreen = new MatchScreen();
+                const mockStateManager = new MockStateManager();
+                const mockFullMatchBetting = new MockFullMatchBetting();
+                
+                matchScreen.initialize({
+                    stateManager: mockStateManager,
+                    fullMatchBetting: mockFullMatchBetting
+                });
+
+                const state = mockStateManager.getState();
+                const element = matchScreen.render(state);
+
+                expect(element).toBeTruthy();
+                expect(element.id).toBe('match-screen');
+                expect(element.querySelector('.match-header')).toBeTruthy();
+                expect(element.querySelector('.betting-section')).toBeTruthy();
+            });
+
+            framework.test('should display team names and score correctly', () => {
+                const matchScreen = new MatchScreen();
+                const mockStateManager = new MockStateManager();
+                
+                matchScreen.initialize({
+                    stateManager: mockStateManager,
+                    fullMatchBetting: new MockFullMatchBetting()
+                });
+
+                const state = mockStateManager.getState();
+                const element = matchScreen.render(state);
+
+                const homeTeam = element.querySelector('.home-team');
+                const awayTeam = element.querySelector('.away-team');
+                const score = element.querySelector('.match-score');
+
+                expect(homeTeam.textContent).toBe('Arsenal');
+                expect(awayTeam.textContent).toBe('Chelsea');
+                expect(score.textContent).toBe('1 - 0');
+            });
+
+            framework.test('should display betting buttons with correct odds', () => {
+                const matchScreen = new MatchScreen();
+                const mockStateManager = new MockStateManager();
+                
+                matchScreen.initialize({
+                    stateManager: mockStateManager,
+                    fullMatchBetting: new MockFullMatchBetting()
+                });
+
+                const state = mockStateManager.getState();
+                const element = matchScreen.render(state);
+
+                const homeOdds = element.querySelector('.odds-home');
+                const drawOdds = element.querySelector('.odds-draw');
+                const awayOdds = element.querySelector('.odds-away');
+
+                expect(homeOdds.textContent).toBe('1.85');
+                expect(drawOdds.textContent).toBe('3.50');
+                expect(awayOdds.textContent).toBe('4.20');
+            });
+        });
+
+        framework.describe('MatchScreen Betting', () => {
+            framework.test('should show betting form when betting button clicked', () => {
+                const matchScreen = new MatchScreen();
+                const mockStateManager = new MockStateManager();
+                
+                matchScreen.initialize({
+                    stateManager: mockStateManager,
+                    fullMatchBetting: new MockFullMatchBetting()
+                });
+
+                const state = mockStateManager.getState();
+                const element = matchScreen.render(state);
+
+                const homeButton = element.querySelector('[data-outcome="home"]');
+                homeButton.click();
+
+                const bettingForm = element.querySelector('.betting-form');
+                expect(bettingForm).toBeTruthy();
+                expect(bettingForm.textContent).toContain('Bet on Arsenal');
+            });
+
+            framework.test('should pre-populate bet amount from memory', () => {
+                const matchScreen = new MatchScreen();
+                const mockStateManager = new MockStateManager();
+                
+                matchScreen.initialize({
+                    stateManager: mockStateManager,
+                    fullMatchBetting: new MockFullMatchBetting()
+                });
+
+                const state = mockStateManager.getState();
+                const element = matchScreen.render(state);
+
+                const homeButton = element.querySelector('[data-outcome="home"]');
+                homeButton.click();
+
+                const amountInput = element.querySelector('#bet-amount');
+                expect(amountInput.value).toBe('25');
+            });
+        });
+
+        framework.describe('MatchScreen Updates', () => {
+            framework.test('should update timer display when time changes', () => {
+                const matchScreen = new MatchScreen();
+                const mockStateManager = new MockStateManager();
+                
+                matchScreen.initialize({
+                    stateManager: mockStateManager,
+                    fullMatchBetting: new MockFullMatchBetting()
+                });
+
+                const state = mockStateManager.getState();
+                const element = matchScreen.render(state);
+
+                matchScreen.updateTimer(67);
+
+                const timer = element.querySelector('.match-timer');
+                expect(timer.textContent).toBe('67\'');
+            });
+
+            framework.test('should update score display when score changes', () => {
+                const matchScreen = new MatchScreen();
+                const mockStateManager = new MockStateManager();
+                
+                matchScreen.initialize({
+                    stateManager: mockStateManager,
+                    fullMatchBetting: new MockFullMatchBetting()
+                });
+
+                const state = mockStateManager.getState();
+                const element = matchScreen.render(state);
+
+                matchScreen.updateScore(2, 1);
+
+                const score = element.querySelector('.match-score');
+                expect(score.textContent).toBe('2 - 1');
+            });
+
+            framework.test('should update wallet display when balance changes', () => {
+                const matchScreen = new MatchScreen();
+                const mockStateManager = new MockStateManager();
+                
+                matchScreen.initialize({
+                    stateManager: mockStateManager,
+                    fullMatchBetting: new MockFullMatchBetting()
+                });
+
+                const state = mockStateManager.getState();
+                const element = matchScreen.render(state);
+
+                matchScreen.updateWallet(750.50);
+
+                const wallet = element.querySelector('.wallet-balance');
+                expect(wallet.textContent).toBe('$750.50');
+            });
+        });
+
+        framework.describe('MatchScreen Interactions', () => {
+            framework.test('should handle power-up button click', () => {
+                const matchScreen = new MatchScreen();
+                const mockStateManager = new MockStateManager();
+                
+                matchScreen.initialize({
+                    stateManager: mockStateManager,
+                    fullMatchBetting: new MockFullMatchBetting()
+                });
+
+                const state = mockStateManager.getState();
+                const element = matchScreen.render(state);
+
+                const powerUpButton = element.querySelector('.power-up-button');
+                
+                expect(() => powerUpButton.click()).not.toThrow();
+            });
+
+            framework.test('should close betting form when cancel clicked', () => {
+                const matchScreen = new MatchScreen();
+                const mockStateManager = new MockStateManager();
+                
+                matchScreen.initialize({
+                    stateManager: mockStateManager,
+                    fullMatchBetting: new MockFullMatchBetting()
+                });
+
+                const state = mockStateManager.getState();
+                const element = matchScreen.render(state);
+
+                const homeButton = element.querySelector('[data-outcome="home"]');
+                homeButton.click();
+
+                let bettingForm = element.querySelector('.betting-form');
+                expect(bettingForm).toBeTruthy();
+
+                const cancelButton = element.querySelector('.cancel-bet-btn');
+                cancelButton.click();
+
+                bettingForm = element.querySelector('.betting-form');
+                expect(bettingForm).toBeFalsy();
+            });
+        });
+
+        // Global test functions
+        window.runAllTests = () => framework.runTests();
+        window.runRenderingTests = () => framework.runTests('rendering');
+        window.runBettingTests = () => framework.runTests('betting');
+        window.runUpdateTests = () => framework.runTests('updates');
+        window.runInteractionTests = () => framework.runTests('interactions');
+
+        window.clearOutput = () => {
+            document.getElementById('test-output').innerHTML = 'Output cleared...';
+            document.getElementById('total-tests').textContent = '0';
+            document.getElementById('passed-tests').textContent = '0';
+            document.getElementById('failed-tests').textContent = '0';
+            document.getElementById('test-time').textContent = '0ms';
+        };
+
+        window.showDemo = () => {
+            const demoContainer = document.getElementById('demo-container');
+            
+            try {
+                const matchScreen = new MatchScreen();
+                const mockStateManager = new MockStateManager();
+                const mockFullMatchBetting = new MockFullMatchBetting();
+                
+                matchScreen.initialize({
+                    stateManager: mockStateManager,
+                    fullMatchBetting: mockFullMatchBetting
+                });
+
+                const state = mockStateManager.getState();
+                const element = matchScreen.render(state);
+                
+                demoContainer.innerHTML = '';
+                demoContainer.appendChild(element);
+
+                // Add demo controls
+                const controls = document.createElement('div');
+                controls.style.cssText = 'margin-top: 20px; padding: 16px; background: rgba(5, 150, 105, 0.1); border-radius: 8px; border: 1px solid #059669;';
+                controls.innerHTML = `
+                    <h4 style="margin: 0 0 12px 0; color: #10b981;">Demo Controls</h4>
+                    <button class="btn" onclick="updateDemoTimer()">Update Timer</button>
+                    <button class="btn" onclick="updateDemoScore()">Update Score</button>
+                    <button class="btn" onclick="updateDemoWallet()">Update Wallet</button>
+                `;
+                demoContainer.appendChild(controls);
+
+                // Store references for demo updates
+                window.demoMatchScreen = matchScreen;
+                window.demoState = state;
+
+            } catch (error) {
+                demoContainer.innerHTML = `<div class="error">Demo Error: ${error.message}</div>`;
+            }
+        };
+
+        window.updateDemoTimer = () => {
+            if (window.demoMatchScreen) {
+                const newTime = Math.floor(Math.random() * 90) + 1;
+                window.demoMatchScreen.updateTimer(newTime);
+            }
+        };
+
+        window.updateDemoScore = () => {
+            if (window.demoMatchScreen) {
+                const homeScore = Math.floor(Math.random() * 4);
+                const awayScore = Math.floor(Math.random() * 4);
+                window.demoMatchScreen.updateScore(homeScore, awayScore);
+            }
+        };
+
+        window.updateDemoWallet = () => {
+            if (window.demoMatchScreen) {
+                const newBalance = Math.floor(Math.random() * 2000) + 500;
+                window.demoMatchScreen.updateWallet(newBalance);
+            }
+        };
+
+        // Initialize
+        framework.log('MatchScreen Test Runner initialized. Ready to run tests!', 'success');
+    </script>
+</body>
+</html>

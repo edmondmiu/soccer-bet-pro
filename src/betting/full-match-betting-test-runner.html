@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FullMatchBetting Test Runner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            background-color: #1e293b;
+        }
+        
+        .test-results {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .test-pass {
+            background-color: #059669;
+            color: white;
+        }
+        
+        .test-fail {
+            background-color: #dc2626;
+            color: white;
+        }
+        
+        .test-info {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        /* FullMatchBetting Styles */
+        .full-match-betting-container {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #059669;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        }
+        
+        .betting-buttons-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .betting-button {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            border: 2px solid #34d399;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+        
+        .betting-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(5, 150, 105, 0.4);
+        }
+        
+        .betting-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .betting-button-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .outcome-label {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .odds-display {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .betting-form-container {
+            margin-top: 20px;
+        }
+        
+        .betting-form-container.hidden {
+            display: none;
+        }
+        
+        .inline-betting-form {
+            background: #334155;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .betting-form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .betting-form-header h3 {
+            margin: 0;
+            color: #34d399;
+        }
+        
+        .close-form-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .betting-form-content {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .bet-details {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .bet-details > div {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .label {
+            font-weight: bold;
+        }
+        
+        .bet-input-section label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .amount-input-group {
+            display: flex;
+            align-items: center;
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 4px;
+            padding: 8px;
+        }
+        
+        .currency-symbol {
+            margin-right: 5px;
+            color: #94a3b8;
+        }
+        
+        .bet-amount-input {
+            background: none;
+            border: none;
+            color: #e2e8f0;
+            font-size: 16px;
+            width: 100%;
+            outline: none;
+        }
+        
+        .quick-amounts {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .quick-amount-btn {
+            padding: 5px 10px;
+            background: #475569;
+            color: #e2e8f0;
+            border: 1px solid #64748b;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .quick-amount-btn:hover {
+            background: #64748b;
+        }
+        
+        .potential-winnings {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            color: #34d399;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .cancel-bet-btn, .place-bet-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .cancel-bet-btn {
+            background: #64748b;
+            color: white;
+        }
+        
+        .place-bet-btn {
+            background: #059669;
+            color: white;
+        }
+        
+        .place-bet-btn:disabled {
+            background: #374151;
+            cursor: not-allowed;
+        }
+        
+        .active-bets-display {
+            margin-top: 20px;
+            padding: 15px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+        }
+        
+        .active-bets-display h4 {
+            margin: 0 0 10px 0;
+            color: #34d399;
+        }
+        
+        .active-bets-list {
+            display: grid;
+            gap: 8px;
+        }
+        
+        .active-bet-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background: #334155;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .power-up-indicator {
+            color: #fbbf24;
+        }
+        
+        .total-staked {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #475569;
+            font-weight: bold;
+            text-align: right;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .notification-success {
+            background: #059669;
+        }
+        
+        .notification-error {
+            background: #dc2626;
+        }
+        
+        .notification-info {
+            background: #3b82f6;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .control-panel {
+            margin: 20px 0;
+            padding: 15px;
+            background: #334155;
+            border-radius: 8px;
+        }
+        
+        .control-panel button {
+            margin: 5px;
+            padding: 8px 15px;
+            background: #059669;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .state-display {
+            margin: 10px 0;
+            padding: 10px;
+            background: #1e293b;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>FullMatchBetting Test Runner</h1>
+        
+        <div class="test-section">
+            <h2>Test Environment</h2>
+            <div id="test-results"></div>
+            
+            <div class="control-panel">
+                <button onclick="runAllTests()">Run All Tests</button>
+                <button onclick="resetTest()">Reset Test</button>
+                <button onclick="simulateOddsChange()">Simulate Odds Change</button>
+                <button onclick="simulateGoal()">Simulate Goal</button>
+                <button onclick="showState()">Show State</button>
+            </div>
+            
+            <div id="state-display" class="state-display" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Live FullMatchBetting Interface</h2>
+            <div id="match-screen">
+                <div id="match-info">
+                    <h3>Arsenal vs Chelsea</h3>
+                    <div>Score: <span id="score">0 - 0</span></div>
+                    <div>Time: <span id="timer">15:00</span></div>
+                    <div>Wallet: $<span id="wallet">1000.00</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { FullMatchBetting } from './FullMatchBetting.js';
+        import { StateManager } from '../core/StateManager.js';
+        import { BettingManager } from './BettingManager.js';
+
+        // Global test variables
+        let stateManager;
+        let bettingManager;
+        let fullMatchBetting;
+        let powerUpManager;
+        let testResults = [];
+
+        // Mock PowerUpManager
+        powerUpManager = {
+            awardPowerUp: () => ({ success: true }),
+            hasPowerUp: () => false,
+            applyPowerUp: () => ({ success: true })
+        };
+
+        function initializeTest() {
+            stateManager = new StateManager();
+            bettingManager = new BettingManager(stateManager, powerUpManager);
+            fullMatchBetting = new FullMatchBetting(stateManager, bettingManager);
+            
+            // Set up initial match state
+            stateManager.updateState({
+                currentScreen: 'match',
+                match: {
+                    active: true,
+                    time: 15,
+                    homeTeam: 'Arsenal',
+                    awayTeam: 'Chelsea',
+                    homeScore: 0,
+                    awayScore: 0,
+                    odds: { home: 1.85, draw: 3.50, away: 4.20 },
+                    initialOdds: { home: 1.85, draw: 3.50, away: 4.20 }
+                }
+            });
+            
+            // Subscribe to state changes to update UI
+            stateManager.subscribe((state) => {
+                updateMatchDisplay(state);
+            });
+            
+            fullMatchBetting.initialize();
+            updateMatchDisplay(stateManager.getState());
+        }
+
+        function updateMatchDisplay(state) {
+            document.getElementById('score').textContent = `${state.match.homeScore} - ${state.match.awayScore}`;
+            document.getElementById('timer').textContent = `${state.match.time}:00`;
+            document.getElementById('wallet').textContent = state.wallet.toFixed(2);
+        }
+
+        function addTestResult(test, passed, message) {
+            testResults.push({ test, passed, message });
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-results ${passed ? 'test-pass' : 'test-fail'}`;
+            resultDiv.textContent = `${test}: ${passed ? 'PASS' : 'FAIL'} - ${message}`;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function clearTestResults() {
+            testResults = [];
+            document.getElementById('test-results').innerHTML = '';
+        }
+
+        window.runAllTests = function() {
+            clearTestResults();
+            
+            try {
+                // Test 1: Interface Creation
+                const bettingContainer = document.getElementById('full-match-betting');
+                addTestResult('Interface Creation', !!bettingContainer, 
+                    bettingContainer ? 'Betting interface created successfully' : 'Failed to create betting interface');
+                
+                // Test 2: Betting Buttons
+                const bettingButtons = document.querySelectorAll('.betting-button');
+                addTestResult('Betting Buttons', bettingButtons.length === 3, 
+                    `Found ${bettingButtons.length} betting buttons (expected 3)`);
+                
+                // Test 3: Odds Display
+                const homeOdds = document.querySelector('[data-outcome="home"] .odds-display');
+                const correctOdds = homeOdds && homeOdds.textContent === '1.85';
+                addTestResult('Odds Display', correctOdds, 
+                    correctOdds ? 'Odds displayed correctly' : 'Odds display incorrect');
+                
+                // Test 4: Form Display
+                const homeButton = document.querySelector('[data-outcome="home"]');
+                if (homeButton) {
+                    homeButton.click();
+                    setTimeout(() => {
+                        const bettingForm = document.querySelector('.inline-betting-form');
+                        addTestResult('Form Display', !!bettingForm, 
+                            bettingForm ? 'Betting form displays on button click' : 'Betting form failed to display');
+                        
+                        if (bettingForm) {
+                            // Test 5: Pre-populated Amount
+                            const amountInput = document.getElementById('bet-amount');
+                            const correctAmount = amountInput && amountInput.value === '25';
+                            addTestResult('Pre-populated Amount', correctAmount, 
+                                correctAmount ? 'Amount pre-populated correctly' : 'Amount pre-population failed');
+                            
+                            // Test 6: Bet Placement
+                            const placeBetBtn = document.querySelector('.place-bet-btn');
+                            if (placeBetBtn) {
+                                const initialWallet = stateManager.getState().wallet;
+                                placeBetBtn.click();
+                                
+                                setTimeout(() => {
+                                    const newWallet = stateManager.getState().wallet;
+                                    const betPlaced = newWallet === initialWallet - 25;
+                                    addTestResult('Bet Placement', betPlaced, 
+                                        betPlaced ? 'Bet placed successfully' : 'Bet placement failed');
+                                    
+                                    // Test 7: Active Bets Display
+                                    const activeBetsDisplay = document.getElementById('active-full-match-bets');
+                                    addTestResult('Active Bets Display', !!activeBetsDisplay, 
+                                        activeBetsDisplay ? 'Active bets display created' : 'Active bets display missing');
+                                }, 100);
+                            }
+                        }
+                    }, 100);
+                }
+                
+                // Test 8: Multiple Bets
+                setTimeout(() => {
+                    const drawButton = document.querySelector('[data-outcome="draw"]');
+                    if (drawButton) {
+                        drawButton.click();
+                        setTimeout(() => {
+                            const placeBetBtn = document.querySelector('.place-bet-btn');
+                            if (placeBetBtn) {
+                                placeBetBtn.click();
+                                setTimeout(() => {
+                                    const state = stateManager.getState();
+                                    const multipleBets = state.bets.fullMatch.length >= 2;
+                                    addTestResult('Multiple Bets', multipleBets, 
+                                        multipleBets ? 'Multiple bets placed successfully' : 'Multiple bets failed');
+                                }, 100);
+                            }
+                        }, 100);
+                    }
+                }, 500);
+                
+            } catch (error) {
+                addTestResult('Test Execution', false, `Error during testing: ${error.message}`);
+            }
+        };
+
+        window.resetTest = function() {
+            if (fullMatchBetting) {
+                fullMatchBetting.cleanup();
+            }
+            clearTestResults();
+            initializeTest();
+            addTestResult('Reset', true, 'Test environment reset successfully');
+        };
+
+        window.simulateOddsChange = function() {
+            const newOdds = {
+                home: 2.10,
+                draw: 3.20,
+                away: 3.80
+            };
+            
+            stateManager.updateState({
+                match: {
+                    ...stateManager.getState().match,
+                    odds: newOdds
+                }
+            });
+            
+            addTestResult('Odds Change', true, 'Odds updated - check if display reflects changes');
+        };
+
+        window.simulateGoal = function() {
+            const state = stateManager.getState();
+            stateManager.updateState({
+                match: {
+                    ...state.match,
+                    homeScore: state.match.homeScore + 1,
+                    odds: { home: 1.50, draw: 4.00, away: 6.00 } // Adjusted odds after goal
+                }
+            });
+            
+            addTestResult('Goal Simulation', true, 'Goal scored - check score and odds updates');
+        };
+
+        window.showState = function() {
+            const stateDisplay = document.getElementById('state-display');
+            const state = stateManager.getState();
+            stateDisplay.textContent = JSON.stringify(state, null, 2);
+            stateDisplay.style.display = stateDisplay.style.display === 'none' ? 'block' : 'none';
+        };
+
+        // Initialize test on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeTest();
+            addTestResult('Initialization', true, 'FullMatchBetting test environment initialized');
+        });
+
+        // Make objects available globally for debugging
+        window.stateManager = stateManager;
+        window.bettingManager = bettingManager;
+        window.fullMatchBetting = fullMatchBetting;
+    </script>
+</body>
+</html>

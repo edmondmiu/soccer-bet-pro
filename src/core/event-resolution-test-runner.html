@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Resolution System Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .test-container {
+            background-color: #1e293b;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .test-pass {
+            background-color: rgba(5, 150, 105, 0.1);
+            border-left-color: #059669;
+            color: #10b981;
+        }
+        .test-fail {
+            background-color: rgba(220, 38, 38, 0.1);
+            border-left-color: #dc2626;
+            color: #f87171;
+        }
+        .test-info {
+            background-color: rgba(59, 130, 246, 0.1);
+            border-left-color: #3b82f6;
+            color: #60a5fa;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-item {
+            background-color: #334155;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            flex: 1;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #10b981;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #94a3b8;
+        }
+        button {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: linear-gradient(135deg, #047857 0%, #059669 100%);
+        }
+        .section-title {
+            color: #10b981;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .event-demo {
+            background-color: #334155;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .event-feed {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .event-item {
+            padding: 8px;
+            margin: 4px 0;
+            background-color: #334155;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 Event Resolution System Tests</h1>
+    
+    <div class="stats">
+        <div class="stat-item">
+            <div class="stat-value" id="totalTests">0</div>
+            <div class="stat-label">Total Tests</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="passedTests">0</div>
+            <div class="stat-label">Passed</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="failedTests">0</div>
+            <div class="stat-label">Failed</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="successRate">0%</div>
+            <div class="stat-label">Success Rate</div>
+        </div>
+    </div>
+
+    <div>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="runResolutionDemo()">Run Resolution Demo</button>
+        <button onclick="runTimingTests()">Test Resolution Timing</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div class="test-container">
+        <h2 class="section-title">Event Resolution Demo</h2>
+        <div id="demoContainer">
+            <p>Click "Run Resolution Demo" to see the event resolution system in action.</p>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2 class="section-title">Test Results</h2>
+        <div id="testResults"></div>
+    </div>
+
+    <script type="module">
+        import { EventManager } from './EventManager.js';
+        import { StateManager } from './StateManager.js';
+        import { BettingManager } from '../betting/BettingManager.js';
+
+        // Test framework
+        class TestFramework {
+            constructor() {
+                this.tests = [];
+                this.results = [];
+            }
+
+            describe(name, fn) {
+                const suite = { name, tests: [] };
+                const originalTest = this.test;
+                this.test = (testName, testFn) => {
+                    suite.tests.push({ name: testName, fn: testFn });
+                };
+                fn();
+                this.test = originalTest;
+                this.tests.push(suite);
+            }
+
+            test(name, fn) {
+                this.tests.push({ name, fn });
+            }
+
+            expect(actual) {
+                return {
+                    toBe: (expected) => {
+                        if (actual !== expected) {
+                            throw new Error(`Expected ${expected}, got ${actual}`);
+                        }
+                    },
+                    toEqual: (expected) => {
+                        if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                            throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+                        }
+                    },
+                    toBeDefined: () => {
+                        if (actual === undefined) {
+                            throw new Error('Expected value to be defined');
+                        }
+                    },
+                    toContain: (expected) => {
+                        if (!actual.includes(expected)) {
+                            throw new Error(`Expected ${actual} to contain ${expected}`);
+                        }
+                    },
+                    toBeGreaterThan: (expected) => {
+                        if (actual <= expected) {
+                            throw new Error(`Expected ${actual} to be greater than ${expected}`);
+                        }
+                    },
+                    toBeLessThan: (expected) => {
+                        if (actual >= expected) {
+                            throw new Error(`Expected ${actual} to be less than ${expected}`);
+                        }
+                    },
+                    toHaveLength: (expected) => {
+                        if (actual.length !== expected) {
+                            throw new Error(`Expected length ${expected}, got ${actual.length}`);
+                        }
+                    }
+                };
+            }
+
+            async runTests() {
+                this.results = [];
+                let totalTests = 0;
+                let passedTests = 0;
+
+                for (const suite of this.tests) {
+                    if (suite.tests) {
+                        // Test suite
+                        for (const test of suite.tests) {
+                            totalTests++;
+                            try {
+                                await test.fn();
+                                this.results.push({
+                                    name: `${suite.name} - ${test.name}`,
+                                    status: 'pass'
+                                });
+                                passedTests++;
+                            } catch (error) {
+                                this.results.push({
+                                    name: `${suite.name} - ${test.name}`,
+                                    status: 'fail',
+                                    error: error.message
+                                });
+                            }
+                        }
+                    } else {
+                        // Individual test
+                        totalTests++;
+                        try {
+                            await suite.fn();
+                            this.results.push({
+                                name: suite.name,
+                                status: 'pass'
+                            });
+                            passedTests++;
+                        } catch (error) {
+                            this.results.push({
+                                name: suite.name,
+                                status: 'fail',
+                                error: error.message
+                            });
+                        }
+                    }
+                }
+
+                return {
+                    total: totalTests,
+                    passed: passedTests,
+                    failed: totalTests - passedTests,
+                    successRate: totalTests > 0 ? ((passedTests / totalTests) * 100).toFixed(1) : 0
+                };
+            }
+        }
+
+        // Mock StateManager for testing
+        class MockStateManager {
+            constructor() {
+                this.state = {
+                    wallet: 1000,
+                    match: {
+                        time: 0,
+                        homeScore: 0,
+                        awayScore: 0,
+                        odds: { home: 1.85, draw: 3.50, away: 4.20 },
+                        timeline: [],
+                        eventFeed: []
+                    },
+                    bets: {
+                        fullMatch: [],
+                        actionBets: []
+                    },
+                    powerUp: {
+                        held: null,
+                        applied: false
+                    }
+                };
+            }
+
+            getState() {
+                return JSON.parse(JSON.stringify(this.state));
+            }
+
+            updateState(updates) {
+                if (updates.match) {
+                    this.state.match = { ...this.state.match, ...updates.match };
+                }
+                if (updates.bets) {
+                    this.state.bets = { ...this.state.bets, ...updates.bets };
+                }
+                if (updates.wallet !== undefined) {
+                    this.state.wallet = updates.wallet;
+                }
+            }
+
+            subscribe(callback) {
+                // Mock implementation
+            }
+        }
+
+        // Mock PowerUpManager
+        class MockPowerUpManager {
+            awardPowerUp() {
+                return { success: true, powerUp: { type: '2x_multiplier' } };
+            }
+        }
+
+        // Global test framework instance
+        window.testFramework = new TestFramework();
+        const { describe, test, expect } = window.testFramework;
+
+        // Test setup
+        let eventManager, bettingManager, mockStateManager, mockPowerUpManager;
+
+        function setupTest() {
+            mockStateManager = new MockStateManager();
+            mockPowerUpManager = new MockPowerUpManager();
+            eventManager = new EventManager(mockStateManager);
+            bettingManager = new BettingManager(mockStateManager, mockPowerUpManager);
+        }
+
+        // Event Resolution Tests
+        describe('Action Bet Resolution Scheduling', () => {
+            test('should schedule resolution 4 minutes after action bet event', () => {
+                setupTest();
+                
+                const actionBetEvent = {
+                    id: 'test_action_bet',
+                    type: 'ACTION_BET',
+                    time: 30,
+                    description: 'Corner kick opportunity',
+                    data: {
+                        choices: [
+                            { outcome: 'goal', description: 'Goal from corner', odds: 4.5 },
+                            { outcome: 'cleared', description: 'Corner cleared', odds: 1.6 }
+                        ]
+                    }
+                };
+
+                eventManager.scheduleActionBetResolution(actionBetEvent);
+                
+                const state = mockStateManager.getState();
+                const resolutionEvent = state.match.timeline.find(event => 
+                    event.type === 'RESOLUTION' && 
+                    event.data.originalEventId === actionBetEvent.id
+                );
+
+                expect(resolutionEvent).toBeDefined();
+                expect(resolutionEvent.time).toBe(34); // 30 + 4 minutes
+            });
+        });
+
+        describe('Goal Event Processing', () => {
+            test('should update score and odds when processing goal', () => {
+                setupTest();
+                
+                const goalEvent = {
+                    id: 'test_goal',
+                    type: 'GOAL',
+                    time: 25,
+                    description: 'Goal!',
+                    data: { 
+                        team: 'home', 
+                        player: 'Test Player',
+                        goalType: 'header'
+                    }
+                };
+
+                const initialOdds = mockStateManager.getState().match.odds;
+                eventManager.processGoalEvent(goalEvent);
+                
+                const state = mockStateManager.getState();
+                
+                expect(state.match.homeScore).toBe(1);
+                expect(state.match.awayScore).toBe(0);
+            });
+        });
+
+        describe('Event Feed Updates', () => {
+            test('should add action bet events to feed with betting indicator', () => {
+                setupTest();
+                
+                const actionBetEvent = {
+                    id: 'test_action_bet',
+                    type: 'ACTION_BET',
+                    time: 40,
+                    description: 'Free kick opportunity',
+                    data: {
+                        choices: [
+                            { outcome: 'goal', description: 'Direct goal', odds: 5.0 }
+                        ]
+                    }
+                };
+
+                eventManager.processActionBetEvent(actionBetEvent);
+
+                const state = mockStateManager.getState();
+                const feedEntry = state.match.eventFeed.find(entry => 
+                    entry.id === actionBetEvent.id
+                );
+
+                expect(feedEntry).toBeDefined();
+                expect(feedEntry.description).toContain('🎯');
+            });
+        });
+
+        describe('Resolution Statistics', () => {
+            test('should provide resolution statistics', () => {
+                setupTest();
+                
+                // Add some events to timeline
+                mockStateManager.updateState({
+                    match: {
+                        ...mockStateManager.getState().match,
+                        timeline: [
+                            {
+                                id: 'action_1',
+                                type: 'ACTION_BET',
+                                time: 10,
+                                data: { choices: [] }
+                            },
+                            {
+                                id: 'resolution_1',
+                                type: 'RESOLUTION',
+                                time: 14,
+                                data: { resolved: true }
+                            }
+                        ]
+                    }
+                });
+
+                const stats = eventManager.getResolutionStatistics();
+
+                expect(stats.totalActionBets).toBe(1);
+                expect(stats.totalResolutions).toBe(1);
+                expect(stats.resolvedCount).toBe(1);
+            });
+        });
+
+        // Global functions for buttons
+        window.runAllTests = async function() {
+            const stats = await window.testFramework.runTests();
+            displayResults(window.testFramework.results, stats);
+        };
+
+        window.runResolutionDemo = function() {
+            setupTest();
+            
+            const demoContainer = document.getElementById('demoContainer');
+            demoContainer.innerHTML = '<h3>Event Resolution Demo</h3>';
+            
+            // Create demo timeline
+            const events = [
+                {
+                    id: 'demo_action_1',
+                    type: 'ACTION_BET',
+                    time: 25,
+                    description: 'Corner kick opportunity',
+                    data: {
+                        choices: [
+                            { outcome: 'goal', description: 'Goal from corner', odds: 4.5 },
+                            { outcome: 'cleared', description: 'Corner cleared', odds: 1.6 }
+                        ]
+                    }
+                },
+                {
+                    id: 'demo_goal_1',
+                    type: 'GOAL',
+                    time: 35,
+                    description: 'Goal scored!',
+                    data: { team: 'home', player: 'Demo Player' }
+                }
+            ];
+
+            // Process events and show results
+            events.forEach(event => {
+                eventManager.processEvent(event);
+            });
+
+            // Schedule resolution
+            eventManager.scheduleActionBetResolution(events[0]);
+
+            // Display event feed
+            const state = mockStateManager.getState();
+            const feedHtml = state.match.eventFeed.map(event => 
+                `<div class="event-item">${event.time}' - ${event.description}</div>`
+            ).join('');
+
+            const timelineHtml = state.match.timeline.map(event => 
+                `<div class="event-item">${event.time}' - ${event.type} - ${event.description || 'Resolution scheduled'}</div>`
+            ).join('');
+
+            demoContainer.innerHTML += `
+                <div class="event-demo">
+                    <h4>Event Feed:</h4>
+                    <div class="event-feed">${feedHtml}</div>
+                </div>
+                <div class="event-demo">
+                    <h4>Timeline (including scheduled resolutions):</h4>
+                    <div class="event-feed">${timelineHtml}</div>
+                </div>
+                <div class="event-demo">
+                    <h4>Match State:</h4>
+                    <p>Score: ${state.match.homeScore}-${state.match.awayScore}</p>
+                    <p>Odds: Home ${state.match.odds.home}, Draw ${state.match.odds.draw}, Away ${state.match.odds.away}</p>
+                </div>
+            `;
+        };
+
+        window.runTimingTests = function() {
+            setupTest();
+            
+            const results = [];
+            
+            // Test 1: Resolution timing accuracy
+            const actionBetEvent = {
+                id: 'timing_test',
+                type: 'ACTION_BET',
+                time: 30,
+                description: 'Timing test event',
+                data: {
+                    choices: [{ outcome: 'test', description: 'Test outcome', odds: 2.0 }]
+                }
+            };
+
+            eventManager.scheduleActionBetResolution(actionBetEvent);
+            
+            const state = mockStateManager.getState();
+            const resolutionEvent = state.match.timeline.find(event => 
+                event.type === 'RESOLUTION'
+            );
+
+            if (resolutionEvent && resolutionEvent.time === 34) {
+                results.push({ name: 'Resolution timing accuracy', status: 'pass' });
+            } else {
+                results.push({ 
+                    name: 'Resolution timing accuracy', 
+                    status: 'fail', 
+                    error: `Expected resolution at 34 minutes, got ${resolutionEvent?.time}` 
+                });
+            }
+
+            // Test 2: Event processing order
+            mockStateManager.updateState({
+                match: {
+                    ...mockStateManager.getState().match,
+                    time: 40,
+                    timeline: [
+                        { id: 'event1', type: 'GOAL', time: 15 },
+                        { id: 'event2', type: 'ACTION_BET', time: 25 },
+                        { id: 'event3', type: 'RESOLUTION', time: 29 },
+                        { id: 'event4', type: 'COMMENTARY', time: 35 }
+                    ]
+                }
+            });
+
+            let processedOrder = [];
+            const originalProcessEvent = eventManager.processEvent;
+            eventManager.processEvent = function(event) {
+                processedOrder.push(event.time);
+                return originalProcessEvent.call(this, event);
+            };
+
+            eventManager.checkForEvents();
+
+            if (processedOrder.length === 4 && 
+                processedOrder[0] === 15 && 
+                processedOrder[1] === 25 && 
+                processedOrder[2] === 29 && 
+                processedOrder[3] === 35) {
+                results.push({ name: 'Event processing order', status: 'pass' });
+            } else {
+                results.push({ 
+                    name: 'Event processing order', 
+                    status: 'fail', 
+                    error: `Incorrect processing order: ${processedOrder.join(', ')}` 
+                });
+            }
+
+            displayResults(results, {
+                total: results.length,
+                passed: results.filter(r => r.status === 'pass').length,
+                failed: results.filter(r => r.status === 'fail').length,
+                successRate: ((results.filter(r => r.status === 'pass').length / results.length) * 100).toFixed(1)
+            });
+        };
+
+        window.clearResults = function() {
+            document.getElementById('testResults').innerHTML = '';
+            document.getElementById('demoContainer').innerHTML = '<p>Click "Run Resolution Demo" to see the event resolution system in action.</p>';
+            updateStats({ total: 0, passed: 0, failed: 0, successRate: 0 });
+        };
+
+        function displayResults(results, stats) {
+            const container = document.getElementById('testResults');
+            container.innerHTML = results.map(result => `
+                <div class="test-result test-${result.status}">
+                    <strong>${result.name}</strong>
+                    ${result.status === 'fail' ? `<br><small>Error: ${result.error}</small>` : ''}
+                </div>
+            `).join('');
+
+            updateStats(stats);
+        }
+
+        function updateStats(stats) {
+            document.getElementById('totalTests').textContent = stats.total;
+            document.getElementById('passedTests').textContent = stats.passed;
+            document.getElementById('failedTests').textContent = stats.failed;
+            document.getElementById('successRate').textContent = stats.successRate + '%';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Event Resolution Test Runner loaded');
+        });
+    </script>
+</body>
+</html>

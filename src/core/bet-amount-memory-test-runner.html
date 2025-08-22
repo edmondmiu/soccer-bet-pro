@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bet Amount Memory Integration Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .test-container {
+            background-color: #1e293b;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        .test-section {
+            margin-bottom: 30px;
+        }
+        .test-case {
+            background-color: #334155;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border-left: 4px solid #059669;
+        }
+        .test-case.failed {
+            border-left-color: #dc2626;
+            background-color: #451a1a;
+        }
+        .test-case.passed {
+            border-left-color: #059669;
+            background-color: #064e3b;
+        }
+        .test-result {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .test-details {
+            font-size: 0.9em;
+            color: #94a3b8;
+        }
+        .summary {
+            background-color: #059669;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .error {
+            background-color: #dc2626;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #059669;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #10b981;
+        }
+        .memory-display {
+            background-color: #475569;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧠 Bet Amount Memory Integration Tests</h1>
+    
+    <div class="summary">
+        <h2>Test Overview</h2>
+        <p>Testing the complete bet amount memory system including:</p>
+        <ul>
+            <li>Memory persistence between matches</li>
+            <li>Separate memory for full-match and action betting</li>
+            <li>Pre-population of betting forms</li>
+            <li>Validation and fallback mechanisms</li>
+            <li>State synchronization and observer notifications</li>
+        </ul>
+    </div>
+
+    <button onclick="runAllTests()">Run All Tests</button>
+    <button onclick="clearResults()">Clear Results</button>
+
+    <div id="test-results"></div>
+
+    <script type="module">
+        import { StateManager } from './StateManager.js';
+        import { FullMatchBetting } from '../betting/FullMatchBetting.js';
+        import { ActionBetting } from '../betting/ActionBetting.js';
+
+        // Mock DOM environment for testing
+        const mockElement = () => ({
+            className: '',
+            innerHTML: '',
+            style: {},
+            appendChild: () => {},
+            removeChild: () => {},
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            querySelector: () => null,
+            querySelectorAll: () => [],
+            setAttribute: () => {},
+            getAttribute: () => null,
+            remove: () => {}
+        });
+
+        // Override document methods for testing
+        const originalCreateElement = document.createElement;
+        document.createElement = () => mockElement();
+
+        let testResults = [];
+
+        // Test framework
+        const test = {
+            expect: (actual) => ({
+                toBe: (expected) => {
+                    if (actual !== expected) {
+                        throw new Error(`Expected ${expected}, got ${actual}`);
+                    }
+                },
+                toEqual: (expected) => {
+                    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                        throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+                    }
+                },
+                toContain: (expected) => {
+                    if (!actual.includes(expected)) {
+                        throw new Error(`Expected "${actual}" to contain "${expected}"`);
+                    }
+                },
+                toThrow: (expectedMessage) => {
+                    try {
+                        actual();
+                        throw new Error('Expected function to throw');
+                    } catch (error) {
+                        if (expectedMessage && !error.message.includes(expectedMessage)) {
+                            throw new Error(`Expected error message to contain "${expectedMessage}", got "${error.message}"`);
+                        }
+                    }
+                }
+            })
+        };
+
+        function runTest(name, testFn) {
+            try {
+                testFn();
+                testResults.push({ name, status: 'passed', error: null });
+                return true;
+            } catch (error) {
+                testResults.push({ name, status: 'failed', error: error.message });
+                return false;
+            }
+        }
+
+        function displayMemoryState(stateManager) {
+            const state = stateManager.getState();
+            return `
+                <div class="memory-display">
+                    <strong>Current Memory State:</strong><br>
+                    Full Match: $${state.betAmountMemory.fullMatch}<br>
+                    Action Betting: $${state.betAmountMemory.opportunity}<br>
+                    Wallet: $${state.wallet}
+                </div>
+            `;
+        }
+
+        window.runAllTests = function() {
+            testResults = [];
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<h2>Running Tests...</h2>';
+
+            // Test 1: Basic Memory Operations
+            runTest('Basic Memory Get/Set', () => {
+                const stateManager = new StateManager();
+                
+                test.expect(stateManager.getBetAmountMemory('fullMatch')).toBe(25);
+                test.expect(stateManager.getBetAmountMemory('opportunity')).toBe(25);
+                
+                stateManager.updateBetAmountMemory('fullMatch', 100);
+                stateManager.updateBetAmountMemory('opportunity', 75);
+                
+                test.expect(stateManager.getBetAmountMemory('fullMatch')).toBe(100);
+                test.expect(stateManager.getBetAmountMemory('opportunity')).toBe(75);
+            });
+
+            // Test 2: Separate Memory Management
+            runTest('Separate Memory for Each Betting Type', () => {
+                const stateManager = new StateManager();
+                
+                stateManager.updateBetAmountMemory('fullMatch', 150);
+                stateManager.updateBetAmountMemory('opportunity', 50);
+                
+                test.expect(stateManager.getBetAmountMemory('fullMatch')).toBe(150);
+                test.expect(stateManager.getBetAmountMemory('opportunity')).toBe(50);
+                
+                // Update one should not affect the other
+                stateManager.updateBetAmountMemory('fullMatch', 200);
+                test.expect(stateManager.getBetAmountMemory('fullMatch')).toBe(200);
+                test.expect(stateManager.getBetAmountMemory('opportunity')).toBe(50);
+            });
+
+            // Test 3: Memory Persistence Between Matches
+            runTest('Memory Persistence Between Matches', () => {
+                const stateManager = new StateManager();
+                
+                // Set custom amounts
+                stateManager.updateBetAmountMemory('fullMatch', 125);
+                stateManager.updateBetAmountMemory('opportunity', 85);
+                
+                // Simulate match activity
+                stateManager.updateState({
+                    'match.active': true,
+                    'match.time': 45,
+                    'match.homeScore': 1
+                });
+                
+                // Reset match
+                stateManager.resetMatch();
+                
+                // Memory should persist
+                test.expect(stateManager.getBetAmountMemory('fullMatch')).toBe(125);
+                test.expect(stateManager.getBetAmountMemory('opportunity')).toBe(85);
+                
+                // Match data should be reset
+                const state = stateManager.getState();
+                test.expect(state.match.active).toBe(false);
+                test.expect(state.match.time).toBe(0);
+            });
+
+            // Test 4: Full Match Betting Integration
+            runTest('Full Match Betting Memory Integration', () => {
+                const stateManager = new StateManager();
+                const fullMatchBetting = new FullMatchBetting(stateManager);
+                
+                // Set custom memory
+                stateManager.updateBetAmountMemory('fullMatch', 80);
+                
+                // Initialize match
+                stateManager.updateState({
+                    'match.active': true,
+                    'match.homeTeam': 'Arsenal',
+                    'match.awayTeam': 'Chelsea'
+                });
+                
+                // Place bet
+                const result = fullMatchBetting.placeBet('home', 120);
+                test.expect(result.success).toBe(true);
+                
+                // Memory should be updated
+                test.expect(stateManager.getBetAmountMemory('fullMatch')).toBe(120);
+            });
+
+            // Test 5: Action Betting Integration
+            runTest('Action Betting Memory Integration', () => {
+                const stateManager = new StateManager();
+                const actionBetting = new ActionBetting(stateManager);
+                
+                // Set custom memory
+                stateManager.updateBetAmountMemory('opportunity', 60);
+                
+                // Verify pre-populated amount
+                test.expect(actionBetting.getPrePopulatedAmount()).toBe(60);
+                
+                // Mock event and place bet
+                const eventData = {
+                    id: 'event1',
+                    description: 'Test event',
+                    choices: [
+                        { id: 'choice1', description: 'Option A', odds: 2.0 }
+                    ]
+                };
+                
+                actionBetting.showActionBettingModal(eventData);
+                const result = actionBetting.placeBet('choice1', 90);
+                test.expect(result.success).toBe(true);
+                
+                // Memory should be updated
+                test.expect(stateManager.getBetAmountMemory('opportunity')).toBe(90);
+            });
+
+            // Test 6: Validation and Error Handling
+            runTest('Validation and Error Handling', () => {
+                const stateManager = new StateManager();
+                
+                // Test invalid bet type
+                test.expect(() => {
+                    stateManager.updateBetAmountMemory('invalid', 50);
+                }).toThrow('Invalid bet type');
+                
+                // Test invalid amounts
+                test.expect(() => {
+                    stateManager.updateBetAmountMemory('fullMatch', -10);
+                }).toThrow('Bet amount must be a positive number');
+                
+                test.expect(() => {
+                    stateManager.updateBetAmountMemory('opportunity', 0);
+                }).toThrow('Bet amount must be a positive number');
+            });
+
+            // Test 7: Fallback Mechanisms
+            runTest('Fallback to Default Values', () => {
+                const stateManager = new StateManager();
+                
+                // Corrupt memory values
+                stateManager.state.betAmountMemory.fullMatch = null;
+                stateManager.state.betAmountMemory.opportunity = undefined;
+                
+                // Should fallback to defaults
+                test.expect(stateManager.getBetAmountMemory('fullMatch')).toBe(25);
+                test.expect(stateManager.getBetAmountMemory('opportunity')).toBe(25);
+            });
+
+            // Test 8: Observer Notifications
+            runTest('Observer Notifications for Memory Changes', () => {
+                const stateManager = new StateManager();
+                let notificationReceived = false;
+                let changeData = null;
+                
+                stateManager.subscribe((newState, oldState, changes) => {
+                    if (changes['betAmountMemory.fullMatch']) {
+                        notificationReceived = true;
+                        changeData = changes['betAmountMemory.fullMatch'];
+                    }
+                });
+                
+                stateManager.updateBetAmountMemory('fullMatch', 175);
+                
+                test.expect(notificationReceived).toBe(true);
+                test.expect(changeData.from).toBe(25);
+                test.expect(changeData.to).toBe(175);
+            });
+
+            // Display results
+            displayResults();
+        };
+
+        function displayResults() {
+            const resultsDiv = document.getElementById('test-results');
+            const passed = testResults.filter(r => r.status === 'passed').length;
+            const failed = testResults.filter(r => r.status === 'failed').length;
+            
+            let html = `
+                <div class="summary">
+                    <h2>Test Results</h2>
+                    <p><strong>Passed:</strong> ${passed} | <strong>Failed:</strong> ${failed} | <strong>Total:</strong> ${testResults.length}</p>
+                </div>
+            `;
+            
+            testResults.forEach(result => {
+                html += `
+                    <div class="test-case ${result.status}">
+                        <div class="test-result">${result.status.toUpperCase()}: ${result.name}</div>
+                        ${result.error ? `<div class="error">Error: ${result.error}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        window.clearResults = function() {
+            document.getElementById('test-results').innerHTML = '';
+            testResults = [];
+        };
+
+        // Auto-run tests on page load
+        setTimeout(() => {
+            runAllTests();
+        }, 500);
+    </script>
+</body>
+</html>

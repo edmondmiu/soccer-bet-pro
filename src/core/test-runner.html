@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StateManager Test Runner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .test-pass {
+            background-color: #059669;
+            color: white;
+        }
+        .test-fail {
+            background-color: #dc2626;
+            color: white;
+        }
+        .test-summary {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #1e293b;
+            border-radius: 5px;
+        }
+        pre {
+            background-color: #334155;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>StateManager Test Runner</h1>
+    <div id="test-results"></div>
+
+    <script type="module">
+        import { StateManager } from './StateManager.js';
+
+        // Simple test framework
+        class TestRunner {
+            constructor() {
+                this.tests = [];
+                this.results = [];
+            }
+
+            describe(name, fn) {
+                console.log(`\n=== ${name} ===`);
+                fn();
+            }
+
+            test(name, fn) {
+                try {
+                    fn();
+                    this.results.push({ name, status: 'pass' });
+                    console.log(`✓ ${name}`);
+                } catch (error) {
+                    this.results.push({ name, status: 'fail', error: error.message });
+                    console.log(`✗ ${name}: ${error.message}`);
+                }
+            }
+
+            expect(actual) {
+                return {
+                    toBe: (expected) => {
+                        if (actual !== expected) {
+                            throw new Error(`Expected ${expected}, got ${actual}`);
+                        }
+                    },
+                    toEqual: (expected) => {
+                        if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+                            throw new Error(`Expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+                        }
+                    },
+                    toThrow: (expectedMessage) => {
+                        let threw = false;
+                        let actualMessage = '';
+                        try {
+                            if (typeof actual === 'function') {
+                                actual();
+                            }
+                        } catch (error) {
+                            threw = true;
+                            actualMessage = error.message;
+                        }
+                        if (!threw) {
+                            throw new Error('Expected function to throw an error');
+                        }
+                        if (expectedMessage && !actualMessage.includes(expectedMessage)) {
+                            throw new Error(`Expected error message to contain "${expectedMessage}", got "${actualMessage}"`);
+                        }
+                    },
+                    toBeGreaterThan: (expected) => {
+                        if (actual <= expected) {
+                            throw new Error(`Expected ${actual} to be greater than ${expected}`);
+                        }
+                    },
+                    toBeNull: () => {
+                        if (actual !== null) {
+                            throw new Error(`Expected null, got ${actual}`);
+                        }
+                    },
+                    toBeUndefined: () => {
+                        if (actual !== undefined) {
+                            throw new Error(`Expected undefined, got ${actual}`);
+                        }
+                    }
+                };
+            }
+
+            renderResults() {
+                const container = document.getElementById('test-results');
+                const passed = this.results.filter(r => r.status === 'pass').length;
+                const failed = this.results.filter(r => r.status === 'fail').length;
+
+                container.innerHTML = `
+                    <div class="test-summary">
+                        <h2>Test Summary</h2>
+                        <p>Total: ${this.results.length} | Passed: ${passed} | Failed: ${failed}</p>
+                    </div>
+                    ${this.results.map(result => `
+                        <div class="test-result test-${result.status}">
+                            <strong>${result.status.toUpperCase()}</strong>: ${result.name}
+                            ${result.error ? `<pre>${result.error}</pre>` : ''}
+                        </div>
+                    `).join('')}
+                `;
+            }
+        }
+
+        // Create test runner instance
+        const runner = new TestRunner();
+        window.test = runner.test.bind(runner);
+        window.describe = runner.describe.bind(runner);
+        window.expect = runner.expect.bind(runner);
+
+        // Run StateManager tests
+        describe('StateManager Tests', () => {
+            let stateManager;
+
+            // Helper to create fresh instance for each test
+            const createStateManager = () => new StateManager();
+
+            describe('Initialization', () => {
+                test('should initialize with correct default state', () => {
+                    stateManager = createStateManager();
+                    const state = stateManager.getState();
+                    
+                    expect(state.currentScreen).toBe('lobby');
+                    expect(state.wallet).toBe(1000);
+                    expect(state.classicMode).toBe(false);
+                    expect(state.match.active).toBe(false);
+                });
+
+                test('should setup validators', () => {
+                    stateManager = createStateManager();
+                    expect(stateManager.validators.size).toBeGreaterThan(0);
+                });
+            });
+
+            describe('State Updates', () => {
+                test('should update simple properties', () => {
+                    stateManager = createStateManager();
+                    stateManager.updateState({ wallet: 750 });
+                    expect(stateManager.getState().wallet).toBe(750);
+                });
+
+                test('should update nested properties', () => {
+                    stateManager = createStateManager();
+                    stateManager.updateState({ 'match.time': 45 });
+                    expect(stateManager.getState().match.time).toBe(45);
+                });
+
+                test('should validate wallet values', () => {
+                    stateManager = createStateManager();
+                    expect(() => {
+                        stateManager.updateState({ wallet: -100 });
+                    }).toThrow('Wallet must be a non-negative number');
+                });
+
+                test('should validate screen values', () => {
+                    stateManager = createStateManager();
+                    expect(() => {
+                        stateManager.updateState({ currentScreen: 'invalid' });
+                    }).toThrow('Invalid screen');
+                });
+            });
+
+            describe('Observer Pattern', () => {
+                test('should notify observers on state change', () => {
+                    stateManager = createStateManager();
+                    let notified = false;
+                    let receivedNewState = null;
+                    
+                    stateManager.subscribe((newState, oldState, changes) => {
+                        notified = true;
+                        receivedNewState = newState;
+                    });
+                    
+                    stateManager.updateState({ wallet: 800 });
+                    
+                    expect(notified).toBe(true);
+                    expect(receivedNewState.wallet).toBe(800);
+                });
+
+                test('should unsubscribe correctly', () => {
+                    stateManager = createStateManager();
+                    let callCount = 0;
+                    
+                    const unsubscribe = stateManager.subscribe(() => {
+                        callCount++;
+                    });
+                    
+                    stateManager.updateState({ wallet: 800 });
+                    expect(callCount).toBe(1);
+                    
+                    unsubscribe();
+                    stateManager.updateState({ wallet: 700 });
+                    expect(callCount).toBe(1); // Should not increment
+                });
+            });
+
+            describe('Bet Amount Memory', () => {
+                test('should get and update bet amount memory', () => {
+                    stateManager = createStateManager();
+                    expect(stateManager.getBetAmountMemory('fullMatch')).toBe(25);
+                    
+                    stateManager.updateBetAmountMemory('fullMatch', 100);
+                    expect(stateManager.getBetAmountMemory('fullMatch')).toBe(100);
+                });
+
+                test('should validate bet amount memory', () => {
+                    stateManager = createStateManager();
+                    expect(() => {
+                        stateManager.updateBetAmountMemory('invalid', 50);
+                    }).toThrow('Invalid bet type');
+                });
+            });
+
+            describe('State Reset', () => {
+                test('should reset while preserving wallet', () => {
+                    stateManager = createStateManager();
+                    stateManager.updateState({ wallet: 500, currentScreen: 'match' });
+                    
+                    stateManager.reset();
+                    
+                    const state = stateManager.getState();
+                    expect(state.wallet).toBe(500);
+                    expect(state.currentScreen).toBe('lobby');
+                });
+            });
+        });
+
+        // Render results after all tests
+        setTimeout(() => {
+            runner.renderResults();
+        }, 100);
+    </script>
+</body>
+</html>

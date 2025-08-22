@@ -1,0 +1,28 @@
+{
+  "moduleStructure": {
+    "allModulesExist": true,
+    "totalModules": 17,
+    "existingModules": 17,
+    "completeness": "100.0%"
+  },
+  "dependencies": {
+    "valid": true
+  },
+  "exports": {
+    "valid": true
+  },
+  "integration": {
+    "gameController": {
+      "methodsFound": 7,
+      "importsFound": 5,
+      "score": "100.0%"
+    },
+    "completeFlow": {
+      "valid": true,
+      "testsExist": 4,
+      "totalTests": 4,
+      "testCoverage": "100.0%"
+    }
+  },
+  "errors": []
+}

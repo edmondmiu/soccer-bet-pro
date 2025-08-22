@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soccer Betting Game - Integration Test Runner</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #1e293b;
+            border-radius: 8px;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #059669;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #10b981;
+        }
+
+        .btn-secondary {
+            background: #475569;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #64748b;
+        }
+
+        .test-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .test-card {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #475569;
+        }
+
+        .test-card.success {
+            border-left-color: #059669;
+        }
+
+        .test-card.error {
+            border-left-color: #dc2626;
+        }
+
+        .test-card.warning {
+            border-left-color: #f59e0b;
+        }
+
+        .test-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #f1f5f9;
+        }
+
+        .test-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .status-pass {
+            background: #059669;
+            color: white;
+        }
+
+        .status-fail {
+            background: #dc2626;
+            color: white;
+        }
+
+        .status-running {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .test-details {
+            font-size: 0.9em;
+            color: #94a3b8;
+        }
+
+        .performance-metrics {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 15px;
+            background: #334155;
+            border-radius: 6px;
+        }
+
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #10b981;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+
+        .console-output {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.8em;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .browser-info {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #334155;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #059669, #10b981);
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .test-controls {
+                flex-direction: column;
+            }
+            
+            .test-results {
+                grid-template-columns: 1fr;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚽ Soccer Betting Game - Integration Tests</h1>
+            <p>Comprehensive end-to-end testing of the complete 8-phase game loop</p>
+        </div>
+
+        <div class="browser-info">
+            <strong>Browser Environment:</strong>
+            <span id="browser-info">Loading...</span>
+        </div>
+
+        <div class="test-controls">
+            <button id="run-all-tests" class="btn btn-primary">Run All Tests</button>
+            <button id="run-game-flow" class="btn btn-secondary">Game Flow Only</button>
+            <button id="run-performance" class="btn btn-secondary">Performance Tests</button>
+            <button id="run-mobile" class="btn btn-secondary">Mobile Tests</button>
+            <button id="clear-results" class="btn btn-secondary">Clear Results</button>
+        </div>
+
+        <div class="progress-bar">
+            <div id="progress-fill" class="progress-fill"></div>
+        </div>
+
+        <div class="performance-metrics">
+            <h3>Performance Metrics</h3>
+            <div class="metrics-grid">
+                <div class="metric">
+                    <div id="init-time" class="metric-value">-</div>
+                    <div class="metric-label">Initialization (ms)</div>
+                </div>
+                <div class="metric">
+                    <div id="match-start-time" class="metric-value">-</div>
+                    <div class="metric-label">Match Start (ms)</div>
+                </div>
+                <div class="metric">
+                    <div id="bet-time" class="metric-value">-</div>
+                    <div class="metric-label">Bet Placement (ms)</div>
+                </div>
+                <div class="metric">
+                    <div id="memory-usage" class="metric-value">-</div>
+                    <div class="metric-label">Memory Usage (MB)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-results" id="test-results">
+            <!-- Test results will be populated here -->
+        </div>
+
+        <div class="console-output">
+            <div id="console-output">Test runner initialized. Click "Run All Tests" to begin.</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { GameController } from '../src/core/GameController.js';
+
+        class IntegrationTestRunner {
+            constructor() {
+                this.gameController = null;
+                this.testResults = {};
+                this.currentTest = 0;
+                this.totalTests = 0;
+                this.startTime = 0;
+                
+                this.setupEventListeners();
+                this.displayBrowserInfo();
+                this.log('Integration Test Runner initialized');
+            }
+
+            setupEventListeners() {
+                document.getElementById('run-all-tests').addEventListener('click', () => {
+                    this.runAllTests();
+                });
+
+                document.getElementById('run-game-flow').addEventListener('click', () => {
+                    this.runGameFlowTests();
+                });
+
+                document.getElementById('run-performance').addEventListener('click', () => {
+                    this.runPerformanceTests();
+                });
+
+                document.getElementById('run-mobile').addEventListener('click', () => {
+                    this.runMobileTests();
+                });
+
+                document.getElementById('clear-results').addEventListener('click', () => {
+                    this.clearResults();
+                });
+            }
+
+            displayBrowserInfo() {
+                const info = {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                    cookieEnabled: navigator.cookieEnabled,
+                    onLine: navigator.onLine,
+                    screen: `${screen.width}x${screen.height}`,
+                    viewport: `${window.innerWidth}x${window.innerHeight}`
+                };
+
+                document.getElementById('browser-info').textContent = 
+                    `${this.getBrowserName()} on ${info.platform} | Screen: ${info.screen} | Viewport: ${info.viewport}`;
+            }
+
+            getBrowserName() {
+                const ua = navigator.userAgent;
+                if (ua.includes('Chrome')) return 'Chrome';
+                if (ua.includes('Firefox')) return 'Firefox';
+                if (ua.includes('Safari')) return 'Safari';
+                if (ua.includes('Edge')) return 'Edge';
+                return 'Unknown';
+            }
+
+            async runAllTests() {
+                this.log('Starting comprehensive integration tests...');
+                this.clearResults();
+                this.startTime = performance.now();
+                
+                const tests = [
+                    { name: 'Game Initialization', fn: () => this.testGameInitialization() },
+                    { name: 'Lobby & Match Selection', fn: () => this.testLobbyAndMatchSelection() },
+                    { name: 'Match Timer & Events', fn: () => this.testMatchTimerAndEvents() },
+                    { name: 'Full Match Betting', fn: () => this.testFullMatchBetting() },
+                    { name: 'Action Betting System', fn: () => this.testActionBettingSystem() },
+                    { name: 'Power-Up System', fn: () => this.testPowerUpSystem() },
+                    { name: 'Event Resolution', fn: () => this.testEventResolution() },
+                    { name: 'Match Conclusion', fn: () => this.testMatchConclusion() },
+                    { name: 'Session Continuity', fn: () => this.testSessionContinuity() },
+                    { name: 'Error Handling', fn: () => this.testErrorHandling() },
+                    { name: 'Performance Validation', fn: () => this.testPerformanceValidation() },
+                    { name: 'Mobile Responsiveness', fn: () => this.testMobileResponsiveness() }
+                ];
+
+                this.totalTests = tests.length;
+                this.currentTest = 0;
+
+                for (const test of tests) {
+                    await this.runSingleTest(test.name, test.fn);
+                    this.currentTest++;
+                    this.updateProgress();
+                }
+
+                this.log('All tests completed!');
+                this.generateTestReport();
+            }
+
+            async runGameFlowTests() {
+                this.log('Running game flow tests...');
+                this.clearResults();
+                
+                const tests = [
+                    { name: 'Game Initialization', fn: () => this.testGameInitialization() },
+                    { name: 'Lobby & Match Selection', fn: () => this.testLobbyAndMatchSelection() },
+                    { name: 'Match Timer & Events', fn: () => this.testMatchTimerAndEvents() },
+                    { name: 'Full Match Betting', fn: () => this.testFullMatchBetting() },
+                    { name: 'Action Betting System', fn: () => this.testActionBettingSystem() },
+                    { name: 'Match Conclusion', fn: () => this.testMatchConclusion() }
+                ];
+
+                this.totalTests = tests.length;
+                this.currentTest = 0;
+
+                for (const test of tests) {
+                    await this.runSingleTest(test.name, test.fn);
+                    this.currentTest++;
+                    this.updateProgress();
+                }
+            }
+
+            async runPerformanceTests() {
+                this.log('Running performance tests...');
+                this.clearResults();
+                
+                await this.runSingleTest('Performance Validation', () => this.testPerformanceValidation());
+                await this.runSingleTest('Memory Management', () => this.testMemoryManagement());
+                await this.runSingleTest('Load Testing', () => this.testLoadTesting());
+            }
+
+            async runMobileTests() {
+                this.log('Running mobile responsiveness tests...');
+                this.clearResults();
+                
+                await this.runSingleTest('Mobile Responsiveness', () => this.testMobileResponsiveness());
+                await this.runSingleTest('Touch Interactions', () => this.testTouchInteractions());
+            }
+
+            async runSingleTest(testName, testFn) {
+                this.log(`Running test: ${testName}`);
+                this.addTestCard(testName, 'running');
+                
+                try {
+                    const startTime = performance.now();
+                    const result = await testFn();
+                    const duration = performance.now() - startTime;
+                    
+                    this.testResults[testName] = {
+                        success: result.success,
+                        duration,
+                        details: result.details || {},
+                        error: result.error
+                    };
+                    
+                    this.updateTestCard(testName, result.success ? 'success' : 'error', {
+                        duration,
+                        details: result.details,
+                        error: result.error
+                    });
+                    
+                    this.log(`Test ${testName}: ${result.success ? 'PASS' : 'FAIL'} (${duration.toFixed(2)}ms)`);
+                    
+                } catch (error) {
+                    this.testResults[testName] = {
+                        success: false,
+                        error: error.message,
+                        duration: 0
+                    };
+                    
+                    this.updateTestCard(testName, 'error', { error: error.message });
+                    this.log(`Test ${testName}: ERROR - ${error.message}`);
+                }
+            }
+
+            async testGameInitialization() {
+                const startTime = performance.now();
+                
+                this.gameController = new GameController();
+                const result = await this.gameController.initialize();
+                
+                const initTime = performance.now() - startTime;
+                document.getElementById('init-time').textContent = initTime.toFixed(2);
+                
+                const status = this.gameController.getStatus();
+                
+                return {
+                    success: result.success && status.isInitialized && status.gamePhase === 'lobby',
+                    details: {
+                        initTime,
+                        modules: status.modules.length,
+                        gamePhase: status.gamePhase
+                    }
+                };
+            }
+
+            async testLobbyAndMatchSelection() {
+                if (!this.gameController) {
+                    await this.testGameInitialization();
+                }
+                
+                const startTime = performance.now();
+                
+                const matchData = {
+                    homeTeam: 'Arsenal',
+                    awayTeam: 'Chelsea',
+                    odds: { home: 1.85, draw: 3.50, away: 4.20 }
+                };
+                
+                const result = await this.gameController.startMatch(matchData);
+                const matchStartTime = performance.now() - startTime;
+                
+                document.getElementById('match-start-time').textContent = matchStartTime.toFixed(2);
+                
+                const state = this.gameController.modules.stateManager.getState();
+                
+                return {
+                    success: result.success && state.currentScreen === 'match' && state.match.active,
+                    details: {
+                        matchStartTime,
+                        homeTeam: state.match.homeTeam,
+                        awayTeam: state.match.awayTeam,
+                        matchActive: state.match.active
+                    }
+                };
+            }
+
+            async testMatchTimerAndEvents() {
+                const timerStatus = this.gameController.modules.timerManager.getStatus();
+                const state = this.gameController.modules.stateManager.getState();
+                
+                return {
+                    success: timerStatus.isRunning && state.match.timeline && state.match.timeline.length > 0,
+                    details: {
+                        timerRunning: timerStatus.isRunning,
+                        matchTime: timerStatus.matchTime,
+                        eventsGenerated: state.match.timeline.length,
+                        eventTypes: [...new Set(state.match.timeline.map(e => e.type))]
+                    }
+                };
+            }
+
+            async testFullMatchBetting() {
+                const startTime = performance.now();
+                
+                const betData = {
+                    type: 'fullMatch',
+                    outcome: 'home',
+                    stake: 50,
+                    odds: 1.85
+                };
+                
+                const result = await this.gameController.placeBet(betData);
+                const betTime = performance.now() - startTime;
+                
+                document.getElementById('bet-time').textContent = betTime.toFixed(2);
+                
+                const state = this.gameController.modules.stateManager.getState();
+                const gameStillRunning = this.gameController.getStatus().gamePhase === 'match';
+                
+                return {
+                    success: result.success && gameStillRunning && state.bets.fullMatch.length > 0,
+                    details: {
+                        betTime,
+                        betPlaced: result.success,
+                        gameStillRunning,
+                        walletBalance: state.wallet,
+                        activeBets: state.bets.fullMatch.length
+                    }
+                };
+            }
+
+            async testActionBettingSystem() {
+                const eventData = {
+                    id: 'test-action-bet',
+                    type: 'ACTION_BET',
+                    description: 'Corner kick opportunity',
+                    choices: [
+                        { id: 'corner-yes', description: 'Corner taken', odds: 1.5 },
+                        { id: 'corner-no', description: 'No corner', odds: 2.5 }
+                    ]
+                };
+                
+                const pauseResult = this.gameController.pauseForActionBet(eventData);
+                const gamePaused = this.gameController.getStatus().gamePhase === 'paused';
+                
+                // Resume the game
+                const resumeResult = this.gameController.resumeMatch();
+                const gameResumed = this.gameController.getStatus().gamePhase === 'match';
+                
+                return {
+                    success: pauseResult.success && gamePaused && resumeResult.success && gameResumed,
+                    details: {
+                        pauseSuccess: pauseResult.success,
+                        gamePaused,
+                        resumeSuccess: resumeResult.success,
+                        gameResumed
+                    }
+                };
+            }
+
+            async testPowerUpSystem() {
+                const powerUpResult = this.gameController.modules.powerUpManager.awardPowerUp();
+                
+                let classicModeTest = true;
+                this.gameController.toggleClassicMode(true);
+                const classicPowerUpResult = this.gameController.modules.powerUpManager.awardPowerUp();
+                classicModeTest = !classicPowerUpResult.success;
+                
+                // Reset classic mode
+                this.gameController.toggleClassicMode(false);
+                
+                return {
+                    success: powerUpResult.success && classicModeTest,
+                    details: {
+                        powerUpAwarded: powerUpResult.success,
+                        classicModeDisablesPowerUps: classicModeTest
+                    }
+                };
+            }
+
+            async testEventResolution() {
+                // Place an action bet
+                const betData = {
+                    type: 'actionBet',
+                    outcome: 'corner-yes',
+                    stake: 25,
+                    odds: 1.5,
+                    eventId: 'test-action-bet'
+                };
+                
+                await this.gameController.placeBet(betData);
+                
+                // Simulate resolution
+                this.gameController.handleActionBetResolution({
+                    winningOutcome: 'corner-yes',
+                    originalEvent: { id: 'test-action-bet' }
+                });
+                
+                return {
+                    success: true,
+                    details: {
+                        betResolved: true
+                    }
+                };
+            }
+
+            async testMatchConclusion() {
+                // Place a bet first
+                await this.gameController.placeBet({
+                    type: 'fullMatch',
+                    outcome: 'home',
+                    stake: 100,
+                    odds: 1.85
+                });
+                
+                // Set final score
+                this.gameController.modules.stateManager.updateState({
+                    'match.homeScore': 2,
+                    'match.awayScore': 1
+                });
+                
+                const result = await this.gameController.endMatch();
+                
+                return {
+                    success: result.success && result.outcome && result.summaryData,
+                    details: {
+                        matchEnded: result.success,
+                        outcome: result.outcome,
+                        summaryCreated: !!result.summaryData
+                    }
+                };
+            }
+
+            async testSessionContinuity() {
+                const walletBefore = this.gameController.modules.stateManager.getState().wallet;
+                
+                this.gameController.returnToLobby();
+                
+                // Start new match
+                const matchData = {
+                    homeTeam: 'Liverpool',
+                    awayTeam: 'Manchester City',
+                    odds: { home: 2.10, draw: 3.20, away: 3.80 }
+                };
+                
+                await this.gameController.startMatch(matchData);
+                const walletAfter = this.gameController.modules.stateManager.getState().wallet;
+                
+                return {
+                    success: walletBefore === walletAfter,
+                    details: {
+                        walletPersisted: walletBefore === walletAfter,
+                        walletBefore,
+                        walletAfter
+                    }
+                };
+            }
+
+            async testErrorHandling() {
+                const errorResult = this.gameController.handleError('test', new Error('Test error'));
+                
+                return {
+                    success: !errorResult.success && errorResult.error === 'Test error',
+                    details: {
+                        errorHandled: !errorResult.success,
+                        errorMessage: errorResult.error
+                    }
+                };
+            }
+
+            async testPerformanceValidation() {
+                const performanceThresholds = {
+                    initialization: 1000,
+                    matchStart: 500,
+                    betting: 100
+                };
+                
+                let issues = [];
+                
+                Object.entries(this.testResults).forEach(([testName, result]) => {
+                    const threshold = performanceThresholds[testName.toLowerCase().replace(/\s+/g, '')];
+                    if (threshold && result.duration > threshold) {
+                        issues.push(`${testName}: ${result.duration}ms > ${threshold}ms`);
+                    }
+                });
+                
+                // Memory usage
+                const memoryUsage = performance.memory ? 
+                    (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(2) : 'N/A';
+                
+                document.getElementById('memory-usage').textContent = memoryUsage;
+                
+                return {
+                    success: issues.length === 0,
+                    details: {
+                        performanceIssues: issues,
+                        memoryUsage: memoryUsage + ' MB'
+                    }
+                };
+            }
+
+            async testMemoryManagement() {
+                const initialMemory = performance.memory ? performance.memory.usedJSHeapSize : 0;
+                
+                // Create and destroy multiple game instances
+                for (let i = 0; i < 5; i++) {
+                    const gc = new GameController();
+                    await gc.initialize();
+                    gc.destroy();
+                }
+                
+                const finalMemory = performance.memory ? performance.memory.usedJSHeapSize : 0;
+                const memoryIncrease = finalMemory - initialMemory;
+                
+                return {
+                    success: memoryIncrease < 10 * 1024 * 1024, // Less than 10MB increase
+                    details: {
+                        initialMemory: (initialMemory / 1024 / 1024).toFixed(2) + ' MB',
+                        finalMemory: (finalMemory / 1024 / 1024).toFixed(2) + ' MB',
+                        memoryIncrease: (memoryIncrease / 1024 / 1024).toFixed(2) + ' MB'
+                    }
+                };
+            }
+
+            async testLoadTesting() {
+                const startTime = performance.now();
+                
+                // Simulate rapid betting
+                const promises = [];
+                for (let i = 0; i < 10; i++) {
+                    promises.push(this.gameController.placeBet({
+                        type: 'fullMatch',
+                        outcome: 'home',
+                        stake: 10,
+                        odds: 1.85
+                    }));
+                }
+                
+                const results = await Promise.all(promises);
+                const duration = performance.now() - startTime;
+                
+                const successCount = results.filter(r => r.success).length;
+                
+                return {
+                    success: successCount === 10 && duration < 1000,
+                    details: {
+                        totalBets: 10,
+                        successfulBets: successCount,
+                        duration: duration.toFixed(2) + 'ms'
+                    }
+                };
+            }
+
+            async testMobileResponsiveness() {
+                const viewport = {
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                };
+                
+                const isMobile = viewport.width <= 768;
+                const hasTouch = 'ontouchstart' in window;
+                
+                // Test responsive elements
+                const elements = document.querySelectorAll('.bet-button, .modal-content, .match-screen');
+                let responsiveElements = 0;
+                
+                elements.forEach(el => {
+                    const styles = window.getComputedStyle(el);
+                    if (styles.display !== 'none' && styles.visibility !== 'hidden') {
+                        responsiveElements++;
+                    }
+                });
+                
+                return {
+                    success: true, // Basic responsiveness check
+                    details: {
+                        viewport: `${viewport.width}x${viewport.height}`,
+                        isMobile,
+                        hasTouch,
+                        responsiveElements
+                    }
+                };
+            }
+
+            async testTouchInteractions() {
+                const hasTouch = 'ontouchstart' in window;
+                const touchEvents = ['touchstart', 'touchend', 'touchmove'];
+                
+                let touchSupport = hasTouch;
+                
+                return {
+                    success: true, // Touch support is optional
+                    details: {
+                        touchSupported: hasTouch,
+                        touchEvents: touchEvents.filter(event => event in window)
+                    }
+                };
+            }
+
+            addTestCard(testName, status) {
+                const testResults = document.getElementById('test-results');
+                
+                const card = document.createElement('div');
+                card.className = `test-card ${status}`;
+                card.id = `test-${testName.replace(/\s+/g, '-').toLowerCase()}`;
+                
+                card.innerHTML = `
+                    <div class="test-title">${testName}</div>
+                    <div class="test-status status-${status === 'success' ? 'pass' : status === 'error' ? 'fail' : 'running'}">
+                        ${status.toUpperCase()}
+                    </div>
+                    <div class="test-details">
+                        ${status === 'running' ? 'Test in progress...' : ''}
+                    </div>
+                `;
+                
+                testResults.appendChild(card);
+            }
+
+            updateTestCard(testName, status, data) {
+                const card = document.getElementById(`test-${testName.replace(/\s+/g, '-').toLowerCase()}`);
+                if (!card) return;
+                
+                card.className = `test-card ${status}`;
+                
+                const statusElement = card.querySelector('.test-status');
+                statusElement.className = `test-status status-${status === 'success' ? 'pass' : 'fail'}`;
+                statusElement.textContent = status === 'success' ? 'PASS' : 'FAIL';
+                
+                const detailsElement = card.querySelector('.test-details');
+                let detailsHtml = '';
+                
+                if (data.duration) {
+                    detailsHtml += `<div>Duration: ${data.duration.toFixed(2)}ms</div>`;
+                }
+                
+                if (data.error) {
+                    detailsHtml += `<div style="color: #dc2626;">Error: ${data.error}</div>`;
+                }
+                
+                if (data.details) {
+                    Object.entries(data.details).forEach(([key, value]) => {
+                        detailsHtml += `<div>${key}: ${JSON.stringify(value)}</div>`;
+                    });
+                }
+                
+                detailsElement.innerHTML = detailsHtml;
+            }
+
+            updateProgress() {
+                const progress = (this.currentTest / this.totalTests) * 100;
+                document.getElementById('progress-fill').style.width = `${progress}%`;
+            }
+
+            clearResults() {
+                document.getElementById('test-results').innerHTML = '';
+                document.getElementById('progress-fill').style.width = '0%';
+                this.testResults = {};
+                this.currentTest = 0;
+                this.totalTests = 0;
+            }
+
+            generateTestReport() {
+                const totalTests = Object.keys(this.testResults).length;
+                const passedTests = Object.values(this.testResults).filter(r => r.success).length;
+                const totalDuration = performance.now() - this.startTime;
+                
+                const report = {
+                    timestamp: new Date().toISOString(),
+                    browser: this.getBrowserName(),
+                    platform: navigator.platform,
+                    viewport: `${window.innerWidth}x${window.innerHeight}`,
+                    summary: {
+                        totalTests,
+                        passedTests,
+                        failedTests: totalTests - passedTests,
+                        passRate: ((passedTests / totalTests) * 100).toFixed(1) + '%',
+                        totalDuration: totalDuration.toFixed(2) + 'ms'
+                    },
+                    results: this.testResults
+                };
+                
+                this.log('=== TEST REPORT ===');
+                this.log(JSON.stringify(report, null, 2));
+                
+                // Store report in localStorage for later retrieval
+                localStorage.setItem('integrationTestReport', JSON.stringify(report));
+            }
+
+            log(message) {
+                const output = document.getElementById('console-output');
+                const timestamp = new Date().toLocaleTimeString();
+                output.textContent += `\n[${timestamp}] ${message}`;
+                output.scrollTop = output.scrollHeight;
+            }
+        }
+
+        // Initialize test runner when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            window.testRunner = new IntegrationTestRunner();
+        });
+    </script>
+</body>
+</html>

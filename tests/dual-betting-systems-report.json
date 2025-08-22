@@ -1,0 +1,34 @@
+{
+  "fullMatchBetting": {
+    "exists": true,
+    "featuresFound": 5,
+    "totalFeatures": 5,
+    "completeness": "100.0%",
+    "hasClass": true,
+    "hasConstructor": true,
+    "hasMethods": true
+  },
+  "actionBetting": {
+    "exists": true,
+    "featuresFound": 6,
+    "totalFeatures": 6,
+    "completeness": "100.0%",
+    "hasClass": true,
+    "hasConstructor": true,
+    "hasMethods": true
+  },
+  "dualSystemIntegration": {
+    "valid": true,
+    "featuresFound": 10,
+    "maxFeatures": 10,
+    "score": "100.0%"
+  },
+  "performance": {
+    "score": "71.4%",
+    "checksFound": 5,
+    "totalChecks": 7,
+    "bottlenecksFound": 2,
+    "recommendation": "Good"
+  },
+  "errors": []
+}

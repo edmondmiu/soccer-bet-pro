@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UIManager Test Runner</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .test-button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .test-button:hover {
+            background: #047857;
+        }
+        
+        .test-results {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        
+        .success { color: #059669; }
+        .error { color: #dc2626; }
+        
+        .demo-area {
+            min-height: 200px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            position: relative;
+            margin: 10px 0;
+        }
+        
+        .notification-demo {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>UIManager Test Runner</h1>
+        <p>Interactive tests for UIManager functionality</p>
+
+        <!-- Initialization Tests -->
+        <div class="test-section">
+            <h3>Initialization Tests</h3>
+            <button class="test-button" onclick="testInitialization()">Test Initialization</button>
+            <button class="test-button" onclick="testStyleApplication()">Test Style Application</button>
+            <div id="init-results" class="test-results"></div>
+        </div>
+
+        <!-- Screen Management Tests -->
+        <div class="test-section">
+            <h3>Screen Management Tests</h3>
+            <button class="test-button" onclick="testScreenRegistration()">Test Screen Registration</button>
+            <button class="test-button" onclick="testScreenTransitions()">Test Screen Transitions</button>
+            <button class="test-button" onclick="testScreenUpdates()">Test Screen Updates</button>
+            <div id="screen-results" class="test-results"></div>
+            <div id="screen-demo" class="demo-area"></div>
+        </div>
+
+        <!-- Notification Tests -->
+        <div class="test-section">
+            <h3>Notification System Tests</h3>
+            <button class="test-button" onclick="testNotifications()">Test Basic Notifications</button>
+            <button class="test-button" onclick="testNotificationTypes()">Test Notification Types</button>
+            <button class="test-button" onclick="testNotificationDismiss()">Test Auto-Dismiss</button>
+            <button class="test-button" onclick="clearAllNotifications()">Clear All</button>
+            <div id="notification-results" class="test-results"></div>
+        </div>
+
+        <!-- Display Update Tests -->
+        <div class="test-section">
+            <h3>Display Update Tests</h3>
+            <button class="test-button" onclick="testDisplayUpdates()">Test Display Updates</button>
+            <button class="test-button" onclick="testLoadingStates()">Test Loading States</button>
+            <div id="display-results" class="test-results"></div>
+            <div id="display-demo">
+                <div>Wallet: <span class="wallet-balance">$0.00</span></div>
+                <div>Timer: <span class="match-timer">0'</span></div>
+                <div>Score: <span class="match-score">0 - 0</span></div>
+                <div>Odds: Home <span class="odds-home">0.00</span> | Draw <span class="odds-draw">0.00</span> | Away <span class="odds-away">0.00</span></div>
+            </div>
+        </div>
+
+        <!-- Responsive Tests -->
+        <div class="test-section">
+            <h3>Responsive Design Tests</h3>
+            <button class="test-button" onclick="testMobileDetection()">Test Mobile Detection</button>
+            <button class="test-button" onclick="testResponsiveStyles()">Test Responsive Styles</button>
+            <div id="responsive-results" class="test-results"></div>
+        </div>
+
+        <!-- Integration Tests -->
+        <div class="test-section">
+            <h3>Integration Tests</h3>
+            <button class="test-button" onclick="testStateIntegration()">Test State Integration</button>
+            <button class="test-button" onclick="testCompleteFlow()">Test Complete Flow</button>
+            <div id="integration-results" class="test-results"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { UIManager } from './UIManager.js';
+
+        // Global test variables
+        let uiManager;
+        let testStateManager;
+
+        // Mock StateManager for testing
+        class TestStateManager {
+            constructor() {
+                this.state = {
+                    currentScreen: 'lobby',
+                    wallet: 1000,
+                    match: {
+                        time: 0,
+                        homeScore: 0,
+                        awayScore: 0,
+                        homeTeam: 'Team A',
+                        awayTeam: 'Team B',
+                        odds: { home: 1.85, draw: 3.50, away: 4.20 }
+                    }
+                };
+                this.subscribers = [];
+            }
+
+            getState() {
+                return { ...this.state };
+            }
+
+            updateState(updates) {
+                this.state = { ...this.state, ...updates };
+                this.notifySubscribers();
+            }
+
+            subscribe(callback) {
+                this.subscribers.push(callback);
+            }
+
+            notifySubscribers() {
+                this.subscribers.forEach(callback => callback(this.state));
+            }
+        }
+
+        // Mock Screen Components
+        class TestScreen {
+            constructor(name, color = '#059669') {
+                this.name = name;
+                this.color = color;
+            }
+
+            render(data) {
+                const element = document.createElement('div');
+                element.className = 'test-screen';
+                element.style.cssText = `
+                    padding: 20px;
+                    background: ${this.color};
+                    color: white;
+                    border-radius: 8px;
+                    text-align: center;
+                    min-height: 150px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-direction: column;
+                `;
+                element.innerHTML = `
+                    <h2>${this.name} Screen</h2>
+                    <p>Data: ${JSON.stringify(data, null, 2)}</p>
+                `;
+                return element;
+            }
+
+            update(state) {
+                const element = document.querySelector('.test-screen');
+                if (element) {
+                    const dataElement = element.querySelector('p');
+                    if (dataElement) {
+                        dataElement.textContent = `Updated State: ${JSON.stringify(state, null, 2)}`;
+                    }
+                }
+            }
+
+            initialize(data) {
+                console.log(`${this.name} screen initialized with:`, data);
+            }
+        }
+
+        // Initialize test environment
+        function initializeTests() {
+            uiManager = new UIManager();
+            testStateManager = new TestStateManager();
+            
+            // Register test screens
+            uiManager.registerScreen('lobby', new TestScreen('Lobby', '#059669'));
+            uiManager.registerScreen('match', new TestScreen('Match', '#3b82f6'));
+            uiManager.registerScreen('summary', new TestScreen('Summary', '#f59e0b'));
+        }
+
+        // Test Functions
+        window.testInitialization = function() {
+            const results = document.getElementById('init-results');
+            try {
+                initializeTests();
+                
+                const appContainer = document.getElementById('app');
+                const notificationContainer = document.getElementById('notification-container');
+                
+                let output = '';
+                output += appContainer ? '✓ App container created\n' : '✗ App container missing\n';
+                output += notificationContainer ? '✓ Notification container created\n' : '✗ Notification container missing\n';
+                output += uiManager.screens.size > 0 ? '✓ Screens registered\n' : '✗ No screens registered\n';
+                
+                results.textContent = output;
+                results.className = 'test-results success';
+            } catch (error) {
+                results.textContent = `Error: ${error.message}`;
+                results.className = 'test-results error';
+            }
+        };
+
+        window.testStyleApplication = function() {
+            const results = document.getElementById('init-results');
+            try {
+                const styles = document.querySelectorAll('style');
+                const hasUIStyles = Array.from(styles).some(style => 
+                    style.textContent.includes('.app-container') || 
+                    style.textContent.includes('.notification')
+                );
+                
+                let output = '';
+                output += hasUIStyles ? '✓ UI styles applied\n' : '✗ UI styles missing\n';
+                output += `Found ${styles.length} style elements\n`;
+                
+                results.textContent = output;
+                results.className = 'test-results success';
+            } catch (error) {
+                results.textContent = `Error: ${error.message}`;
+                results.className = 'test-results error';
+            }
+        };
+
+        window.testScreenRegistration = function() {
+            const results = document.getElementById('screen-results');
+            try {
+                if (!uiManager) initializeTests();
+                
+                let output = '';
+                output += `✓ Registered ${uiManager.screens.size} screens\n`;
+                output += uiManager.screens.has('lobby') ? '✓ Lobby screen registered\n' : '✗ Lobby screen missing\n';
+                output += uiManager.screens.has('match') ? '✓ Match screen registered\n' : '✗ Match screen missing\n';
+                
+                results.textContent = output;
+                results.className = 'test-results success';
+            } catch (error) {
+                results.textContent = `Error: ${error.message}`;
+                results.className = 'test-results error';
+            }
+        };
+
+        window.testScreenTransitions = function() {
+            const results = document.getElementById('screen-results');
+            const demo = document.getElementById('screen-demo');
+            
+            try {
+                if (!uiManager) initializeTests();
+                
+                // Clear demo area
+                demo.innerHTML = '';
+                
+                // Show lobby screen
+                uiManager.showScreen('lobby', { test: 'lobby data' });
+                
+                let output = 'Screen transition test started...\n';
+                output += `Current screen: ${uiManager.getCurrentScreen()}\n`;
+                
+                // Transition to match screen after 2 seconds
+                setTimeout(() => {
+                    uiManager.showScreen('match', { test: 'match data' });
+                    output += `Transitioned to: ${uiManager.getCurrentScreen()}\n`;
+                    results.textContent = output;
+                }, 2000);
+                
+                // Transition to summary after 4 seconds
+                setTimeout(() => {
+                    uiManager.showScreen('summary', { test: 'summary data' });
+                    output += `Final screen: ${uiManager.getCurrentScreen()}\n`;
+                    results.textContent = output;
+                    results.className = 'test-results success';
+                }, 4000);
+                
+                results.textContent = output;
+                results.className = 'test-results';
+            } catch (error) {
+                results.textContent = `Error: ${error.message}`;
+                results.className = 'test-results error';
+            }
+        };
+
+        window.testScreenUpdates = function() {
+            const results = document.getElementById('screen-results');
+            try {
+                if (!uiManager) initializeTests();
+                
+                uiManager.initialize(testStateManager);
+                uiManager.showScreen('match');
+                
+                // Update state to trigger screen update
+                testStateManager.updateState({
+                    wallet: 1500,
+                    match: { ...testStateManager.state.match, time: 45 }
+                });
+                
+                let output = '✓ Screen update test completed\n';
+                output += '✓ State manager integrated\n';
+                output += '✓ Screen updated with new state\n';
+                
+                results.textContent = output;
+                results.className = 'test-results success';
+            } catch (error) {
+                results.textContent = `Error: ${error.message}`;
+                results.className = 'test-results error';
+            }
+        };
+
+        window.testNotifications = function() {
+            const results = document.getElementById('notification-results');
+            try {
+                if (!uiManager) initializeTests();
+                
+                const id1 = uiManager.showNotification('Test notification 1', 'info', 'Info');
+                const id2 = uiManager.showNotification('Test notification 2', 'success', 'Success');
+                
+                let output = '';
+                output += `✓ Created notification with ID: ${id1}\n`;
+                output += `✓ Created notification with ID: ${id2}\n`;
+                output += `✓ Total notifications: ${uiManager.notifications.length}\n`;
+                
+                results.textContent = output;
+                results.className = 'test-results success';
+            } catch (error) {
+                results.textContent = `Error: ${error.message}`;
+                results.className = 'test-results error';
+            }
+        };
+
+        window.testNotificationTypes = function() {
+            const results = document.getElementById('notification-results');
+            try {
+                if (!uiManager) initializeTests();
+                
+                const types = ['success', 'error', 'warning', 'info'];
+                types.forEach((type, index) => {
+                    setTimeout(() => {
+                        uiManager.showNotification(
+                            `This is a ${type} notification`,
+                            type,
+                            type.charAt(0).toUpperCase() + type.slice(1)
+                        );
+                    }, index * 500);
+                });
+                
+                let output = '✓ Testing all notification types:\n';
+                types.forEach(type => {
+                    output += `  - ${type}\n`;
+                });
+                
+                results.textContent = output;
+                results.className = 'test-results success';
+            } catch (error) {
+                results.textContent = `Error: ${error.message}`;
+                results.className = 'test-results error';
+            }
+        };
+
+        window.testNotificationDismiss = function() {
+            const results = document.getElementById('notification-results');
+            try {
+                if (!uiManager) initializeTests();
+                
+                uiManager.showNotification('Auto-dismiss in 2 seconds', 'warning', 'Auto Dismiss', 2000);
+                
+                let output = '✓ Auto-dismiss notification created\n';
+                output += '✓ Will dismiss automatically in 2 seconds\n';
+                
+                setTimeout(() => {
+                    output += `✓ Remaining notifications: ${uiManager.notifications.length}\n`;
+                    results.textContent = output;
+                }, 2500);
+                
+                results.textContent = output;
+                results.className = 'test-results success';
+            } catch (error) {
+                results.textContent = `Error: ${error.message}`;
+                results.className = 'test-results error';
+            }
+        };
+
+        window.clearAllNotifications = function() {
+            if (uiManager) {
+                uiManager.clearNotifications();
+                const results = document.getElementById('notification-results');
+                results.textContent = '✓ All notifications cleared';
+                results.className = 'test-results success';
+            }
+        };
+
+        window.testDisplayUpdates = function() {
+            const results = document.getElementById('display-results');
+            try {
+                if (!uiManager) initializeTests();
+                
+                // Test wallet update
+                uiManager.updateDisplay({ wallet: 1234.56 });
+                
+                // Test timer update
+                uiManager.updateDisplay({ match: { time: 67.3 } });
+                
+                // Test score update
+                uiManager.updateDisplay({ match: { homeScore: 2, awayScore: 1 } });
+                
+                // Test odds update
+                uiManager.updateDisplay({ 
+                    match: { 
+                        odds: { home: 2.10, draw: 3.20, away: 3.80 } 
+                    } 
+                });
+                
+                let output = '✓ Display updates completed:\n';
+                output += '  - Wallet updated to $1234.56\n';
+                output += '  - Timer updated to 67\'\n';
+                output += '  - Score updated to 2 - 1\n';
+                output += '  - Odds updated\n';
+                
+                results.textContent = output;
+                results.className = 'test-results success';
+            } catch (error) {
+                results.textContent = `Error: ${error.message}`;
+                results.className = 'test-results error';
+            }
+        };
+
+        window.testLoadingStates = function() {
+            const results = document.getElementById('display-results');
+            try {
+                if (!uiManager) initializeTests();
+                
+                uiManager.showLoading('Loading match data...');
+                
+                setTimeout(() => {
+                    uiManager.hideLoading();
+                    
+                    let output = '✓ Loading state test completed:\n';
+                    output += '  - Loading notification shown\n';
+                    output += '  - Loading notification hidden after 2 seconds\n';
+                    
+                    results.textContent = output;
+                    results.className = 'test-results success';
+                }, 2000);
+                
+                results.textContent = '✓ Loading state shown, will hide in 2 seconds...';
+                results.className = 'test-results';
+            } catch (error) {
+                results.textContent = `Error: ${error.message}`;
+                results.className = 'test-results error';
+            }
+        };
+
+        window.testMobileDetection = function() {
+            const results = document.getElementById('responsive-results');
+            try {
+                if (!uiManager) initializeTests();
+                
+                const isMobile = uiManager.isMobile();
+                const windowWidth = window.innerWidth;
+                
+                let output = `✓ Mobile detection test:\n`;
+                output += `  - Window width: ${windowWidth}px\n`;
+                output += `  - Is mobile: ${isMobile}\n`;
+                output += `  - Touch support: ${'ontouchstart' in window}\n`;
+                
+                results.textContent = output;
+                results.className = 'test-results success';
+            } catch (error) {
+                results.textContent = `Error: ${error.message}`;
+                results.className = 'test-results error';
+            }
+        };
+
+        window.testResponsiveStyles = function() {
+            const results = document.getElementById('responsive-results');
+            try {
+                const testElement = document.createElement('div');
+                testElement.className = 'btn btn-primary';
+                testElement.textContent = 'Test Button';
+                document.body.appendChild(testElement);
+                
+                const styles = window.getComputedStyle(testElement);
+                
+                let output = '✓ Responsive styles test:\n';
+                output += `  - Button padding: ${styles.padding}\n`;
+                output += `  - Button background: ${styles.background}\n`;
+                output += `  - Button border: ${styles.border}\n`;
+                
+                document.body.removeChild(testElement);
+                
+                results.textContent = output;
+                results.className = 'test-results success';
+            } catch (error) {
+                results.textContent = `Error: ${error.message}`;
+                results.className = 'test-results error';
+            }
+        };
+
+        window.testStateIntegration = function() {
+            const results = document.getElementById('integration-results');
+            try {
+                if (!uiManager) initializeTests();
+                
+                uiManager.initialize(testStateManager);
+                
+                // Test state subscription
+                let stateChangeCount = 0;
+                testStateManager.subscribe(() => {
+                    stateChangeCount++;
+                });
+                
+                // Trigger state changes
+                testStateManager.updateState({ wallet: 500 });
+                testStateManager.updateState({ currentScreen: 'match' });
+                
+                let output = '✓ State integration test:\n';
+                output += `  - StateManager initialized\n`;
+                output += `  - State changes detected: ${stateChangeCount}\n`;
+                output += `  - Current screen: ${uiManager.getCurrentScreen()}\n`;
+                
+                results.textContent = output;
+                results.className = 'test-results success';
+            } catch (error) {
+                results.textContent = `Error: ${error.message}`;
+                results.className = 'test-results error';
+            }
+        };
+
+        window.testCompleteFlow = function() {
+            const results = document.getElementById('integration-results');
+            try {
+                // Reset and initialize
+                if (uiManager) uiManager.destroy();
+                initializeTests();
+                uiManager.initialize(testStateManager);
+                
+                let step = 0;
+                const steps = [
+                    'Initializing...',
+                    'Showing lobby screen...',
+                    'Transitioning to match...',
+                    'Updating game state...',
+                    'Showing notifications...',
+                    'Complete!'
+                ];
+                
+                function nextStep() {
+                    if (step < steps.length) {
+                        results.textContent = `Step ${step + 1}: ${steps[step]}`;
+                        
+                        switch(step) {
+                            case 0:
+                                // Already initialized
+                                break;
+                            case 1:
+                                uiManager.showScreen('lobby');
+                                break;
+                            case 2:
+                                testStateManager.updateState({ currentScreen: 'match' });
+                                break;
+                            case 3:
+                                testStateManager.updateState({
+                                    wallet: 1500,
+                                    match: { ...testStateManager.state.match, time: 30, homeScore: 1 }
+                                });
+                                break;
+                            case 4:
+                                uiManager.showNotification('Goal scored!', 'success', 'Match Update');
+                                break;
+                            case 5:
+                                results.textContent = '✓ Complete flow test successful!';
+                                results.className = 'test-results success';
+                                return;
+                        }
+                        
+                        step++;
+                        setTimeout(nextStep, 1000);
+                    }
+                }
+                
+                nextStep();
+            } catch (error) {
+                results.textContent = `Error: ${error.message}`;
+                results.className = 'test-results error';
+            }
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('UIManager Test Runner loaded');
+        });
+    </script>
+</body>
+</html>

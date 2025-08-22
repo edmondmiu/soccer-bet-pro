@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EventManager & EventGenerator Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        
+        .test-section {
+            background-color: #1e293b;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #334155;
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        .test-pass {
+            background-color: #059669;
+            color: white;
+        }
+        
+        .test-fail {
+            background-color: #dc2626;
+            color: white;
+        }
+        
+        .test-info {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        button {
+            background-color: #059669;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background-color: #10b981;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background-color: #334155;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #10b981;
+        }
+        
+        .timeline-event {
+            background-color: #475569;
+            padding: 8px;
+            margin: 4px 0;
+            border-radius: 4px;
+            border-left: 4px solid #10b981;
+        }
+        
+        .event-time {
+            font-weight: bold;
+            color: #34d399;
+        }
+        
+        .event-type {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .event-goal { background-color: #dc2626; }
+        .event-action { background-color: #f59e0b; }
+        .event-commentary { background-color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <h1>EventManager & EventGenerator Tests</h1>
+    
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="testEventGenerator()">Test EventGenerator</button>
+        <button onclick="testEventManager()">Test EventManager</button>
+        <button onclick="generateSampleTimeline()">Generate Sample Timeline</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+    
+    <div id="test-results" class="test-section">
+        <h2>Test Results</h2>
+        <div id="results-container">
+            <p>Click "Run All Tests" to start testing...</p>
+        </div>
+    </div>
+    
+    <div id="timeline-demo" class="test-section" style="display: none;">
+        <h2>Sample Timeline</h2>
+        <div id="timeline-stats" class="stats"></div>
+        <div id="timeline-events"></div>
+    </div>
+
+    <script type="module">
+        import { EventGenerator } from '../utils/EventGenerator.js';
+        import { EventManager } from './EventManager.js';
+        import { StateManager } from './StateManager.js';
+
+        // Make classes available globally for testing
+        window.EventGenerator = EventGenerator;
+        window.EventManager = EventManager;
+        window.StateManager = StateManager;
+
+        // Test utilities
+        window.testResults = [];
+        
+        function logResult(message, type = 'info') {
+            const result = { message, type, timestamp: new Date().toLocaleTimeString() };
+            window.testResults.push(result);
+            
+            const container = document.getElementById('results-container');
+            const div = document.createElement('div');
+            div.className = `test-result test-${type}`;
+            div.textContent = `[${result.timestamp}] ${message}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function assert(condition, message) {
+            if (condition) {
+                logResult(`✓ ${message}`, 'pass');
+                return true;
+            } else {
+                logResult(`✗ ${message}`, 'fail');
+                return false;
+            }
+        }
+
+        // EventGenerator Tests
+        window.testEventGenerator = function() {
+            logResult('Starting EventGenerator tests...', 'info');
+            
+            const generator = new EventGenerator();
+            let passCount = 0;
+            let totalTests = 0;
+
+            // Test 1: Distribution validation
+            totalTests++;
+            if (assert(generator.validateDistribution(), 'Event distribution sums to 1.0')) {
+                passCount++;
+            }
+
+            // Test 2: Timeline generation
+            totalTests++;
+            const timeline = generator.generateMatchTimeline();
+            if (assert(Array.isArray(timeline) && timeline.length > 0, 'Timeline generation produces events')) {
+                passCount++;
+            }
+
+            // Test 3: Event structure
+            totalTests++;
+            let structureValid = true;
+            timeline.forEach(event => {
+                if (!event.id || !event.type || typeof event.time !== 'number' || !event.description) {
+                    structureValid = false;
+                }
+            });
+            if (assert(structureValid, 'All events have proper structure')) {
+                passCount++;
+            }
+
+            // Test 4: Event timing
+            totalTests++;
+            let timingValid = true;
+            for (let i = 1; i < timeline.length; i++) {
+                if (timeline[i].time < timeline[i-1].time) {
+                    timingValid = false;
+                    break;
+                }
+            }
+            if (assert(timingValid, 'Events are sorted by time')) {
+                passCount++;
+            }
+
+            // Test 5: Event spacing
+            totalTests++;
+            const times = generator.generateEventTimes();
+            let spacingValid = true;
+            for (let i = 1; i < times.length; i++) {
+                const spacing = times[i] - times[i-1];
+                if (spacing < 8 || spacing > 18) {
+                    spacingValid = false;
+                    break;
+                }
+            }
+            if (assert(spacingValid, 'Event spacing is within 8-18 minutes')) {
+                passCount++;
+            }
+
+            // Test 6: Event types
+            totalTests++;
+            const types = timeline.map(e => e.type);
+            const hasGoals = types.includes('GOAL');
+            const hasActionBets = types.includes('ACTION_BET');
+            const hasCommentary = types.includes('COMMENTARY');
+            if (assert(hasGoals || hasActionBets || hasCommentary, 'Timeline contains valid event types')) {
+                passCount++;
+            }
+
+            // Test 7: Goal event generation
+            totalTests++;
+            const goalEvent = generator.generateGoalEvent('test', 25);
+            const goalValid = goalEvent.type === 'GOAL' && 
+                            goalEvent.data.team && 
+                            goalEvent.data.player &&
+                            ['home', 'away'].includes(goalEvent.data.team);
+            if (assert(goalValid, 'Goal events have correct structure')) {
+                passCount++;
+            }
+
+            // Test 8: Action bet event generation
+            totalTests++;
+            const actionEvent = generator.generateActionBetEvent('test', 30);
+            const actionValid = actionEvent.type === 'ACTION_BET' && 
+                              Array.isArray(actionEvent.data.choices) &&
+                              actionEvent.data.choices.length > 0;
+            if (assert(actionValid, 'Action bet events have choices')) {
+                passCount++;
+            }
+
+            // Test 9: Statistics calculation
+            totalTests++;
+            const stats = generator.getEventStatistics(timeline);
+            const statsValid = stats.total === timeline.length &&
+                             stats.goals + stats.actionBets + stats.commentary === stats.total;
+            if (assert(statsValid, 'Event statistics are calculated correctly')) {
+                passCount++;
+            }
+
+            logResult(`EventGenerator tests completed: ${passCount}/${totalTests} passed`, 
+                     passCount === totalTests ? 'pass' : 'fail');
+        };
+
+        // EventManager Tests
+        window.testEventManager = function() {
+            logResult('Starting EventManager tests...', 'info');
+            
+            const stateManager = new StateManager();
+            const eventManager = new EventManager(stateManager);
+            let passCount = 0;
+            let totalTests = 0;
+
+            // Test 1: Timeline generation
+            totalTests++;
+            const timeline = eventManager.generateTimeline();
+            if (assert(Array.isArray(timeline) && timeline.length > 0, 'EventManager generates timeline')) {
+                passCount++;
+            }
+
+            // Test 2: State update
+            totalTests++;
+            const state = stateManager.getState();
+            if (assert(state.match.timeline.length > 0, 'Timeline is stored in state')) {
+                passCount++;
+            }
+
+            // Test 3: Goal processing
+            totalTests++;
+            const initialScore = state.match.homeScore;
+            const goalEvent = {
+                id: 'test_goal',
+                type: 'GOAL',
+                time: 25,
+                description: 'Test goal',
+                data: { team: 'home', player: 'Test Player' }
+            };
+            eventManager.processGoalEvent(goalEvent);
+            const newState = stateManager.getState();
+            if (assert(newState.match.homeScore === initialScore + 1, 'Goal events update score')) {
+                passCount++;
+            }
+
+            // Test 4: Odds calculation
+            totalTests++;
+            const newOdds = eventManager.calculateNewOdds(2, 0);
+            if (assert(newOdds.home < 1.85 && newOdds.away > 4.20, 'Odds adjust correctly after goals')) {
+                passCount++;
+            }
+
+            // Test 5: Event feed
+            totalTests++;
+            const testEvent = {
+                id: 'test_feed',
+                type: 'COMMENTARY',
+                time: 15,
+                description: 'Test event'
+            };
+            eventManager.addToEventFeed(testEvent);
+            const feedState = stateManager.getState();
+            if (assert(feedState.match.eventFeed && feedState.match.eventFeed.length > 0, 'Events are added to feed')) {
+                passCount++;
+            }
+
+            // Test 6: Event scheduling
+            totalTests++;
+            const customEvent = {
+                id: 'custom_event',
+                type: 'COMMENTARY',
+                description: 'Custom event',
+                data: {}
+            };
+            eventManager.scheduleEvent(customEvent, 45);
+            const scheduledState = stateManager.getState();
+            const hasCustomEvent = scheduledState.match.timeline.some(e => e.id === 'custom_event');
+            if (assert(hasCustomEvent, 'Custom events can be scheduled')) {
+                passCount++;
+            }
+
+            // Test 7: Next event retrieval
+            totalTests++;
+            eventManager.currentEventIndex = 0;
+            const nextEvent = eventManager.getNextEvent();
+            if (assert(nextEvent !== null && typeof nextEvent === 'object', 'Can retrieve next event')) {
+                passCount++;
+            }
+
+            // Test 8: Event filtering
+            totalTests++;
+            const goalEvents = eventManager.getEventsByType('GOAL');
+            const allGoals = goalEvents.every(e => e.type === 'GOAL');
+            if (assert(allGoals, 'Can filter events by type')) {
+                passCount++;
+            }
+
+            logResult(`EventManager tests completed: ${passCount}/${totalTests} passed`, 
+                     passCount === totalTests ? 'pass' : 'fail');
+        };
+
+        // Generate sample timeline for demonstration
+        window.generateSampleTimeline = function() {
+            const generator = new EventGenerator();
+            const timeline = generator.generateMatchTimeline();
+            const stats = generator.getEventStatistics(timeline);
+            
+            // Show timeline section
+            document.getElementById('timeline-demo').style.display = 'block';
+            
+            // Display statistics
+            const statsContainer = document.getElementById('timeline-stats');
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${stats.total}</div>
+                    <div>Total Events</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.goals}</div>
+                    <div>Goals (${stats.goalPercentage}%)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.actionBets}</div>
+                    <div>Action Bets (${stats.actionBetPercentage}%)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.commentary}</div>
+                    <div>Commentary (${stats.commentaryPercentage}%)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.averageSpacing?.toFixed(1) || 'N/A'}</div>
+                    <div>Avg Spacing (min)</div>
+                </div>
+            `;
+            
+            // Display timeline events
+            const eventsContainer = document.getElementById('timeline-events');
+            eventsContainer.innerHTML = timeline.map(event => `
+                <div class="timeline-event">
+                    <span class="event-time">${event.time}'</span>
+                    <span class="event-type event-${event.type.toLowerCase()}">${event.type}</span>
+                    <span>${event.description}</span>
+                </div>
+            `).join('');
+            
+            logResult(`Generated timeline with ${timeline.length} events`, 'info');
+        };
+
+        // Run all tests
+        window.runAllTests = function() {
+            clearResults();
+            logResult('Starting comprehensive test suite...', 'info');
+            testEventGenerator();
+            testEventManager();
+            logResult('All tests completed!', 'info');
+        };
+
+        // Clear results
+        window.clearResults = function() {
+            document.getElementById('results-container').innerHTML = '<p>Results cleared.</p>';
+            window.testResults = [];
+        };
+    </script>
+</body>
+</html>

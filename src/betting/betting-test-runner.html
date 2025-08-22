@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BettingManager Test Runner</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 10px;
+            border: 2px solid #059669;
+        }
+        
+        .test-section {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #059669;
+        }
+        
+        .test-results {
+            background: #334155;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .run-button {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .run-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background-color: #059669;
+            color: white;
+        }
+        
+        .status.error {
+            background-color: #dc2626;
+            color: white;
+        }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .feature-item {
+            background: #334155;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid #10b981;
+        }
+        
+        .feature-item h4 {
+            margin: 0 0 10px 0;
+            color: #10b981;
+        }
+        
+        .feature-item p {
+            margin: 0;
+            font-size: 14px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 BettingManager Test Suite</h1>
+        <p>Comprehensive testing for betting logic and validation</p>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Test Coverage</h2>
+        <div class="feature-list">
+            <div class="feature-item">
+                <h4>Bet Placement</h4>
+                <p>Valid bet placement, validation, and wallet deduction</p>
+            </div>
+            <div class="feature-item">
+                <h4>Validation Logic</h4>
+                <p>Amount validation, minimum bets, insufficient funds</p>
+            </div>
+            <div class="feature-item">
+                <h4>Power-Up System</h4>
+                <p>Power-up application and 2x multiplier calculation</p>
+            </div>
+            <div class="feature-item">
+                <h4>Bet Resolution</h4>
+                <p>Winning/losing bet resolution and payout processing</p>
+            </div>
+            <div class="feature-item">
+                <h4>Statistics</h4>
+                <p>Bet statistics calculation and tracking</p>
+            </div>
+            <div class="feature-item">
+                <h4>Edge Cases</h4>
+                <p>Multiple bets, cancellation, and error handling</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🧪 Test Execution</h2>
+        <button class="run-button" onclick="runAllTests()">Run All Tests</button>
+        <button class="run-button" onclick="runValidationTests()">Run Validation Tests</button>
+        <button class="run-button" onclick="runPowerUpTests()">Run Power-Up Tests</button>
+        <button class="run-button" onclick="clearResults()">Clear Results</button>
+        
+        <div id="status"></div>
+        <div id="results" class="test-results"></div>
+    </div>
+
+    <script type="module">
+        import { runTests } from './BettingManager.test.js';
+        
+        let originalConsoleLog = console.log;
+        let testOutput = '';
+        
+        function captureConsoleOutput() {
+            testOutput = '';
+            console.log = function(...args) {
+                testOutput += args.join(' ') + '\n';
+                originalConsoleLog.apply(console, args);
+            };
+        }
+        
+        function restoreConsoleOutput() {
+            console.log = originalConsoleLog;
+        }
+        
+        function showStatus(message, type = 'success') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function showResults(output) {
+            document.getElementById('results').textContent = output;
+        }
+        
+        window.runAllTests = async function() {
+            showStatus('Running all BettingManager tests...', 'info');
+            
+            try {
+                captureConsoleOutput();
+                const results = runTests();
+                restoreConsoleOutput();
+                
+                showResults(testOutput);
+                
+                if (results.failed === 0) {
+                    showStatus(`✅ All ${results.passed} tests passed!`, 'success');
+                } else {
+                    showStatus(`⚠️ ${results.passed} passed, ${results.failed} failed`, 'error');
+                }
+            } catch (error) {
+                restoreConsoleOutput();
+                showStatus(`❌ Test execution failed: ${error.message}`, 'error');
+                showResults(`Error: ${error.message}\n${error.stack}`);
+            }
+        };
+        
+        window.runValidationTests = function() {
+            showStatus('Running validation-specific tests...', 'info');
+            showResults('Validation tests would run here (subset of full test suite)');
+        };
+        
+        window.runPowerUpTests = function() {
+            showStatus('Running power-up specific tests...', 'info');
+            showResults('Power-up tests would run here (subset of full test suite)');
+        };
+        
+        window.clearResults = function() {
+            document.getElementById('results').textContent = '';
+            document.getElementById('status').innerHTML = '';
+        };
+        
+        // Auto-run tests on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                runAllTests();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
